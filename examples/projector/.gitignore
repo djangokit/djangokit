@@ -1,0 +1,8 @@
+/.env*
+/*.sqlite3
+/.mypy_cache/
+/.venv/
+/node_modules/
+/static/
+
+bundle.js

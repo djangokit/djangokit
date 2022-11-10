@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "djangokit-core"
+version = "0.1.0"
+description = "DjangoKit core"
+authors = ["Wyatt Baldwin <self@wyattbaldwin.com>"]
+license = "MIT"
+readme = "README.md"
+
+packages = [
+    { include = "djangokit", from = "src" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+Django = ">=3.0"
+python-dotenv = "^0.21.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.10.0"
+isort = "^5.10.1"
+mypy = "^0.990"
+pytest = "^7.2.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

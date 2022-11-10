@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "djangokit-cli"
+version = "1.0a1"
+description = "DjangoKit command line interface"
+authors = ["Wyatt Baldwin <self@wyattbaldwin.com>"]
+license = "MIT"
+readme = "README.md"
+
+packages = [
+    { include = "djangokit", from = "src" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+djangokit-core = { path = "../core", develop = true }
+tomli = { version = "^2.0.1", python = "<3.11" }
+typer = { version = "^0.7.0", extras = ["all"] }
+
+[tool.poetry.scripts]
+dk = "djangokit.cli.__main__:app"
+djangokit = "djangokit.cli.__main__:app"
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.10.0"
+isort = "^5.10.1"
+mypy = "^0.990"
+pytest = "^7.2.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

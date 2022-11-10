@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "{{ cookiecutter.dist_name }}"
+version = "{{ cookiecutter.version }}"
+description = "{{ cookiecutter.description }}"
+authors = ["{{ cookiecutter.author }} <{{ cookiecutter.author }}>"]
+license = "{{ cookiecutter.license }}"
+readme = "README.md"
+
+packages = [
+    { include = "{{ cookiecutter.package_name }}", from = "src" }
+]
+
+[tool.poetry.dependencies]
+python = "{{ cookiecutter.python_version }}"
+djangokit-core = { path = "../../core", develop = true }
+djangokit-cli = { path = "../../cli", develop = true }
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.10.0"
+isort = "^5.10.1"
+mypy = "^0.990"
+pytest = "^7.2.0"
+
+[tool.djangokit]
+package = "{{ cookiecutter.package_name }}"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
