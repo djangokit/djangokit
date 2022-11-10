@@ -1,0 +1,159 @@
+---
+# App
+
+- name: <LOCAL> Remove app build directory & archive
+  tags:
+    - prepare-app
+    - prepare-app-clean
+    - deploy-app
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ app_build_dir }}"
+    - "{{ app_build_archive }}"
+
+- name: <LOCAL> Create app build directory for version
+  tags:
+    - prepare-app
+    - deploy-app
+  file:
+    path: "{{ app_build_dir }}"
+    state: directory
+
+- name: <LOCAL> Copy public dotenv file to build directory
+  tags:
+    - prepare-app
+    - prepare-copy-files
+    - deploy-app
+  template:
+    src: "{{ package_info.public_dotenv_file }}"
+    dest: "{{ app_build_dir }}"
+
+- name: <LOCAL> Copy env-specific dotenv file to build directory
+  tags:
+    - prepare-app
+    - prepare-copy-files
+    - deploy-app
+  template:
+    src: "{{ package_info.dotenv_file }}"
+    dest: "{{ app_build_dir }}"
+
+- name: <LOCAL> Copy WSGI module to build directory
+  tags:
+    - prepare-app
+    - prepare-copy-files
+    - deploy-app
+  template:
+    src: "wsgi.py.j2"
+    dest: "{{ app_build_dir }}/wsgi.py"
+
+- name: <LOCAL> Remove existing source distributions
+  tags:
+    - prepare-app
+    - deploy-app
+    - build-distributions
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ root }}/dist"
+    - "{{ core_root }}/dist"
+    - "{{ cli_root }}/dist"
+
+- name: <LOCAL> Build source distributions
+  tags:
+    - prepare-app
+    - deploy-app
+    - build-distributions
+  command: poetry build --format wheel
+  args:
+    chdir: "{{ item }}"
+  with_items:
+    - "{{ root }}"
+    - "{{ core_root }}"
+    - "{{ cli_root }}"
+
+- name: <LOCAL> Copy source distributions to build directory
+  tags:
+    - prepare-app
+    - deploy-app
+    - build-distributions
+  copy:
+    src: "{{ item }}"
+    dest: "{{ app_build_dir }}/dist/"
+  with_fileglob:
+    - "{{ root }}/dist/*"
+    - "{{ core_root }}/dist/*"
+    - "{{ cli_root }}/dist/*"
+
+- name: <LOCAL> Create build archive
+  tags:
+    - prepare-app
+    - deploy-app
+    - create-app-archive
+  archive:
+    path: "{{ app_build_dir }}"
+    dest: "{{ app_build_archive }}"
+
+# Static files, including SSR
+
+- name: <LOCAL> Remove client & static build directories
+  tags:
+    - prepare-static
+    - prepare-static-clean
+    - deploy-static
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ package_info.static_build_dir }}"
+    - "{{ static_build_dir }}"
+    - "{{ static_build_archive }}"
+
+- name: <LOCAL> Build server bundle
+  tags:
+    - prepare-static
+    - prepare-static-build
+    - deploy-static
+    - prepare-ssr
+    - prepare-ssr-build
+    - deploy-ssr
+  command: >
+    djangokit
+    --env {{ env }}
+    build-server
+    --minify
+  args:
+    creates: "{{ package_info.static_build_dir }}/server.bundle.js"
+
+- name: <LOCAL> Build client bundle
+  tags:
+    - prepare-static
+    - prepare-static-build
+    - deploy-static
+  command: >
+    djangokit
+    --env {{ env }}
+    build-client
+    --minify 
+  args:
+    creates: "{{ package_info.static_build_dir }}/client.bundle.js"
+
+- name: <LOCAL> Collect Django static files
+  tags:
+    - prepare-static
+    - prepare-static-build
+    - deploy-static
+  environment:
+    - DJANGO_STATIC_ROOT: "{{ static_build_dir }}"
+  command: djangokit manage collectstatic
+
+- name: <LOCAL> Create static archive
+  tags:
+    - prepare-static
+    - deploy-static
+    - create-static-archive
+  archive:
+    path: "{{ static_build_dir }}"
+    dest: "{{ static_build_archive }}"

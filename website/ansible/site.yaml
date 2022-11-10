@@ -1,0 +1,28 @@
+---
+- name: Provision
+  hosts:
+    - web
+  become: true
+  roles:
+    - base
+    - provision
+  tags:
+    - provision
+
+- name: Prepare
+  hosts:
+    - localhost
+  roles:
+    - base
+    - prepare
+  tags:
+    - prepare
+
+- name: Deploy
+  hosts:
+    - web
+  become: true
+  roles:
+    - base
+    - deploy
+  tags: deploy

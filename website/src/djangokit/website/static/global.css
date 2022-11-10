@@ -1,0 +1,98 @@
+#root {
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas: "header" "main" "footer";
+}
+
+#root > header {
+  grid-area: header;
+  z-index: 100;
+}
+
+#root > main {
+  grid-area: main;
+  overflow: auto;
+}
+
+#root > footer {
+  grid-area: footer;
+  box-shadow: 0 -0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+  z-index: 100;
+}
+
+blockquote {
+  --bs-text-opacity: 1;
+  background-color: var(--bs-light);
+  border-left: 0.25rem var(--bs-border-style) var(--bs-border-color);
+  padding: 0.25rem;
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+ul {
+  list-style: "▷ ";
+}
+li {
+  line-height: 2;
+}
+
+/** Markdown **/
+
+.admonition {
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: var(--bs-light);
+  border: var(--bs-border-width) var(--bs-border-style) var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+}
+
+.admonition-title {
+  font-weight: bold;
+}
+.admonition .admonition-title::before {
+  margin-right: 0.5em;
+}
+
+.admonition.note .admonition-title::before {
+  content: "📝";
+}
+
+.admonition.info {
+  border-color: rgba(var(--bs-info-rgb), var(--bs-border-opacity));
+}
+.admonition.info .admonition-title::before {
+  content: "🗄️";
+}
+
+.admonition.warning {
+  border-color: rgba(var(--bs-warning-rgb), var(--bs-border-opacity));
+}
+.admonition.warning .admonition-title::before {
+  content: "⚠️";
+}
+
+.admonition.danger {
+  border-color: rgba(var(--bs-danger-rgb), var(--bs-border-opacity));
+}
+.admonition.danger .admonition-title::before {
+  content: "⛔️";
+}
+
+.codehilite {
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: var(--bs-gray-200);
+  border-left: 0.25em solid var(--bs-dark);
+  border-right: 0.25em solid var(--bs-dark);
+}
+.codehilite pre {
+  margin-bottom: 0;
+}
+
+.toc ul {
+  list-style: "🔗 ";
+}

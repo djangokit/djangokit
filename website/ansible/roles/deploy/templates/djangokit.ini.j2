@@ -1,0 +1,36 @@
+[uwsgi]
+env = ENV={{ env }}
+env = DOTENV_PATH={{ remote_dotenv_path }}
+env = VERSION={{ version }}
+
+master = true
+plugins = python3
+
+uid = djangokit
+gid = www-data
+
+workers = 2
+enable-threads = true
+threads = 4
+
+logto2 = /sites/{{ hostname }}/uwsgi.log
+
+chdir = /sites/{{ hostname }}/current/app
+virtualenv = /sites/{{ hostname }}/current/app/venv
+wsgi-file = /sites/{{ hostname }}/current/app/wsgi.py
+
+single-interpreter = true
+
+# Clean up socket and pid files on exit
+vacuum = true
+
+# Kill requests that take too long
+harakiri = 30
+
+# Reload when memory usage gets too high
+reload-on-rss = 256
+
+# Ensure POST bodies are read
+post-buffering = 1
+
+die-on-term = true

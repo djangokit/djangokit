@@ -1,0 +1,26 @@
+{
+  "root": true,
+  "ignorePatterns": [
+    "build",
+    "dist"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "env": {
+    "browser": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended",
+    "plugin:react/jsx-runtime",
+    "plugin:prettier/recommended"
+  ],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": 0
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  }
+}

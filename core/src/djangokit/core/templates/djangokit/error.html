@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="DjangoKit Error Page">
+
+    <title>DjangoKit Error Page</title>
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css"
+      integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65"
+      crossorigin="anonymous"
+    >
+
+    <style>
+      p:last-child {
+        margin-bottom: 0;
+      }
+    </style>
+  </head>
+
+  <body class="p-4">
+    <div class="p-4 bg-light border border-danger rounded">
+      <h1 class="text-danger">
+        ⛔️ Error{% if explanation %} - {{ explanation }}{% endif %}
+      </h1>
+
+      {% if detail %}
+        <div class="lead">
+          {{ detail|safe }}
+        </div>
+      {% endif %}
+
+      {% if status_code != 404 %}
+        <hr>
+
+        <p>
+          Please try again later or contact the site administrator at
+          {{ settings.webmaster }}.
+        </p>
+
+        <p>
+          Error code: {{ status_code }}
+        </p>
+      {% endif %}
+    </div>
+  </body>
+</html>

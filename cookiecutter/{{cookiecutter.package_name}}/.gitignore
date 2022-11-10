@@ -1,0 +1,13 @@
+.env*
+!.env.public
+*.sqlite3
+.mypy_cache/
+.pytest_cache/
+.venv/
+build/
+dist/
+node_modules/
+
+# NOTE: This ignores the static directory at the project root, which is
+#       typically created by running the Django collectstatic command.
+/static/

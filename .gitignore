@@ -1,0 +1,10 @@
+# Common ignore patterns for all DjangoKit packages
+.mypy_cache/
+.pytest_cache/
+.tox/
+.venv/
+build/
+dist/
+node_modules/
+package-lock.json
+poetry.lock
