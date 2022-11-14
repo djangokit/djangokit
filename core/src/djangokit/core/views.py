@@ -1,8 +1,13 @@
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, View
 
 
-class AppView(TemplateView):
-    """Render React app."""
+class PageView(TemplateView):
 
+    page_path = None
     template_name = "djangokit/app.html"
     http_method_names = ["get", "head"]
+
+
+class ApiView(View):
+
+    pass
