@@ -11,7 +11,7 @@ from djangokit.core.settings import dotenv_values
 from rich.pretty import pretty_repr
 from typer import Argument
 
-from .app import app, format_
+from .app import app
 from .utils import Console, read_project_config
 from .utils.run import Args, process_args
 
@@ -39,12 +39,6 @@ def createsuperuser(username: str = getuser(), email: str = None):
 def migrate():
     """Run all database migrations"""
     run_django_command("migrate")
-
-
-@app.command()
-def start():
-    """Run dev server"""
-    run_django_command("runserver")
 
 
 @app.command()
@@ -158,8 +152,6 @@ def add_model(
     # Create migration for model -------------------------------
 
     run_django_command(f"makemigrations {package} --name {migration_name}", quiet=True)
-
-    format_()
 
     console.warning("NOTE: Migrations still need to be run")
 

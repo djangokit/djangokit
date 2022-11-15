@@ -21,7 +21,7 @@ Other options for installing `poetry` can be found in its docs:
 
 Change into the project directory and install the package:
 
-    poetry env use ^3.11
+    poetry env use 3.11
     poetry install
 
 Complete the installation process:

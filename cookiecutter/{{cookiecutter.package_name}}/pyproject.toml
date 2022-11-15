@@ -11,7 +11,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "{{ cookiecutter.python_version }}"
+python = "^{{ cookiecutter.python_version }}"
 djangokit-core = { path = "../../core", develop = true }
 djangokit-cli = { path = "../../cli", develop = true }
 

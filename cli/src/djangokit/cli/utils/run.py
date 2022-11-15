@@ -40,7 +40,6 @@ def run_poetry_command(args: Args, quiet=False) -> subprocess.CompletedProcess:
     return subprocess_run(args, quiet)
 
 
-
 def subprocess_run(args: List[str], quiet=False) -> subprocess.CompletedProcess:
     if not quiet:
         print(f"[bold]> {' '.join(args)}")
