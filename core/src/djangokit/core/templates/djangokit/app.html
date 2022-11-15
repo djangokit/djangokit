@@ -11,9 +11,13 @@
     <script defer src="{% static 'bundle.js' %}"></script>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root">
-      {{ react.markup }}
+      {{ react.markup|safe }}
     </div>
+
+    <ul>
+      <li><code>view => {{ view }}</code></li>
+      <li><code>page path => {{ page_path }}</code></li>
+    </ul>
   </body>
 </html>

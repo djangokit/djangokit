@@ -35,6 +35,8 @@ def register_routes(
     urls = []
 
     routes_path = Path(routes_package.__file__).parent
+    routes_package = routes_package.__package__
+
     page_paths = routes_path.glob("**/*.[jt]sx")
     api_paths = routes_path.glob("**/api.py")
 
@@ -47,18 +49,18 @@ def register_routes(
         if page_name.startswith("."):
             page_name = page_name[1:]
 
-        pattern = []
+        segments = []
 
         parts = page_name.rsplit("/", 1)
         for part in parts:
             if part.startswith("[") and part.endswith("]"):
                 name = part[1:-1]
                 part = f"<{name}>"
-            pattern.append(part)
+            segments.append(part)
 
-        pattern = "/".join(pattern)
-        url = path(pattern, page_view_class.as_view(page_path=page_path))
-        urls.append(url)
+        pattern = "/".join(segments)
+        view = page_view_class.as_view(page_path=page_path)
+        urls.append(path(pattern, view))
 
     for api_path in api_paths:
         rel_api_path = api_path.relative_to(routes_path)
@@ -66,21 +68,27 @@ def register_routes(
         api_name = rel_api_path.parent
         api_name = api_name.as_posix()
         api_name = api_name.replace("/", ".")
+        api_name = api_name[1:] if api_name.startswith(".") else api_name
 
-        if api_name.startswith("."):
-            api_name = api_name[1:]
+        if api_name:
+            api_module_name = f"{routes_package}.{api_name}.api"
+        else:
+            api_module_name = f"{routes_package}.api"
 
-        pattern = []
+        api_module = import_module(api_module_name)
 
-        parts = api_name.rsplit("/", 1)
+        segments = []
+
+        parts = api_name.rsplit(".", 1)
         for part in parts:
             if part.startswith("[") and part.endswith("]"):
                 name = part[1:-1]
                 part = f"<{name}>"
-            pattern.append(part)
+            segments.append(part)
 
-        pattern = "/".join(pattern)
-        url = path(f"api/{pattern}", api_view_class.as_view())
-        urls.append(url)
+        pattern = "/".join(segments)
+        pattern = f"api/{pattern}"
+        view = api_view_class.as_view(api_module=api_module)
+        urls.append(path(pattern, view))
 
     return urls
