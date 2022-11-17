@@ -1,15 +1,19 @@
+from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
+from types import ModuleType
+from typing import List
 
 from django.urls import path
 
+from .utils import get_package_info
 from .views import ApiView, PageView
 
 
 def register_routes(
-    routes_package,
-    api_view_class=ApiView,
+    package,
     page_view_class=PageView,
+    api_view_class=ApiView,
 ) -> list:
     """Discover & register file-based routes.
 
@@ -29,66 +33,99 @@ def register_routes(
         ]
 
     """
-    if isinstance(routes_package, str):
-        routes_package = import_module(routes_package)
-
     urls = []
+    page_info = find_pages(package)
+    api_info = find_apis(package)
 
-    routes_path = Path(routes_package.__file__).parent
-    routes_package = routes_package.__package__
+    for info in page_info:
+        view = page_view_class.as_view(page_path=info.path)
+        urls.append(path(info.url_pattern, view))
 
-    page_paths = routes_path.glob("**/*.[jt]sx")
-    api_paths = routes_path.glob("**/api.py")
-
-    for page_path in page_paths:
-        rel_page_path = page_path.relative_to(routes_path)
-
-        page_name = rel_page_path.parent
-        page_name = page_name.as_posix()
-
-        if page_name.startswith("."):
-            page_name = page_name[1:]
-
-        segments = []
-
-        parts = page_name.rsplit("/", 1)
-        for part in parts:
-            if part.startswith("[") and part.endswith("]"):
-                name = part[1:-1]
-                part = f"<{name}>"
-            segments.append(part)
-
-        pattern = "/".join(segments)
-        view = page_view_class.as_view(page_path=page_path)
-        urls.append(path(pattern, view))
-
-    for api_path in api_paths:
-        rel_api_path = api_path.relative_to(routes_path)
-
-        api_name = rel_api_path.parent
-        api_name = api_name.as_posix()
-        api_name = api_name.replace("/", ".")
-        api_name = api_name[1:] if api_name.startswith(".") else api_name
-
-        if api_name:
-            api_module_name = f"{routes_package}.{api_name}.api"
-        else:
-            api_module_name = f"{routes_package}.api"
-
-        api_module = import_module(api_module_name)
-
-        segments = []
-
-        parts = api_name.rsplit(".", 1)
-        for part in parts:
-            if part.startswith("[") and part.endswith("]"):
-                name = part[1:-1]
-                part = f"<{name}>"
-            segments.append(part)
-
-        pattern = "/".join(segments)
-        pattern = f"api/{pattern}"
-        view = api_view_class.as_view(api_module=api_module)
-        urls.append(path(pattern, view))
+    for info in api_info:
+        view = api_view_class.as_view(api_module=info.module)
+        urls.append(path(info.url_pattern, view))
 
     return urls
+
+
+@dataclass
+class PageInfo:
+
+    path: Path
+    """Path to page.jsx or page.tsx."""
+
+    url_pattern: str
+    """URL pattern for page."""
+
+
+def find_pages(package) -> List[PageInfo]:
+    info = []
+    package_info = get_package_info(package)
+    page_paths = package_info.path.glob("**/*.[jt]sx")
+
+    for page_path in page_paths:
+        rel_page_path = page_path.relative_to(package_info.path)
+
+        rel_path = rel_page_path.parent.as_posix()
+        rel_path = "" if rel_path == "." else rel_path
+
+        segments = rel_path.rsplit("/", 1)
+
+        for i, segment in enumerate(segments):
+            if segment.startswith("[") and segment.endswith("]"):
+                segments[i] = f"<{segment[1:-1]}>"
+
+        url_pattern = "/".join(segments)
+
+        info.append(PageInfo(
+            path=page_path,
+            url_pattern=url_pattern,
+        ))
+
+    return info
+
+
+@dataclass
+class ApiInfo:
+
+    module: ModuleType
+    """API module."""
+
+    url_pattern: str
+    """URL pattern for API module."""
+
+
+def find_apis(package) -> List[ApiInfo]:
+    """Find API modules in package."""
+    info = []
+    package_info = get_package_info(package)
+    api_paths = package_info.path.glob("**/api.py")
+
+    for api_path in api_paths:
+        rel_api_path = api_path.relative_to(package_info.path)
+
+        rel_path = rel_api_path.parent.as_posix()
+        rel_path = "" if rel_path == "." else rel_path
+
+        if rel_path:
+            api_package_name = rel_path.replace("/", ".")
+            module_name = f"{package_info.name}.{api_package_name}.api"
+        else:
+            module_name = f"{package_info.name}.api"
+
+        module = import_module(module_name)
+
+        segments = module_name.rsplit(".", 1)
+        for i, segment in enumerate(segments):
+            if segment.startswith("[") and segment.endswith("]"):
+                segments[i] = f"<{segment[1:-1]}>"
+
+        url_pattern = "/".join(segments)
+        url_pattern = f"api/{url_pattern}"
+
+        info.append(ApiInfo(
+            module=module,
+            url_pattern=url_pattern,
+        ))
+
+    return info
