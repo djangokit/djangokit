@@ -7,7 +7,6 @@ from typing import List, Union
 
 @dataclass
 class PackageInfo:
-
     module: ModuleType
     """The package's module."""
 
@@ -20,17 +19,18 @@ class PackageInfo:
 
 @dataclass
 class PageInfo:
-
     path: Path
     """Path to page.jsx or page.tsx."""
 
     url_pattern: str
+    """Django URL pattern for page."""
+
+    route_pattern: str
     """URL pattern for page."""
 
 
 @dataclass
 class ApiInfo:
-
     module: ModuleType
     """API module."""
 
@@ -38,88 +38,80 @@ class ApiInfo:
     """URL pattern for API module."""
 
 
-def get_package_info(module: Union[ModuleType, str]) -> PackageInfo:
-    """Get package info for the specified module.
-
-    .. note::
-        This gets info on the *package* containing the specified module
-        rather than info on the module itself.
-
-    Example::
-
-        >>> info = get_package_info("djangokit.core.utils")
-        >>> info.name
-        'djangokit.core'
-        >>> info.path.as_posix()
-        '...djangokit/core'
-
-    """
-    if isinstance(module, str):
-        module = import_module(module)
-    package_name = module.__package__
-    package_module = import_module(package_name)
-    return PackageInfo(
-        module=package_module, name=package_name, path=Path(module.__file__).parent
-    )
-
-
-def find_pages(package) -> List[PageInfo]:
-    """Find pages in package."""
+def find_pages(root: Path) -> List[PageInfo]:
+    """Find pages in root directory."""
     info = []
-    package_info = get_package_info(package)
-    page_paths = package_info.path.glob("**/*.[jt]sx")
+    page_paths = root.glob("**/*.[jt]sx")
 
     for page_path in page_paths:
-        rel_page_path = page_path.relative_to(package_info.path)
+        rel_page_path = page_path.relative_to(root)
 
         rel_path = rel_page_path.parent.as_posix()
         rel_path = "" if rel_path == "." else rel_path
 
-        segments = rel_path.rsplit("/", 1)
+        parts = rel_path.rsplit("/", 1)
+        url_segments = []
+        route_segments = []
 
-        for i, segment in enumerate(segments):
-            if segment.startswith("[") and segment.endswith("]"):
-                segments[i] = f"<{segment[1:-1]}>"
+        for part in parts:
+            if part.startswith("[") and part.endswith("]"):
+                name = part[1:-1]
+                url_part = f"<{name}>"
+                url_segments.append(url_part)
 
-        url_pattern = "/".join(segments)
+                name_parts = name.split("_")
+                for i in enumerate(name_parts[1:], 1):
+                    name_parts[i] = name_parts[i].capitalize()
+
+                route_part = f"{name}"
+                route_segments.append(f":{route_part}")
+            else:
+                part = part.replace("_", "-")
+                url_segments.append(part)
+                route_segments.append(part)
+
+        url_pattern = "/".join(url_segments)
+        route_pattern = "/".join(route_segments)
+        route_pattern = f"/{route_pattern}"
 
         info.append(
             PageInfo(
                 path=page_path,
                 url_pattern=url_pattern,
+                route_pattern=route_pattern,
             )
         )
 
     return info
 
 
-def find_apis(package) -> List[ApiInfo]:
-    """Find API modules in package."""
+def find_apis(root: Path, root_package: str) -> List[ApiInfo]:
+    """Find API modules in directory."""
     info = []
-    package_info = get_package_info(package)
-    api_paths = package_info.path.glob("**/api.py")
+    api_paths = root.glob("**/api.py")
 
     for api_path in api_paths:
-        rel_api_path = api_path.relative_to(package_info.path)
+        rel_api_path = api_path.relative_to(root)
 
         rel_path = rel_api_path.parent.as_posix()
         rel_path = "" if rel_path == "." else rel_path
 
         if rel_path:
             api_package_name = rel_path.replace("/", ".")
-            module_name = f"{package_info.name}.{api_package_name}.api"
+            module_name = f"{root_package}.{api_package_name}"
+
+            segments = rel_path.split("/")
+            for i, segment in enumerate(segments):
+                if segment.startswith("[") and segment.endswith("]"):
+                    segments[i] = f"<{segment[1:-1]}>"
+
+            url_pattern = "/".join(segments)
+            url_pattern = f"__api__/{url_pattern}"
         else:
-            module_name = f"{package_info.name}.api"
+            module_name = f"{root_package}.api"
+            url_pattern = f"__api__/__root__"
 
         module = import_module(module_name)
-
-        segments = module_name.rsplit(".", 1)
-        for i, segment in enumerate(segments):
-            if segment.startswith("[") and segment.endswith("]"):
-                segments[i] = f"<{segment[1:-1]}>"
-
-        url_pattern = "/".join(segments)
-        url_pattern = f"api/{url_pattern}"
 
         info.append(
             ApiInfo(

@@ -1,56 +1,9 @@
-import os.path
-import subprocess
 from functools import cached_property
 from typing import Dict
 
-from django.contrib.staticfiles import finders
 from django.core.exceptions import ImproperlyConfigured
-from django.http import HttpResponse, HttpResponseServerError, JsonResponse
-from django.views.generic import TemplateView, View
-
-from .utils import find_pages
-
-
-class PageView(TemplateView):
-    """Page view.
-
-    Handles server side rendering of the React app.
-
-    """
-
-    page_path = None
-    template_name = "djangokit/app.html"
-    http_method_names = ["get", "head"]
-
-    def get(self, request, *args, **kwargs):
-        result = self.build()
-        if result is not None:
-            return result
-        return super().get(request, *args, **kwargs)
-
-    @cached_property
-    def pages(self):
-        return find_pages()
-
-    @property
-    def extra_context(self):
-        return {
-            "react": {
-                "markup": "<p>REACT MARKUP</p>",
-            },
-            "page_path": self.page_path,
-        }
-
-    def build(self):
-        path = finders.find("main.tsx")
-        if path is None:
-            return HttpResponseServerError("Could not find entrypoint: main.tsx")
-        out_path = os.path.join(os.path.dirname(path), "bundle.js")
-        result = subprocess.run(
-            ["npx", "esbuild", "--bundle", path, f"--outfile={out_path}"],
-        )
-        if result.returncode:
-            return HttpResponseServerError("Could not build entrypoint: main.tsx")
+from django.http import HttpResponse, JsonResponse
+from django.views.generic import View
 
 
 class ApiView(View):

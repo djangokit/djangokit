@@ -8,15 +8,17 @@ function Layout() {
           <Link to="/" className="navbar-brand">
             Home
           </Link>
+
           <ul className="navbar-nav">
             <li className="nav-item">
-              <Link to="/x" className="nav-link">
-                X
+              <Link to="/b" className="nav-link">
+                A
               </Link>
             </li>
+
             <li className="nav-item">
-              <Link to="/y" className="nav-link">
-                Y
+              <Link to="/b" className="nav-link">
+                B
               </Link>
             </li>
           </ul>

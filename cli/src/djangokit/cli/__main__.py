@@ -1,6 +1,9 @@
 """DjangoKit console script entry point."""
-from . import base  # noqa: Import is needed to register base commands
-from . import django  # noqa: Import is needed to register Django commands
+# NOTE: These imports are needed to register the commands in each
+#       module.
+from . import base  # noqa
+from . import build  # noqa
+from . import django  # noqa
 from .app import app
 
 if __name__ == "__main__":

@@ -7,5 +7,4 @@
 /dist/
 /node_modules/
 /static/
-
-bundle.js
+/src/basic/static/build/
