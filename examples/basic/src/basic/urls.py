@@ -1,10 +1,8 @@
 from django.contrib import admin
-from django.urls import include, path
-from djangokit.core import register_routes
-
-from . import routes
+from django.urls import path
+from djangokit.core import create_routes
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", include(register_routes(routes))),
+    create_routes(),
 ]

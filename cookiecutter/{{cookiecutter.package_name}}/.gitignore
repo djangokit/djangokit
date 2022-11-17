@@ -3,6 +3,8 @@
 /.mypy_cache/
 /.pytest_cache/
 /.venv/
+/build/
+/dist/
 /node_modules/
 /static/
 

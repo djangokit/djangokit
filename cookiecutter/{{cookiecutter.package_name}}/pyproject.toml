@@ -10,6 +10,10 @@ packages = [
     { include = "{{ cookiecutter.package_name }}", from = "src" }
 ]
 
+include = [
+    "src/basic/routes/**/*.{js,jsx,ts,tsx}",
+]
+
 [tool.poetry.dependencies]
 python = "^{{ cookiecutter.python_version }}"
 djangokit-core = { path = "../../core", develop = true }

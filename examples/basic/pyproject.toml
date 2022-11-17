@@ -10,6 +10,10 @@ packages = [
     { include = "basic", from = "src" }
 ]
 
+include = [
+    "src/basic/routes/**/*.{js,jsx,ts,tsx}",
+]
+
 [tool.poetry.dependencies]
 python = "^3.11"
 djangokit-core = { path = "../../core", develop = true }

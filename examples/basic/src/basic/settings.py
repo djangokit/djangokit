@@ -14,6 +14,10 @@ TIME_ZONE = "America/Los_Angeles"
 USE_I18N = True
 USE_TZ = True
 
+DJANGOKIT = {
+    "package": "basic",
+}
+
 INSTALLED_APPS = [
     "basic",
     "djangokit.core",
@@ -35,6 +39,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+STATIC_ROOT = getenv("STATIC_ROOT", "static")
 STATIC_URL = "static/"
 
 TEMPLATES = [
