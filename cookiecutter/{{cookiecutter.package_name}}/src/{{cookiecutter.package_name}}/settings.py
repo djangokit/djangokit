@@ -1,4 +1,4 @@
-from djangokit.core.settings import getenv, load_dotenv
+from djangokit.core.conf import load_dotenv, getenv
 
 load_dotenv()
 
@@ -16,6 +16,7 @@ USE_TZ = True
 
 DJANGOKIT = {
     "package": "{{ cookiecutter.package_name }}",
+    "global_css": ["global.css"],
 }
 
 INSTALLED_APPS = [

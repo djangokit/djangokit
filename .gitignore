@@ -1,3 +1,4 @@
+# Common ignore patterns for core and cli packages
 /*/.mypy_cache/
 /*/.pytest_cache/
 /*/.venv/

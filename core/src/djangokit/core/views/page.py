@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.views.generic import TemplateView
 
 from ..build import build
@@ -17,6 +18,7 @@ class PageView(TemplateView):
     @property
     def extra_context(self):
         return {
+            "settings": settings.DJANGOKIT,
             "react": {
                 "markup": "<div>Loading...</div>",
             },

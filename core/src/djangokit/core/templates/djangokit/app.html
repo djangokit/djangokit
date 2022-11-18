@@ -7,8 +7,13 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="DjangoKit App">
+
   <title>DjangoKit App</title>
-  <link rel="stylesheet" href="{% static 'global.css' %}">
+
+  {% for path in settings.global_css %}
+  <link rel="stylesheet" href="{% static path %}">
+  {% endfor %}
+
   <script defer src="{% static 'build/bundle.js' %}"></script>
 </head>
 <body>

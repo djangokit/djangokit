@@ -4,26 +4,29 @@ import subprocess
 import sys
 from getpass import getuser
 from pathlib import Path
-from typing import List
 
+import click
 import typer
-from djangokit.core.settings import dotenv_values
+from djangokit.core.conf import dotenv_values
 from rich.pretty import pretty_repr
 from typer import Argument
 
-from .app import app
-from .utils import Console, read_project_config
+from .app import app, state
+from .utils import Console
 from .utils.run import Args, process_args
 
 
-@app.command()
-def manage(
-    args: List[str] = Argument(
-        None,
-        help="Args passed through to django-admin",
-    )
-):
-    """Run a Django management command"""
+@click.command(context_settings={"ignore_unknown_options": True})
+@click.argument("args", nargs=-1, type=click.UNPROCESSED)
+def manage(args):
+    """Run a Django management command
+
+    This command passes any & all args & options to `django-admin`,
+    first configuring things as needed. It implements the functionality
+    of `manage.py` in a way that's consistent with the other DjangoKit
+    commands.
+
+    """
     run_django_command(args)
 
 
@@ -33,6 +36,12 @@ def createsuperuser(username: str = getuser(), email: str = None):
     if not email:
         email = f"{username}@example.com"
     run_django_command(["createsuperuser", "--username", username, "--email", email])
+
+
+@app.command()
+def makemigrations():
+    """Create database migrations for project"""
+    run_django_command(["makemigrations", state.config.package])
 
 
 @app.command()
@@ -50,9 +59,12 @@ def show_settings(env_only: bool = False, dotenv_path: str = ".env", name: str =
     configure_settings_module(dotenv_settings=dotenv_settings)
 
     if env_only:
+        console.header("Django settings loaded from environment variables:")
         settings = dotenv_settings
     else:
         from django.conf import settings
+
+        console.header(f"All Django settings for project (excludes defaults):")
 
         settings._setup()
         explicit = settings._explicit_settings
@@ -109,7 +121,7 @@ def add_model(
     class_name = "".join(word.capitalize() for word in singular_words)
     table_name = "_".join(singular_words)
 
-    package = read_project_config("tool.djangokit.package")
+    package = state.config.package
     package_path = Path("src") / package
 
     models_path = package_path / "models"

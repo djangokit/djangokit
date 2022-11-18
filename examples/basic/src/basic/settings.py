@@ -1,4 +1,4 @@
-from djangokit.core.settings import getenv, load_dotenv
+from djangokit.core.conf import getenv, load_dotenv
 
 load_dotenv()
 
