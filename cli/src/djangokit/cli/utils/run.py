@@ -2,47 +2,48 @@ import shlex
 import subprocess
 from typing import List, Union
 
-from rich import print
-
 Arg = Union[str, List[str]]
 Args = List[Arg]
 
 
-def run(args: Args, quiet=False) -> subprocess.CompletedProcess:
+def run(args: Args) -> subprocess.CompletedProcess:
     """Run a command in a subprocess.
 
     .. note::
-        In many cases, it's better to use :func:`run_poetry_command`
-        to ensure the command is run in the project's virtualenv.
+        In many cases, it's better to use :func:`run_poetry_command` or
+        :func:`run_poetry_command` to ensure the command is run in the
+        project's node env or virtualenv.
 
     """
     args = process_args(args)
-    return subprocess_run(args, quiet)
+    return subprocess_run(args)
 
 
-def run_node_command(args: Args, quiet=False) -> subprocess.CompletedProcess:
+def run_node_command(args: Args) -> subprocess.CompletedProcess:
     """Run a command via npx in a subprocess.
 
     This is a convenience for `npx <args>`.
 
     """
     args = ["npx"] + process_args(args)
-    return subprocess_run(args, quiet)
+    return subprocess_run(args)
 
 
-def run_poetry_command(args: Args, quiet=False) -> subprocess.CompletedProcess:
+def run_poetry_command(args: Args) -> subprocess.CompletedProcess:
     """Run a command via poetry in a subprocess.
 
     This is a convenience for `poetry run <args>`.
 
     """
     args = ["poetry", "run"] + process_args(args)
-    return subprocess_run(args, quiet)
+    return subprocess_run(args)
 
 
-def subprocess_run(args: List[str], quiet=False) -> subprocess.CompletedProcess:
-    if not quiet:
-        print(f"[bold]> {' '.join(args)}")
+def subprocess_run(args: List[str]) -> subprocess.CompletedProcess:
+    from ..app import state
+
+    if not state.quiet:
+        state.console.command(">", " ".join(args))
     return subprocess.run(args)
 
 

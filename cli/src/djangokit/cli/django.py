@@ -12,8 +12,7 @@ from rich.pretty import pretty_repr
 from typer import Argument
 
 from .app import app, state
-from .utils import Console
-from .utils.run import Args, process_args
+from .utils.run import Args, process_args, subprocess_run
 
 
 @click.command(context_settings={"ignore_unknown_options": True})
@@ -53,7 +52,7 @@ def migrate():
 @app.command()
 def show_settings(env_only: bool = False, dotenv_path: str = ".env", name: str = None):
     """Show Django settings"""
-    console = Console()
+    console = state.console
 
     dotenv_settings = dotenv_values(dotenv_path)
     configure_settings_module(dotenv_settings=dotenv_settings)
@@ -114,7 +113,7 @@ def add_model(
     )
 ):
     """Add new Django model"""
-    console = Console()
+    console = state.console
 
     singular_name = singular_name.lower()
     singular_words = singular_name.split()
@@ -197,10 +196,10 @@ def run_django_command(
     args: Args, dotenv_path=".env", quiet=False
 ) -> subprocess.CompletedProcess:
     """Run a Django management command."""
-    console = Console()
+    console = state.console
     settings_module = configure_settings_module(dotenv_path=dotenv_path)
     if not quiet:
         newline = "\n" if args else ""
         console.print(f'DJANGO_SETTINGS_MODULE = "{settings_module}"{newline}')
     args = ["poetry", "run", "django-admin"] + process_args(args)
-    return subprocess.run(args)
+    return subprocess_run(args)

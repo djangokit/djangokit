@@ -6,13 +6,13 @@ from typer import Context
 
 from .app import app, state
 from .django import run_django_command
-from .utils import Console, run, run_node_command, run_poetry_command
+from .utils import run, run_node_command, run_poetry_command
 
 
 @app.command()
 def setup(python_version=None):
     """Set up project"""
-    console = Console()
+    console = state.console
     console.header(f"Setting up project...")
     install(python_version)
     update()
@@ -28,14 +28,15 @@ def start():
 @app.command()
 def show_config():
     """Show DjangoKit configuration"""
+    console = state.console
     for name, val in dataclasses.asdict(state.config).items():
-        print(f"{name} = {val}")
+        console.print(f"{name} = {val!r}")
 
 
 @app.command()
 def install(python_version=None):
     """Run `poetry install`"""
-    console = Console()
+    console = state.console
     console.header(f"Installing project...")
     if python_version:
         run(f"poetry env use {python_version}")
@@ -46,7 +47,7 @@ def install(python_version=None):
 @app.command()
 def update():
     """Run `poetry update`"""
-    console = Console()
+    console = state.console
     console.header(f"Updating project...")
     run("poetry update")
     run("npm update")
@@ -55,7 +56,7 @@ def update():
 @app.command()
 def check(ctx: Context, python: bool = True, js: bool = True):
     """Check code for issues"""
-    console = Console()
+    console = state.console
 
     if ctx.get_parameter_source("python") == ParameterSource.DEFAULT:
         python = state.config.has_python
@@ -88,7 +89,7 @@ def check(ctx: Context, python: bool = True, js: bool = True):
 @app.command(name="format")
 def format_(ctx: Context, python: bool = True, js: bool = True):
     """Format code"""
-    console = Console()
+    console = state.console
 
     if ctx.get_parameter_source("python") == ParameterSource.DEFAULT:
         python = state.config.has_python

@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 
 import typer
 
+from .utils.console import Console
 from .utils.project import Config, read_project_config
 
 app = typer.Typer()
@@ -20,16 +21,14 @@ class State:
     env: str = "dev"
     quiet: bool = False
     config: Config = field(default_factory=Config)
+    console: Console = Console()
 
 
 state = State()
 
 
 @app.callback(no_args_is_help=True)
-def main(
-    env: str = state.env,
-    quiet: bool = state.quiet,
-):
+def main(env: str = state.env, quiet: bool = state.quiet):
     """DjangoKit CLI
 
     Commands must be run from the top level directory of your project.
