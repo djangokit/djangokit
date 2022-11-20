@@ -39,20 +39,35 @@ def build(request=None) -> BuildInfo:
     if not build_dir.exists():
         build_dir.mkdir()
 
-    # Build main.tsx ---------------------------------------------------
+    # Create entrypoint ------------------------------------------------
 
-    context = {"page_info": page_info}
+    imports = []
+    for info in page_info:
+        imports.append(
+            {
+                "what": f"{{ default as Page_{info.id} }}",
+                "path": f"../../routes/{info.import_path}",
+            }
+        )
+
+    context = {
+        "imports": imports,
+        "page_info": page_info,
+    }
+
     main_script = render_to_string("djangokit/main.tsx", context, request)
     with entrypoint_path.open("w") as fp:
         fp.write(main_script)
 
-    # Build bundle -----------------------------------------------------
+    # Build bundle from entrypoint -------------------------------------
 
     result = subprocess.run(
         ["npx", "esbuild", "--bundle", entrypoint_path, f"--outfile={bundle_path}"]
     )
     if result.returncode:
         raise BuildError(f"Could not build main script: {entrypoint_path}")
+
+    subprocess.run(["npx", "eslint", "--fix", entrypoint_path])
 
     return BuildInfo(
         build_dir=build_dir,

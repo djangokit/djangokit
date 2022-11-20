@@ -3,22 +3,23 @@
 {% load static %}
 
 <html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="DjangoKit App">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="DjangoKit App">
 
-  <title>DjangoKit App</title>
+    <title>DjangoKit App</title>
 
-  {% for path in settings.global_css %}
-  <link rel="stylesheet" href="{% static path %}">
-  {% endfor %}
+    {% for path in settings.global_css %}
+    <link rel="stylesheet" href="{% static path %}">
+    {% endfor %}
 
-  <script defer src="{% static 'build/bundle.js' %}"></script>
-</head>
-<body>
-<div id="root">
-  {{ react.markup|safe }}
-</div>
-</body>
+    <script defer src="{% static 'build/bundle.js' %}"></script>
+  </head>
+
+  <body>
+    <div id="root">
+      {{ react.markup|safe }}
+    </div>
+  </body>
 </html>

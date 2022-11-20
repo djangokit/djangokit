@@ -1,3 +1,5 @@
+/* Root Layout */
+
 import { Link, Outlet } from "react-router-dom";
 
 function Layout() {
@@ -11,7 +13,7 @@ function Layout() {
 
           <ul className="navbar-nav">
             <li className="nav-item">
-              <Link to="/b" className="nav-link">
+              <Link to="/a" className="nav-link">
                 A
               </Link>
             </li>

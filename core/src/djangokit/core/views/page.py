@@ -2,6 +2,7 @@ from django.conf import settings
 from django.views.generic import TemplateView
 
 from ..build import build
+from ..conf import get_setting
 
 
 class PageView(TemplateView):
@@ -17,8 +18,10 @@ class PageView(TemplateView):
 
     @property
     def extra_context(self):
+        dk_settings = settings.DJANGOKIT
+        dk_settings["global_css"] = get_setting("global_css")
         return {
-            "settings": settings.DJANGOKIT,
+            "settings": dk_settings,
             "react": {
                 "markup": "<div>Loading...</div>",
             },

@@ -3,16 +3,20 @@ import ReactDOM from "react-dom/client";
 
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
+{% for info in imports %}import {{ info.what }} from "{{ info.path }}";{% endfor %}
+
 const router = createBrowserRouter([
   {% for info in page_info %}
     {
       path: "{{ info.route_pattern }}",
-      element: <div>{'{{ info.route_pattern }}'}</div>,
+      element: <Page_{{ info.id }} data={% verbatim %}{{}}{% endverbatim %} />,
     },
   {% endfor %}
 ]);
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+const rootElement = document.getElementById("root");
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <RouterProvider router={router}/>
   </React.StrictMode>

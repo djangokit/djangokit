@@ -15,7 +15,10 @@ from .app import app, state
 from .utils.run import Args, process_args, subprocess_run
 
 
-@click.command(context_settings={"ignore_unknown_options": True})
+@click.command(
+    add_help_option=False,
+    context_settings={"ignore_unknown_options": True},
+)
 @click.argument("args", nargs=-1, type=click.UNPROCESSED)
 def manage(args):
     """Run a Django management command

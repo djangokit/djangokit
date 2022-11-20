@@ -2,31 +2,57 @@ from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
 from types import ModuleType
-from typing import List, Union
-
-
-@dataclass
-class PackageInfo:
-    module: ModuleType
-    """The package's module."""
-
-    name: str
-    """The package's dotted name."""
-
-    path: Path
-    """The package's directory path."""
+from typing import List, Optional
 
 
 @dataclass
 class PageInfo:
+    id: str
+
     path: Path
-    """Path to page.jsx or page.tsx."""
+    """Absolute path to Page component module."""
+
+    rel_path: Path
+    """Path to Page component module relative to routes/."""
+
+    import_path: str
+    """JS import path of Page component module relative to routes/.
+
+    `routes/page` (root) -> "page"
+    `routes/_id/page` -> "_id/page".
+
+    """
 
     url_pattern: str
-    """Django URL pattern for page."""
+    """Django URL pattern for page.
+    
+    `routes/page` (root) -> ""
+    `routes/_id/page` -> "<id>".
+    
+    """
 
     route_pattern: str
-    """URL pattern for page."""
+    """React Router URL pattern for page.
+    
+    `routes/page` (root) -> "/"
+    `routes/_id/page` -> ":id".
+    
+    """
+
+
+@dataclass
+class LayoutInfo:
+    id: str
+
+    import_path: str
+    """JS import path of Layout component module relative to routes/.
+
+    `routes/layout` (root) -> "layout"
+
+    """
+
+    children: List[PageInfo]
+    """Pages using this layout."""
 
 
 @dataclass
@@ -38,45 +64,70 @@ class ApiInfo:
     """URL pattern for API module."""
 
 
+def find_layout(root: Path, page_path: Path) -> Optional[Path]:
+    """Find layout for page."""
+    parent = page_path.parent
+    assert parent.is_relative_to(root), "Page path must be under root path"
+    while True:
+        candidates = (parent / "layout.tsx", parent / "layout.jsx")
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
+        parent.samefile(root)
+        if parent.samefile(root):
+            return None
+        parent = parent.parent
+
+
 def find_pages(root: Path) -> List[PageInfo]:
     """Find pages in root directory."""
     info = []
-    page_paths = root.glob("**/*.[jt]sx")
+    page_paths = root.glob("**/page.[jt]sx")
 
     for page_path in page_paths:
         rel_page_path = page_path.relative_to(root)
+        route_path = rel_page_path.parent.as_posix()
 
-        rel_path = rel_page_path.parent.as_posix()
-        rel_path = "" if rel_path == "." else rel_path
+        if route_path == ".":
+            page_id = "root"
+            import_path = "page"
+            url_pattern = ""
+            route_pattern = "/"
+        else:
+            page_id = route_path.replace("/", "_")
+            import_path = f"{route_path}/page"
+            segments = route_path.split("/")
 
-        parts = rel_path.rsplit("/", 1)
-        url_segments = []
-        route_segments = []
+            url_pattern = []
+            route_pattern = []
 
-        for part in parts:
-            if part.startswith("[") and part.endswith("]"):
-                name = part[1:-1]
-                url_part = f"<{name}>"
-                url_segments.append(url_part)
+            for segment in segments:
+                if segment.startswith("_"):
+                    name = segment[1:]
+                    url_segment = f"<{name}>"
+                    url_pattern.append(url_segment)
 
-                name_parts = name.split("_")
-                for i in enumerate(name_parts[1:], 1):
-                    name_parts[i] = name_parts[i].capitalize()
+                    name_parts = name.split("_")
+                    for i in enumerate(name_parts[1:], 1):
+                        name_parts[i] = name_parts[i].capitalize()
 
-                route_part = f"{name}"
-                route_segments.append(f":{route_part}")
-            else:
-                part = part.replace("_", "-")
-                url_segments.append(part)
-                route_segments.append(part)
+                    route_segment = f"{name}"
+                    route_pattern.append(f":{route_segment}")
+                else:
+                    segment = segment.replace("_", "-")
+                    url_pattern.append(segment)
+                    route_pattern.append(segment)
 
-        url_pattern = "/".join(url_segments)
-        route_pattern = "/".join(route_segments)
-        route_pattern = f"/{route_pattern}"
+            url_pattern = "/".join(url_pattern)
+            route_pattern = "/".join(route_pattern)
+            route_pattern = f"/{route_pattern}"
 
         info.append(
             PageInfo(
+                id=page_id,
                 path=page_path,
+                rel_path=rel_page_path,
+                import_path=import_path,
                 url_pattern=url_pattern,
                 route_pattern=route_pattern,
             )
