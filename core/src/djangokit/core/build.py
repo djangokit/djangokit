@@ -7,7 +7,7 @@ from django.template.loader import render_to_string
 
 from .conf import settings
 from .exceptions import BuildError
-from .utils import make_page_tree
+from .utils import find_pages, make_page_tree
 
 
 @dataclass
@@ -34,7 +34,7 @@ def build(request=None) -> BuildInfo:
     entrypoint_path = build_dir / "main.tsx"
     bundle_path = build_dir / "bundle.js"
     routes_dir = app_dir / "routes"
-    page_info = make_page_tree(routes_dir)
+    page_info = find_pages(routes_dir)
 
     if not build_dir.exists():
         build_dir.mkdir()

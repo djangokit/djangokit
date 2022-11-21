@@ -94,6 +94,45 @@ def show_settings(env_only: bool = False, dotenv_path: str = ".env", name: str =
         console.print(f"{name} = {pretty_value}{newline}", soft_wrap=True)
 
 
+@app.command()
+def show_urls(dotenv_path: str = ".env", include_admin: bool = False):
+    """Show Django URL patterns in order of precedence
+
+    Django Admin URLs are excluded by default.
+
+    """
+    from django.urls import get_resolver, URLResolver, URLPattern
+
+    def get_patterns(obj, ancestors=()):
+        patterns = []
+        if isinstance(obj, list):
+            for item in obj:
+                patterns.extend(get_patterns(item, ancestors))
+        elif isinstance(obj, URLResolver):
+            ancestors += (obj.pattern,)
+            for item in obj.url_patterns:
+                patterns.extend(get_patterns(item, ancestors))
+        elif isinstance(obj, URLPattern):
+            prefix = "".join(str(segment) for segment in ancestors)
+            patterns.append(f"{prefix}{obj.pattern}")
+        else:
+            raise TypeError(f"Unexpected object of type {type(obj)}: {obj}")
+        return patterns
+
+    console = state.console
+    configure_settings_module(dotenv_path=dotenv_path)
+
+    resolver = get_resolver()
+    url_patterns = get_patterns(resolver)
+
+    if not include_admin:
+        url_patterns = (p for p in url_patterns if not p.startswith("^/$admin"))
+
+    console.header("Django URL patterns in order of precedence:")
+    for pattern in url_patterns:
+        console.info(pattern)
+
+
 MODEL_TEMPLATE = """\
 from django.db import models
 

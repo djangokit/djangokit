@@ -6,6 +6,7 @@ from .django import configure_settings_module, run_django_command
 
 @app.command(name="build")
 def build_command(dotenv_path: str = ".env", collect: bool = True):
+    """Build & collect static files"""
     configure_settings_module(dotenv_path=dotenv_path)
 
     build()

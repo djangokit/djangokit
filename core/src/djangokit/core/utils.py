@@ -40,6 +40,57 @@ class PageInfo:
     
     """
 
+    @classmethod
+    def from_path(cls, path: Path, root: Path) -> "PageInfo":
+        assert path.is_file()
+        assert path.name == "page.tsx" or path.name == "page.jsx"
+        assert path.is_relative_to(root)
+
+        rel_path = path.relative_to(root)
+        route_path = rel_path.parent.as_posix()
+
+        if route_path == ".":
+            page_id = "root"
+            import_path = "page"
+            url_pattern = ""
+            route_pattern = "/"
+        else:
+            page_id = route_path.replace("/", "_")
+            import_path = f"{route_path}/page"
+            url_pattern = []
+            route_pattern = []
+
+            segments = route_path.split("/")
+            for segment in segments:
+                if segment.startswith("_"):
+                    name = segment[1:]
+                    url_segment = f"<{name}>"
+                    url_pattern.append(url_segment)
+
+                    name_parts = name.split("_")
+                    for i in enumerate(name_parts[1:], 1):
+                        name_parts[i] = name_parts[i].capitalize()
+
+                    route_segment = f"{name}"
+                    route_pattern.append(f":{route_segment}")
+                else:
+                    segment = segment.replace("_", "-")
+                    url_pattern.append(segment)
+                    route_pattern.append(segment)
+
+            url_pattern = "/".join(url_pattern)
+            route_pattern = "/".join(route_pattern)
+            route_pattern = f"/{route_pattern}"
+
+        return cls(
+            id=page_id,
+            path=path,
+            rel_path=rel_path,
+            import_path=import_path,
+            url_pattern=url_pattern,
+            route_pattern=route_pattern,
+        )
+
 
 @dataclass
 class LayoutInfo:
@@ -66,6 +117,62 @@ class ApiInfo:
 
     url_pattern: str
     """URL pattern for API module."""
+
+    @classmethod
+    def from_path(cls, path: Path, root: Path, root_package: str) -> "ApiInfo":
+        """Make an ApiInfo instance from a file system path.
+
+        Args:
+            path: Path to an API module in a file named api.py
+            root: Path to the root of the API/routes hierarchy
+            root_package: Package name of root
+
+        Example::
+
+            .../src/package/routes/
+                api.py
+                _id/
+                    api.py
+
+            ApiInfo.from_path(
+                ".../src/package/routes/api.py",
+                ".../src/package/routes",
+                "package.routes",
+            )
+            # -> ApiInfo(module="package.routes.api", url_pattern="$api/__root__")
+
+            ApiInfo.from_path(
+                ".../src/package/routes/_id/api.py",
+                ".../src/package/routes",
+                "package.routes",
+            )
+            # -> ApiInfo(module="package.routes._id.api", url_pattern="$api/<id>")
+
+        """
+        assert path.is_file()
+        assert path.name == "api.py"
+        assert path.is_relative_to(root)
+
+        rel_path = path.relative_to(root)
+        package_path = rel_path.parent.as_posix()
+
+        if package_path == ".":
+            module_name = f"{root_package}.api"
+            url_pattern = "$api"
+        else:
+            package_name = package_path.replace("/", ".")
+            module_name = f"{root_package}.{package_name}.api"
+
+            segments = package_path.split("/")
+            for i, segment in enumerate(segments):
+                if segment.startswith("_"):
+                    segments[i] = f"<{segment[1:]}>"
+
+            url_pattern = "/".join(segments)
+            url_pattern = f"$api/{url_pattern}"
+
+        module = import_module(module_name)
+        return cls(module=module, url_pattern=url_pattern)
 
 
 def make_page_tree(root: Path):
@@ -118,94 +225,11 @@ def find_layout(root: Path, page_path: Path) -> Optional[Path]:
 
 def find_pages(root: Path) -> List[PageInfo]:
     """Find pages in root directory."""
-    info = []
-    page_paths = root.glob("**/page.[jt]sx")
-
-    for page_path in page_paths:
-        rel_page_path = page_path.relative_to(root)
-        route_path = rel_page_path.parent.as_posix()
-
-        if route_path == ".":
-            page_id = "root"
-            import_path = "page"
-            url_pattern = ""
-            route_pattern = "/"
-        else:
-            page_id = route_path.replace("/", "_")
-            import_path = f"{route_path}/page"
-            segments = route_path.split("/")
-
-            url_pattern = []
-            route_pattern = []
-
-            for segment in segments:
-                if segment.startswith("_"):
-                    name = segment[1:]
-                    url_segment = f"<{name}>"
-                    url_pattern.append(url_segment)
-
-                    name_parts = name.split("_")
-                    for i in enumerate(name_parts[1:], 1):
-                        name_parts[i] = name_parts[i].capitalize()
-
-                    route_segment = f"{name}"
-                    route_pattern.append(f":{route_segment}")
-                else:
-                    segment = segment.replace("_", "-")
-                    url_pattern.append(segment)
-                    route_pattern.append(segment)
-
-            url_pattern = "/".join(url_pattern)
-            route_pattern = "/".join(route_pattern)
-            route_pattern = f"/{route_pattern}"
-
-        info.append(
-            PageInfo(
-                id=page_id,
-                path=page_path,
-                rel_path=rel_page_path,
-                import_path=import_path,
-                url_pattern=url_pattern,
-                route_pattern=route_pattern,
-            )
-        )
-
-    return info
+    paths = root.glob("**/page.[jt]sx")
+    return [PageInfo.from_path(path, root) for path in paths]
 
 
 def find_apis(root: Path, root_package: str) -> List[ApiInfo]:
     """Find API modules in directory."""
-    info = []
-    api_paths = root.glob("**/api.py")
-
-    for api_path in api_paths:
-        rel_api_path = api_path.relative_to(root)
-
-        rel_path = rel_api_path.parent.as_posix()
-        rel_path = "" if rel_path == "." else rel_path
-
-        if rel_path:
-            api_package_name = rel_path.replace("/", ".")
-            module_name = f"{root_package}.{api_package_name}"
-
-            segments = rel_path.split("/")
-            for i, segment in enumerate(segments):
-                if segment.startswith("[") and segment.endswith("]"):
-                    segments[i] = f"<{segment[1:-1]}>"
-
-            url_pattern = "/".join(segments)
-            url_pattern = f"__api__/{url_pattern}"
-        else:
-            module_name = f"{root_package}.api"
-            url_pattern = f"__api__/__root__"
-
-        module = import_module(module_name)
-
-        info.append(
-            ApiInfo(
-                module=module,
-                url_pattern=url_pattern,
-            )
-        )
-
-    return info
+    paths = root.glob("**/api.py")
+    return [ApiInfo.from_path(path, root, root_package) for path in paths]
