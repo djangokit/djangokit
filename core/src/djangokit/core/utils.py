@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
@@ -44,6 +45,9 @@ class PageInfo:
 class LayoutInfo:
     id: str
 
+    path: Path
+    """Absolute path to Layout component module."""
+
     import_path: str
     """JS import path of Layout component module relative to routes/.
 
@@ -62,6 +66,39 @@ class ApiInfo:
 
     url_pattern: str
     """URL pattern for API module."""
+
+
+def make_page_tree(root: Path):
+    root_layout = get_layout(root, root)
+
+    if root_layout is None:
+        root_layout = LayoutInfo(id="root", path=None, import_path=None, children=[])
+
+    current_layout = root_layout
+
+    for entry in root.iterdir():
+        pass
+
+    return root_layout
+
+
+def get_layout(directory: Path, root: Path) -> Optional[LayoutInfo]:
+    layout_id = "_".join(directory.relative_to(root).parts)
+    import_path = directory.relative_to(root) / "layout"
+
+    layout_path = directory / "layout.tsx"
+    if layout_path.exists():
+        return LayoutInfo(
+            id=layout_id, path=layout_path, import_path=import_path, children=[]
+        )
+
+    layout_path = directory / "layout.jsx"
+    if layout_path.exists():
+        return LayoutInfo(
+            id=layout_id, path=layout_path, import_path=import_path, children=[]
+        )
+
+    return None
 
 
 def find_layout(root: Path, page_path: Path) -> Optional[Path]:

@@ -1,11 +1,11 @@
 import dataclasses
 import json
 import os
-from functools import lru_cache
-from typing import Any, Dict, Optional
+from functools import cached_property
+from typing import Any, Dict, List, Optional
 
 import dotenv
-from django.conf import settings
+from django.conf import settings as django_settings
 from django.core.exceptions import ImproperlyConfigured
 
 from .checks import make_error
@@ -20,66 +20,87 @@ class Settings:
     This defines the available DjangoKit settings, their types, and
     their default values.
 
-    """
+    When a setting is accessed, its value will be retrieved from the
+    `DJANGOKIT` dict in the project's Django settings module,if present,
+    or the default value defined in `known_settings` will be used.
 
-    package: str
-    """The project's top level package name."""
-
-    global_css: list = ("global.css",)
-    """CSS files to link in app.html template."""
-
-
-@lru_cache
-def get_setting(name: str, default=NOT_SET):
-    """Get a DjangoKit setting from the project's Django settings.
-
-    DjangoKit settings are defined as keys of the top level `DJANGOKIT`
-    setting in a project's Django settings module::
-
-        # <package>/settings.py
-        DJANGOKIT = {
-            "package": "my_package",
-            "global.css": ["tailwind.css"],
-        }
-
-    For optional settings that haven't been set in the Django settings
-    module, a default value may be passed; otherwise, the default value
-    specified in `data`:Defaults` will be used.
+    .. note::
+        Settings are cached the first time they're accessed and can be
+        cleared using `settings.clear()` or individually using
+        `del settings.<name>`. Clearing is only necessary if the
+        `DJANGOKIT` settings are dynamically updated after Django
+        startup (e.g., in tests).
 
     """
-    if not hasattr(settings, "DJANGOKIT"):
-        err = make_error("E000", None)
-        raise ImproperlyConfigured(err.msg)
 
-    dk_settings = settings.DJANGOKIT
-    fields = dataclasses.fields(Settings)
-    fields = {field.name: field for field in fields}
+    known_settings = {
+        "package": {
+            "type": str,
+        },
+        "global_css": {
+            "type": list,
+            "default": ["global.css"],
+        },
+    }
 
-    if name not in fields:
-        err = make_error("E003", None, name=name)
-        raise LookupError(err.msg)
+    @cached_property
+    def package(self) -> str:
+        """The project's top level package name."""
+        return self._get_required("package")
 
-    field = fields[name]
+    @cached_property
+    def global_css(self) -> List[str]:
+        """CSS files to link in app.html template."""
+        return self._get_optional("global_css")
 
-    # NOTE: Even though there are startup checks to ensure required DK
-    #       settings are present and that DK settings have the correct
-    #       type, the checks here are needed in case DK settings are
-    #       accessed early in the Django startup process (as they are
-    #       when create_routes() is called from a project's urls.py).
-    if name in dk_settings:
-        value = dk_settings[name]
-        if not isinstance(value, field.type):
-            err = make_error("E002", field, value=value)
+    def as_dict(self):
+        """Return a dict with *all* DjangoKit settings.
+
+        This will include defaults plus any values set in the project's
+        Django settings module in the `DJANGOKIT` dict.
+
+        """
+        return {name: getattr(self, name) for name in self.known_settings}
+
+    def clear(self):
+        """Clear all cached DjangoKit settings."""
+        for name in self.known_settings:
+            if hasattr(self, name):
+                delattr(self, name)
+
+    @property
+    def _dk_settings(self):
+        """Retrieve `DJANGOKIT` dict from Django settings module."""
+        try:
+            return django_settings.DJANGOKIT
+        except AttributeError:
+            err = make_error("E000")
             raise ImproperlyConfigured(err.msg)
-        return value
-    elif field.default is dataclasses.MISSING:
-        err = make_error("E001", field)
+
+    def _get_required(self, name):
+        if name in self._dk_settings:
+            value = self._dk_settings[name]
+            self._check_type(name, value)
+            return value
+        err = make_error("E001", name)
         raise ImproperlyConfigured(err.msg)
 
-    if default is NOT_SET:
-        default = field.default
+    def _get_optional(self, name):
+        if name in self._dk_settings:
+            value = self._dk_settings[name]
+            self._check_type(name, value)
+        else:
+            value = self.known_settings[name]
+        return value
 
-    return default
+    def _check_type(self, name, value):
+        type_ = self.known_settings[name]["type"]
+        if not isinstance(value, type_):
+            err = make_error("E002", name=name, type=type_, value=value)
+            raise ImproperlyConfigured(err.msg)
+
+
+settings = Settings()
 
 
 def load_dotenv(path=".env") -> bool:

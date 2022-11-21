@@ -1,36 +1,32 @@
-import dataclasses
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from django.conf import settings
 from django.core.checks import Error
 
 MESSAGES = {
+    # Vars:
     "E000": (
         "The DJANGOKIT setting must be present in your project's "
         "Django settings module."
     ),
+    # Vars: name
     "E001": (
         "DjangoKit setting {name} must be set in your project's Django "
         "settings module as a key of the DJANGOKIT setting."
     ),
+    # Vars: name, type, value
     "E002": (
         "DjangoKit setting {name} has incorrect type. Expected "
         "{type.__name__}; got {value.__class__.__name__}."
     ),
+    # Vars: name
     "E003": "Unknown DjangoKit setting: {name}.",
 }
 
 
-def make_error(
-    code: str,
-    field: Optional[dataclasses.Field],
-    **data: Dict[str, Any],
-) -> Error:
+def make_error(code: str, **data: Dict[str, Any]) -> Error:
     message = MESSAGES[code]
-    if field is None:
-        message = message.format(**data)
-    else:
-        message = message.format(name=field.name, type=field.type, **data)
+    message = message.format(**data)
     return Error(message, id=f"djangokit.{code}")
 
 
@@ -43,24 +39,24 @@ def check_settings(**kwargs):
     errors = []
 
     if not hasattr(settings, "DJANGOKIT"):
-        errors.append(make_error("E000", None))
+        errors.append(make_error("E000"))
         return errors
 
     dk_settings = settings.DJANGOKIT
-    fields = dataclasses.fields(Settings)
-    fields: Dict[str, dataclasses.Field] = {field.name: field for field in fields}
+    known_settings = Settings.known_settings
 
-    for name, field in fields.items():
+    for name, info in known_settings.items():
         if name in dk_settings:
+            type_ = info["type"]
             value = dk_settings[name]
-            if not isinstance(value, field.type):
-                errors.append(make_error("E002", field, value=value))
-        elif field.default is dataclasses.MISSING:
-            errors.append(make_error("E001", field))
+            if not isinstance(value, type_):
+                errors.append(make_error("E002", name=name, type=type_, value=value))
+        elif "default" not in info:
+            errors.append(make_error("E001", name=name))
 
     for name in dk_settings:
-        if name not in fields:
-            errors.append(make_error("E003", field))
+        if name not in known_settings:
+            errors.append(make_error("E003", name=name))
 
     return errors
 

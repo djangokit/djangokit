@@ -3,7 +3,7 @@ from pathlib import Path
 from django.apps import apps
 from django.urls import include, path
 
-from .conf import get_setting
+from .conf import settings
 from .utils import find_apis, find_pages
 from .views import ApiView, PageView
 
@@ -33,7 +33,7 @@ def create_routes(
         ]
 
     """
-    package = get_setting("package")
+    package = settings.package
     routes_package = f"{package}.routes"
     app = apps.get_app_config(package)
     app_dir = Path(app.path)
