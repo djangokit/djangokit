@@ -1,3 +1,24 @@
+"""DjangoKit settings.
+
+DjangoKit settings are set in the `DJANGOKIT` dict in a project's Django
+settings module::
+
+    DJANGOKIT = {"package": "my_app"}
+
+When accessing a project's DjangoKit settings, it's generally preferable
+to use the `settings` object exported from this module rather than
+accessing the `DJANGOKIT` dict directly::
+
+    from djangokit.core.conf import settings
+
+    settings.package # -> django.conf.settings.DJANGOKIT["package"]
+
+When accessing an optional DjangoKit setting, the default value will
+automatically be used if it's not set in the `DJANGOKIT` dict::
+
+    settings.global_css  # -> ["global.css"]
+
+"""
 import dataclasses
 import json
 import os
