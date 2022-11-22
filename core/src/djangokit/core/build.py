@@ -17,7 +17,7 @@ class BuildInfo:
     bundle_path: Path
 
 
-def build(request=None) -> BuildInfo:
+def build(minify=False, request=None) -> BuildInfo:
     """Build front end.
 
     Steps:
@@ -72,9 +72,10 @@ def build(request=None) -> BuildInfo:
 
     # Build bundle from entrypoint -------------------------------------
 
-    result = subprocess.run(
-        ["npx", "esbuild", "--bundle", entrypoint_path, f"--outfile={bundle_path}"]
-    )
+    args = ["npx", "esbuild", "--bundle", entrypoint_path, f"--outfile={bundle_path}"]
+    if minify:
+        args.append("--minify")
+    result = subprocess.run(args)
     if result.returncode:
         raise BuildError(f"Could not build main script: {entrypoint_path}")
 

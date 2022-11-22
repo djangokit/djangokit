@@ -47,6 +47,7 @@ class PageInfo:
 
     @classmethod
     def from_path(cls, path: Path, root: Path) -> "PageInfo":
+        """Make a PageInfo instance from a file system path."""
         assert path.is_file()
         assert path.name == "page.tsx" or path.name == "page.jsx"
         assert path.is_relative_to(root)
@@ -62,30 +63,8 @@ class PageInfo:
         else:
             page_id = route_path.replace("/", "_")
             import_path = f"{route_path}/page"
-            url_pattern = []
-            route_pattern = []
-
-            segments = route_path.split("/")
-            for segment in segments:
-                if segment.startswith("_"):
-                    name = segment[1:]
-                    url_segment = f"<{name}>"
-                    url_pattern.append(url_segment)
-
-                    name_parts = name.split("_")
-                    for i in enumerate(name_parts[1:], 1):
-                        name_parts[i] = name_parts[i].capitalize()
-
-                    route_segment = f"{name}"
-                    route_pattern.append(f":{route_segment}")
-                else:
-                    segment = segment.replace("_", "-")
-                    url_pattern.append(segment)
-                    route_pattern.append(segment)
-
-            url_pattern = "/".join(url_pattern)
-            route_pattern = "/".join(route_pattern)
-            route_pattern = f"/{route_pattern}"
+            url_pattern = get_url_pattern(route_path)
+            route_pattern = get_route_pattern(route_path)
 
         return cls(
             id=page_id,
@@ -98,6 +77,11 @@ class PageInfo:
 
     @classmethod
     def from_dir(cls, directory: Path, root: Path) -> Optional["PageInfo"]:
+        """Make a PageInfo instance from a file system directory path.
+
+        This searches for a page module in the specified directory.
+
+        """
         assert directory.is_dir()
         assert directory.is_relative_to(root)
         path = directory / "page.tsx"
@@ -136,6 +120,7 @@ class LayoutInfo:
 
     @classmethod
     def from_path(cls, path: Path, root: Path) -> "LayoutInfo":
+        """Make a LayoutInfo instance from a file system path."""
         assert path.is_file()
         assert path.name == "layout.tsx" or path.name == "layout.jsx"
         assert path.is_relative_to(root)
@@ -150,25 +135,7 @@ class LayoutInfo:
         else:
             layout_id = route_path.replace("/", "_")
             import_path = f"{route_path}/layout"
-            route_pattern = []
-
-            segments = route_path.split("/")
-            for segment in segments:
-                if segment.startswith("_"):
-                    name = segment[1:]
-
-                    name_parts = name.split("_")
-                    for i in enumerate(name_parts[1:], 1):
-                        name_parts[i] = name_parts[i].capitalize()
-
-                    route_segment = f"{name}"
-                    route_pattern.append(f":{route_segment}")
-                else:
-                    segment = segment.replace("_", "-")
-                    route_pattern.append(segment)
-
-            route_pattern = "/".join(route_pattern)
-            route_pattern = f"/{route_pattern}"
+            route_pattern = get_route_pattern(route_path)
 
         return cls(
             id=layout_id,
@@ -179,6 +146,11 @@ class LayoutInfo:
 
     @classmethod
     def from_dir(cls, directory: Path, root: Path) -> Optional["LayoutInfo"]:
+        """Make a LayoutInfo instance from a file system directory path.
+
+        This searches for a layout module in the specified directory.
+
+        """
         assert directory.is_dir()
         assert directory.is_relative_to(root)
         path = directory / "layout.tsx"
@@ -242,13 +214,7 @@ class ApiInfo:
         else:
             package_name = package_path.replace("/", ".")
             module_name = f"{root_package}.{package_name}.api"
-
-            segments = package_path.split("/")
-            for i, segment in enumerate(segments):
-                if segment.startswith("_"):
-                    segments[i] = f"<{segment[1:]}>"
-
-            url_pattern = "/".join(segments)
+            url_pattern = get_url_pattern(package_path)
             url_pattern = f"$api/{url_pattern}"
 
         module = import_module(module_name)
@@ -256,6 +222,11 @@ class ApiInfo:
 
 
 def get_routes(directory: Path, *, root=None, parent_layout=None) -> List[LayoutInfo]:
+    """Get routes in directory, recursively.
+
+    This organizes pages under their respective layouts.
+
+    """
     routes = []
 
     if root is None:
@@ -281,7 +252,10 @@ def get_routes(directory: Path, *, root=None, parent_layout=None) -> List[Layout
         if page.route_pattern == layout.route_pattern:
             layout_route_pattern = ""
         else:
-            layout_route_pattern = posixpath.relpath(page.route_pattern, layout.route_pattern)
+            layout_route_pattern = posixpath.relpath(
+                page.route_pattern,
+                layout.route_pattern,
+            )
         page.layout_route_pattern = layout_route_pattern
         layout.children.append(page)
 
@@ -304,5 +278,39 @@ def find_apis(root: Path, root_package: str) -> List[ApiInfo]:
     return [ApiInfo.from_path(path, root, root_package) for path in paths]
 
 
-def get_route_pattern():
-    pass
+def get_url_pattern(route_path: str) -> str:
+    """Convert relative path to Django URL pattern."""
+    assert not posixpath.isabs(route_path)
+    url_pattern = []
+    segments = route_path.split("/")
+    for segment in segments:
+        if segment.startswith("_"):
+            name = segment[1:]
+            segment = f"<{name}>"
+            url_pattern.append(segment)
+        else:
+            segment = segment.replace("_", "-")
+            url_pattern.append(segment)
+    url_pattern = "/".join(url_pattern)
+    return url_pattern
+
+
+def get_route_pattern(route_path: str) -> str:
+    """Convert relative path to React Router URL pattern."""
+    assert not posixpath.isabs(route_path)
+    route_pattern = []
+    segments = route_path.split("/")
+    for segment in segments:
+        if segment.startswith("_"):
+            name = segment[1:]
+            name_parts = name.split("_")
+            for i in enumerate(name_parts[1:], 1):
+                name_parts[i] = name_parts[i].capitalize()
+            route_segment = f"{''.join(name_parts)}"
+            route_pattern.append(f":{route_segment}")
+        else:
+            segment = segment.replace("_", "-")
+            route_pattern.append(segment)
+    route_pattern = "/".join(route_pattern)
+    route_pattern = f"/{route_pattern}"
+    return route_pattern

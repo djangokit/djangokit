@@ -1,7 +1,8 @@
+from django.conf import settings
 from django.views.generic import TemplateView
 
 from ..build import build
-from ..conf import settings
+from ..conf import settings as dk_settings
 
 
 class PageView(TemplateView):
@@ -18,7 +19,7 @@ class PageView(TemplateView):
     @property
     def extra_context(self):
         return {
-            "settings": settings.as_dict(),
+            "settings": dk_settings.as_dict(),
             "react": {
                 "markup": "<div>Loading...</div>",
             },
@@ -26,7 +27,7 @@ class PageView(TemplateView):
         }
 
     def build(self):
-        return build(request=self.request)
+        return build(minify=not settings.DEBUG, request=self.request)
 
     def get(self, request, *args, **kwargs):
         self.build()
