@@ -4,6 +4,7 @@ import subprocess
 import sys
 from getpass import getuser
 from pathlib import Path
+from typing import List
 
 import click
 import typer
@@ -88,7 +89,9 @@ def show_settings(env_only: bool = False, name: str = None):
         total_width = len(name) + 3 + len(pretty_value)
         if total_width > max_width:
             pretty_value = pretty_repr(value, max_width=max_width)
-        console.print(f"{name} = {pretty_value}{newline}", soft_wrap=True, highlight=True)
+        console.print(
+            f"{name} = {pretty_value}{newline}", soft_wrap=True, highlight=True
+        )
 
 
 @app.command()
@@ -130,80 +133,129 @@ def show_urls(include_admin: bool = False):
         console.print(pattern)
 
 
-MODEL_TEMPLATE = """\
-from django.db import models
-
-
-class {class_name}(models.Model):
-
-    class Meta:
-        db_table = "{table_name}"
-    
-    def __str__(self):
-        return "{class_name}"
-"""
-
-
 @app.command()
 def add_model(
     singular_name: str = Argument(
         ...,
-        help='Singular name of model (e.g., project or "user project")',
-    )
+        help='Singular name of model (e.g., post or "user post")',
+    ),
+    fields: List[str] = Argument(
+        None,
+        help="Fields to add to the model (e.g., title:str)",
+    ),
+    register_admin: bool = True,
 ):
     """Add new Django model"""
+    from django.template import Context, Template
+
+    configure_settings_module()
+
     console = state.console
+    package = state.settings.package
+    package_path = Path("src") / package
+
+    # Add model --------------------------------------------------------
 
     singular_name = singular_name.lower()
     singular_words = singular_name.split()
     class_name = "".join(word.capitalize() for word in singular_words)
     table_name = "_".join(singular_words)
 
-    package = state.settings.package
-    package_path = Path("src") / package
-
     models_path = package_path / "models"
     init_path = models_path / "__init__.py"
     model_path = models_path / f"{table_name}.py"
 
-    migration_name = f"add_{table_name}_model"
-    migrations_path = package_path / "migrations"
-    migration_path = tuple(migrations_path.glob(f"*_{migration_name}.py"))
-    migration_path = migration_path[0] if migration_path else None
-
-    admin_path = package_path / "admin.py"
-
-    console.rule(f"Adding model {class_name} to {model_path}")
+    console.header(f"Adding model {class_name} to {model_path}")
 
     if model_path.exists():
-        console.error(f"Model exists: {model_path}")
+        console.error(f"Model {class_name} exists at {model_path}")
         raise typer.Abort()
 
-    if migration_path and migration_path.exists():
-        console.error(f"Migration exists: {migration_path}")
-        raise typer.Abort()
+    model_fields = {}
+    for field in fields:
+        name, *type_ = field.split(":", 1)
+        if type_:
+            type_ = type_[0]
+        elif name in ("created", "created_at"):
+            type_ = "created"
+        elif name in ("updated", "updated_at"):
+            type_ = "updated"
+        else:
+            console.error(f"Field `{name}` requires a type; e.g. {name}:str")
+            raise typer.Abort()
+        model_fields[name] = get_model_field(type_)
+
+    template = Template(MODEL_TEMPLATE)
+    context = Context(
+        {
+            "class_name": class_name,
+            "table_name": table_name,
+            "fields": model_fields,
+        }
+    )
+    contents = template.render(context)
+
+    with model_path.open("w") as fp:
+        fp.write(contents)
 
     # Add model import to __init__.py ----------------------------------
 
     with init_path.open("a") as fp:
         fp.write(f"\nfrom . {table_name} import {class_name}\n")
 
-    # Add module for model ---------------------------------------------
-
-    with model_path.open("w") as fp:
-        fp.write(MODEL_TEMPLATE.format(class_name=class_name, table_name=table_name))
-
     # Register model with Django Admin ---------------------------------
 
-    with admin_path.open("a") as fp:
-        fp.write(f"\nfrom .models import {class_name}\n")
-        fp.write(f"admin.site.register({class_name})")
+    if register_admin:
+        admin_path = package_path / "admin.py"
+        with admin_path.open("a") as fp:
+            fp.write(f"\nfrom .models import {class_name}\n")
+            fp.write(f"admin.site.register({class_name})")
 
-    # Create migration for model -------------------------------
+    console.success(f"Model {class_name} created at {model_path}")
+    console.warning(
+        "\nTODO:\n"
+        "\n1. Check model definition"
+        "\n2. Make migration with `dk makemigrations`"
+        "\n3. Run migrations with `dk migrate`"
+    )
 
-    run_django_command(f"makemigrations {package} --name {migration_name}", quiet=True)
 
-    console.warning("NOTE: Migrations still need to be run")
+MODEL_TEMPLATE = """\
+from django.db import models
+
+
+class {{ class_name }}(models.Model):
+
+    class Meta:
+        db_table = "{{ table_name }}"
+    {% for name, value in fields.items %}
+    {{ name }} = {{ value }}{% endfor %}
+
+    def __str__(self):
+        return "{{ class_name }}"
+"""
+
+
+def get_model_field(type_: str) -> str:
+    if type_ in ("str", "string"):
+        return "models.CharField(max_length=255)"
+    if type_ == "text":
+        return "models.TextField()"
+    if type_ in ("bool", "boolean"):
+        return "models.BooleanField(max_length=255)"
+    if type_ in ("int", "integer"):
+        return "models.IntegerField()"
+    if type_ == "date":
+        return "models.DateField()"
+    if type_ == "time":
+        return "models.TimeField()"
+    if type_ == "datetime":
+        return "models.DateTimeField()"
+    if type_ == "created":
+        return "models.DateTimeField(auto_now=True, auto_now_add=True)"
+    if type_ == "updated":
+        return "models.DateTimeField(auto_now=True)"
+    return f"models.{type_}"
 
 
 # Utilities ------------------------------------------------------------
