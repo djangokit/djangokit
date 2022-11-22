@@ -1,8 +1,6 @@
 """Base commands."""
-import dataclasses
-
 from click.core import ParameterSource
-from typer import Context
+from typer import Abort, Context, Exit
 
 from .app import app, state
 from .django import run_django_command
@@ -23,14 +21,6 @@ def setup(python_version=None):
 def start():
     """Run dev server & watch files"""
     run_django_command("runserver")
-
-
-@app.command()
-def show_config():
-    """Show DjangoKit configuration"""
-    console = state.console
-    for name, val in dataclasses.asdict(state.config).items():
-        console.print(f"{name} = {val!r}")
 
 
 @app.command()
@@ -58,13 +48,7 @@ def check(ctx: Context, python: bool = True, js: bool = True):
     """Check code for issues"""
     console = state.console
 
-    if ctx.get_parameter_source("python") == ParameterSource.DEFAULT:
-        python = state.config.has_python
-
-    if ctx.get_parameter_source("js") == ParameterSource.DEFAULT:
-        js = state.config.has_js
-
-    if python or (python is None and state.config.has_python):
+    if python:
         console.header("Checking Python formatting \[black]...")
         run_poetry_command("black --check .")
 
@@ -74,8 +58,24 @@ def check(ctx: Context, python: bool = True, js: bool = True):
         console.header(f"Checking Python types \[mypy]...")
         run_poetry_command("mypy")
 
-    if js or (js is None and state.config.has_js):
+    if js:
         console.header(f"Checking JavaScript formatting \[eslint/prettier]...")
+
+        if not state.has_node_modules:
+            if ctx.get_parameter_source("js") == ParameterSource.DEFAULT:
+                console.warning(
+                    f"CWD does not appear to be a node env: {state.cwd}\n"
+                    f"Skipping eslint formatting and tsc type checking.\n"
+                    f"Use the --no-js flag to avoid this warning."
+                )
+                raise Exit()
+            else:
+                console.error(
+                    f"CWD does not appear to be a node env: {state.cwd}\n"
+                    f"Do you need to run `npm install`?"
+                )
+                raise Abort()
+
         result = run_node_command("eslint .")
         if result.returncode == 0:
             console.success("No issues found")
@@ -91,12 +91,6 @@ def format_(ctx: Context, python: bool = True, js: bool = True):
     """Format code"""
     console = state.console
 
-    if ctx.get_parameter_source("python") == ParameterSource.DEFAULT:
-        python = state.config.has_python
-
-    if ctx.get_parameter_source("js") == ParameterSource.DEFAULT:
-        js = state.config.has_js
-
     if python:
         console.header(f"Formatting Python code \[black]...")
         run_poetry_command("black .")
@@ -104,8 +98,24 @@ def format_(ctx: Context, python: bool = True, js: bool = True):
         console.header(f"Sorting Python imports \[isort]...")
         run_poetry_command("isort --profile black .")
 
-    if js or (js is None and state.config.has_js):
+    if js:
         console.header(f"Formatting JavaScript code \[eslint/prettier]...")
-        result = run("eslint --fix .")
+
+        if not state.has_node_modules:
+            if ctx.get_parameter_source("js") == ParameterSource.DEFAULT:
+                console.warning(
+                    f"CWD does not appear to be a node env: {state.cwd}\n"
+                    f"Skipping eslint formatting.\n"
+                    f"Use the --no-js flag to avoid this warning."
+                )
+                raise Exit()
+            else:
+                console.error(
+                    f"CWD does not appear to be a node env: {state.cwd}\n"
+                    f"Do you need to run `npm install`?"
+                )
+                raise Abort()
+
+        result = run_node_command("eslint --fix .")
         if result.returncode == 0:
             console.success("No issues found")

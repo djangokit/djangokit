@@ -129,7 +129,7 @@ def load_dotenv(path=".env") -> bool:
     return dotenv.load_dotenv(path)
 
 
-def dotenv_values(path=".env") -> Dict[str, Optional[str]]:
+def dotenv_settings(path=".env") -> Dict[str, Optional[str]]:
     """Load settings from .env file into environ."""
     values = dotenv.dotenv_values(path)
     processed_values = {}

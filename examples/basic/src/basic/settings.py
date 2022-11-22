@@ -16,10 +16,11 @@ USE_TZ = True
 
 DJANGOKIT = {
     "package": "basic",
+    "global_css": ["global.css"],
 }
 
 INSTALLED_APPS = [
-    "basic",
+    DJANGOKIT["package"],
     "djangokit.core",
     "django.contrib.admin",
     "django.contrib.auth",

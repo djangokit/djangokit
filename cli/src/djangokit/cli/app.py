@@ -5,11 +5,12 @@ used to add commands.
 
 """
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import typer
+from djangokit.core.conf import Settings, dotenv_settings, settings
 
-from .utils.console import Console
-from .utils.project import Config, read_project_config
+from .utils import Console
 
 app = typer.Typer()
 
@@ -20,15 +21,19 @@ class State:
 
     env: str = "dev"
     quiet: bool = False
-    config: Config = field(default_factory=Config)
-    console: Console = Console()
+    dotenv_path: Path = Path(".env")
+    dotenv_settings: dict = field(default_factory=dict)
+    settings: Settings = field(default_factory=lambda: settings)
+    console: Console = Console(highlight=False)
+    cwd: Path = Path.cwd()
+    has_node_modules: bool = (Path.cwd() / "node_modules").exists()
 
 
 state = State()
 
 
 @app.callback(no_args_is_help=True)
-def main(env: str = state.env, quiet: bool = state.quiet):
+def main(env: str = state.env, quiet: bool = state.quiet, dotenv_path: Path = ".env"):
     """DjangoKit CLI
 
     Commands must be run from the top level directory of your project.
@@ -36,4 +41,5 @@ def main(env: str = state.env, quiet: bool = state.quiet):
     """
     state.env = env
     state.quiet = quiet
-    state.config = read_project_config(default=state.config)
+    state.dotenv_path = dotenv_path
+    state.dotenv_settings = dotenv_settings(dotenv_path)

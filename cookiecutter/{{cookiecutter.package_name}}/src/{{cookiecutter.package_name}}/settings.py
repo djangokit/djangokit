@@ -20,7 +20,7 @@ DJANGOKIT = {
 }
 
 INSTALLED_APPS = [
-    "{{ cookiecutter.package_name }}",
+    DJANGOKIT["package"],
     "djangokit.core",
     "django.contrib.admin",
     "django.contrib.auth",

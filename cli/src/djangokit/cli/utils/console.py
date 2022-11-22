@@ -7,7 +7,7 @@ class Console(BaseConsole):
     @cached_property
     def err_console(self) -> "Console":
         """Attach error console for convenience."""
-        return Console(stderr=True)
+        return Console(stderr=True, highlight=False)
 
     def header(self, text):
         self.rule()

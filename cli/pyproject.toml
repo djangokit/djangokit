@@ -26,10 +26,6 @@ isort = "^5.10.1"
 mypy = "^0.990"
 pytest = "^7.2.0"
 
-[tool.djangokit]
-package = "djangokit.cli"
-has_js = false
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

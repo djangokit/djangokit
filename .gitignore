@@ -3,4 +3,5 @@
 /*/.pytest_cache/
 /*/.venv/
 /*/node_modules/
+/*/package-lock.json
 /*/poetry.lock

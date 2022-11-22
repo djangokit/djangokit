@@ -7,7 +7,6 @@ from pathlib import Path
 
 import click
 import typer
-from djangokit.core.conf import dotenv_values
 from rich.pretty import pretty_repr
 from typer import Argument
 
@@ -43,7 +42,7 @@ def createsuperuser(username: str = getuser(), email: str = None):
 @app.command()
 def makemigrations():
     """Create database migrations for project"""
-    run_django_command(["makemigrations", state.config.package])
+    run_django_command(["makemigrations", state.settings.package])
 
 
 @app.command()
@@ -53,16 +52,14 @@ def migrate():
 
 
 @app.command()
-def show_settings(env_only: bool = False, dotenv_path: str = ".env", name: str = None):
+def show_settings(env_only: bool = False, name: str = None):
     """Show Django settings"""
     console = state.console
-
-    dotenv_settings = dotenv_values(dotenv_path)
-    configure_settings_module(dotenv_settings=dotenv_settings)
+    configure_settings_module()
 
     if env_only:
         console.header("Django settings loaded from environment variables:")
-        settings = dotenv_settings
+        settings = state.dotenv_settings
     else:
         from django.conf import settings
 
@@ -91,17 +88,17 @@ def show_settings(env_only: bool = False, dotenv_path: str = ".env", name: str =
         total_width = len(name) + 3 + len(pretty_value)
         if total_width > max_width:
             pretty_value = pretty_repr(value, max_width=max_width)
-        console.print(f"{name} = {pretty_value}{newline}", soft_wrap=True)
+        console.print(f"{name} = {pretty_value}{newline}", soft_wrap=True, highlight=True)
 
 
 @app.command()
-def show_urls(dotenv_path: str = ".env", include_admin: bool = False):
+def show_urls(include_admin: bool = False):
     """Show Django URL patterns in order of precedence
 
     Django Admin URLs are excluded by default.
 
     """
-    from django.urls import get_resolver, URLResolver, URLPattern
+    from django.urls import URLPattern, URLResolver, get_resolver
 
     def get_patterns(obj, ancestors=()):
         patterns = []
@@ -120,7 +117,7 @@ def show_urls(dotenv_path: str = ".env", include_admin: bool = False):
         return patterns
 
     console = state.console
-    configure_settings_module(dotenv_path=dotenv_path)
+    configure_settings_module()
 
     resolver = get_resolver()
     url_patterns = get_patterns(resolver)
@@ -130,7 +127,7 @@ def show_urls(dotenv_path: str = ".env", include_admin: bool = False):
 
     console.header("Django URL patterns in order of precedence:")
     for pattern in url_patterns:
-        console.info(pattern)
+        console.print(pattern)
 
 
 MODEL_TEMPLATE = """\
@@ -162,7 +159,7 @@ def add_model(
     class_name = "".join(word.capitalize() for word in singular_words)
     table_name = "_".join(singular_words)
 
-    package = state.config.package
+    package = state.settings.package
     package_path = Path("src") / package
 
     models_path = package_path / "models"
@@ -212,34 +209,43 @@ def add_model(
 # Utilities ------------------------------------------------------------
 
 
-def configure_settings_module(*, dotenv_path=".env", dotenv_settings=None) -> str:
+def configure_settings_module() -> str:
     """Configure Django settings module.
 
     If the `DJANGO_SETTINGS_MODULE` environment variable isn't present
     or isn't set, this will read `DJANGO_SETTINGS_MODULE` from the
     project's `.env` file and set it as an env var.
 
+    After `DJANGO_SETTINGS_MODULE` is set, `django.setup()` is called
+    and the name of the settings module is returned.
+
     """
     import django
 
-    if os.getenv("DJANGO_SETTINGS_MODULE"):
-        settings_module = os.environ["DJANGO_SETTINGS_MODULE"]
+    console = state.console
+    dotenv_settings = state.dotenv_settings
+    key = "DJANGO_SETTINGS_MODULE"
+
+    if os.getenv(key):
+        settings_module = os.environ[key]
     else:
-        if dotenv_settings is None:
-            dotenv_settings = dotenv_values(dotenv_path)
-        settings_module = dotenv_settings["DJANGO_SETTINGS_MODULE"]
-        os.environ["DJANGO_SETTINGS_MODULE"] = settings_module
+        if key not in dotenv_settings:
+            console.error(
+                f"The {key} environment variable is required to run Django commands.\n"
+                f"It can be set directly or in the project's .env file."
+            )
+            raise typer.Abort()
+        settings_module = dotenv_settings[key]
+        os.environ[key] = settings_module
 
     django.setup()
     return settings_module
 
 
-def run_django_command(
-    args: Args, dotenv_path=".env", quiet=False
-) -> subprocess.CompletedProcess:
+def run_django_command(args: Args, quiet=False) -> subprocess.CompletedProcess:
     """Run a Django management command."""
     console = state.console
-    settings_module = configure_settings_module(dotenv_path=dotenv_path)
+    settings_module = configure_settings_module()
     if not quiet:
         newline = "\n" if args else ""
         console.print(f'DJANGO_SETTINGS_MODULE = "{settings_module}"{newline}')
