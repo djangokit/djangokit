@@ -1,3 +1,3 @@
-export default function Page({ data }: { data: any }) {
-  return <h1>Page</h1>;
+export default function Page() {
+  return <h1>Admin</h1>;
 }

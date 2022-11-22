@@ -13,14 +13,8 @@ function Layout() {
 
           <ul className="navbar-nav">
             <li className="nav-item">
-              <Link to="/a" className="nav-link">
-                A
-              </Link>
-            </li>
-
-            <li className="nav-item">
-              <Link to="/b" className="nav-link">
-                B
+              <Link to="/users" className="nav-link">
+                Users
               </Link>
             </li>
           </ul>
@@ -31,7 +25,12 @@ function Layout() {
         <Outlet />
       </main>
 
-      <footer className="fixed-bottom p-4 border-top bg-light">Footer</footer>
+      <footer className="d-flex fixed-bottom p-4 border-top bg-light">
+        <span className="flex-fill">&copy; DjangoKit 2022</span>
+        <Link to="/admin" className="nav-link">
+          Admin
+        </Link>
+      </footer>
     </>
   );
 }

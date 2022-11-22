@@ -1,7 +1,7 @@
-export default function Page({ data }: { data: any }) {
+export default function Page() {
   return (
     <>
-      <h1>{data.title}</h1>
+      <h1>Page</h1>
     </>
   );
 }

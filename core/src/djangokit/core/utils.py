@@ -1,9 +1,11 @@
-import os
-from dataclasses import dataclass
+import posixpath
+from dataclasses import dataclass, field
 from importlib import import_module
 from pathlib import Path
 from types import ModuleType
 from typing import List, Optional
+
+from .exceptions import BuildError
 
 
 @dataclass
@@ -39,6 +41,9 @@ class PageInfo:
     `routes/_id/page` -> ":id".
     
     """
+
+    layout_route_pattern: Optional[str] = None
+    """React Router URL pattern for page relative to layout."""
 
     @classmethod
     def from_path(cls, path: Path, root: Path) -> "PageInfo":
@@ -91,6 +96,18 @@ class PageInfo:
             route_pattern=route_pattern,
         )
 
+    @classmethod
+    def from_dir(cls, directory: Path, root: Path) -> Optional["PageInfo"]:
+        assert directory.is_dir()
+        assert directory.is_relative_to(root)
+        path = directory / "page.tsx"
+        if path.exists():
+            return cls.from_path(path, root)
+        path = directory / "page.jsx"
+        if path.exists():
+            return cls.from_path(path, root)
+        return None
+
 
 @dataclass
 class LayoutInfo:
@@ -106,8 +123,71 @@ class LayoutInfo:
 
     """
 
-    children: List[PageInfo]
+    route_pattern: str
+    """React Router URL pattern for layout.
+    
+    `routes/layout` (root) -> "/"
+    `routes/_id/layout` -> ":id".
+    
+    """
+
+    children: List[PageInfo] = field(default_factory=list)
     """Pages using this layout."""
+
+    @classmethod
+    def from_path(cls, path: Path, root: Path) -> "LayoutInfo":
+        assert path.is_file()
+        assert path.name == "layout.tsx" or path.name == "layout.jsx"
+        assert path.is_relative_to(root)
+
+        rel_path = path.relative_to(root)
+        route_path = rel_path.parent.as_posix()
+
+        if route_path == ".":
+            layout_id = "root"
+            import_path = "layout"
+            route_pattern = "/"
+        else:
+            layout_id = route_path.replace("/", "_")
+            import_path = f"{route_path}/layout"
+            route_pattern = []
+
+            segments = route_path.split("/")
+            for segment in segments:
+                if segment.startswith("_"):
+                    name = segment[1:]
+
+                    name_parts = name.split("_")
+                    for i in enumerate(name_parts[1:], 1):
+                        name_parts[i] = name_parts[i].capitalize()
+
+                    route_segment = f"{name}"
+                    route_pattern.append(f":{route_segment}")
+                else:
+                    segment = segment.replace("_", "-")
+                    route_pattern.append(segment)
+
+            route_pattern = "/".join(route_pattern)
+            route_pattern = f"/{route_pattern}"
+
+        return cls(
+            id=layout_id,
+            path=path,
+            import_path=import_path,
+            route_pattern=route_pattern,
+        )
+
+    @classmethod
+    def from_dir(cls, directory: Path, root: Path) -> Optional["LayoutInfo"]:
+        assert directory.is_dir()
+        assert directory.is_relative_to(root)
+        path = directory / "layout.tsx"
+        if path.exists():
+            return LayoutInfo.from_path(path, root)
+        path = directory / "layout.jsx"
+        if path.exists():
+            return LayoutInfo.from_path(path, root)
+        return None
 
 
 @dataclass
@@ -175,52 +255,41 @@ class ApiInfo:
         return cls(module=module, url_pattern=url_pattern)
 
 
-def make_page_tree(root: Path):
-    root_layout = get_layout(root, root)
+def get_routes(directory: Path, *, root=None, parent_layout=None) -> List[LayoutInfo]:
+    routes = []
 
-    if root_layout is None:
-        root_layout = LayoutInfo(id="root", path=None, import_path=None, children=[])
+    if root is None:
+        is_root = True
+        root = directory
+    else:
+        is_root = False
 
-    current_layout = root_layout
+    layout = LayoutInfo.from_dir(directory, root)
 
-    for entry in root.iterdir():
-        pass
-
-    return root_layout
-
-
-def get_layout(directory: Path, root: Path) -> Optional[LayoutInfo]:
-    layout_id = "_".join(directory.relative_to(root).parts)
-    import_path = directory.relative_to(root) / "layout"
-
-    layout_path = directory / "layout.tsx"
-    if layout_path.exists():
-        return LayoutInfo(
-            id=layout_id, path=layout_path, import_path=import_path, children=[]
+    if layout:
+        routes.append(layout)
+    elif is_root:
+        raise BuildError(
+            f"A root layout is required but no layout component was "
+            f"found in {root} (searched for layout.tsx and layout.jsx)"
         )
+    else:
+        layout = parent_layout
 
-    layout_path = directory / "layout.jsx"
-    if layout_path.exists():
-        return LayoutInfo(
-            id=layout_id, path=layout_path, import_path=import_path, children=[]
-        )
+    page = PageInfo.from_dir(directory, root)
+    if page:
+        if page.route_pattern == layout.route_pattern:
+            layout_route_pattern = ""
+        else:
+            layout_route_pattern = posixpath.relpath(page.route_pattern, layout.route_pattern)
+        page.layout_route_pattern = layout_route_pattern
+        layout.children.append(page)
 
-    return None
+    for entry in directory.iterdir():
+        if entry.is_dir() and entry.name != "__pycache__":
+            routes.extend(get_routes(entry, root=root, parent_layout=layout))
 
-
-def find_layout(root: Path, page_path: Path) -> Optional[Path]:
-    """Find layout for page."""
-    parent = page_path.parent
-    assert parent.is_relative_to(root), "Page path must be under root path"
-    while True:
-        candidates = (parent / "layout.tsx", parent / "layout.jsx")
-        for candidate in candidates:
-            if candidate.exists():
-                return candidate
-        parent.samefile(root)
-        if parent.samefile(root):
-            return None
-        parent = parent.parent
+    return routes
 
 
 def find_pages(root: Path) -> List[PageInfo]:
@@ -233,3 +302,7 @@ def find_apis(root: Path, root_package: str) -> List[ApiInfo]:
     """Find API modules in directory."""
     paths = root.glob("**/api.py")
     return [ApiInfo.from_path(path, root, root_package) for path in paths]
+
+
+def get_route_pattern():
+    pass

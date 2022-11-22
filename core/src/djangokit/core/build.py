@@ -7,7 +7,7 @@ from django.template.loader import render_to_string
 
 from .conf import settings
 from .exceptions import BuildError
-from .utils import find_pages, make_page_tree
+from .utils import get_routes
 
 
 @dataclass
@@ -34,7 +34,7 @@ def build(request=None) -> BuildInfo:
     entrypoint_path = build_dir / "main.tsx"
     bundle_path = build_dir / "bundle.js"
     routes_dir = app_dir / "routes"
-    page_info = find_pages(routes_dir)
+    routes = get_routes(routes_dir)
 
     if not build_dir.exists():
         build_dir.mkdir()
@@ -42,17 +42,28 @@ def build(request=None) -> BuildInfo:
     # Create entrypoint ------------------------------------------------
 
     imports = []
-    for info in page_info:
+    for layout_info in routes:
         imports.append(
             {
-                "what": f"{{ default as Page_{info.id} }}",
-                "path": f"../../routes/{info.import_path}",
+                "id": layout_info.id,
+                "route_pattern": layout_info.route_pattern,
+                "what": f"{{ default as Layout_{layout_info.id} }}",
+                "path": f"../../routes/{layout_info.import_path}",
+                "children": [
+                    {
+                        "id": page_info.id,
+                        "route_pattern": page_info.route_pattern,
+                        "what": f"{{ default as Page_{page_info.id} }}",
+                        "path": f"../../routes/{page_info.import_path}",
+                    }
+                    for page_info in layout_info.children
+                ],
             }
         )
 
     context = {
         "imports": imports,
-        "page_info": page_info,
+        "routes": routes,
     }
 
     main_script = render_to_string("djangokit/main.tsx", context, request)
@@ -66,8 +77,6 @@ def build(request=None) -> BuildInfo:
     )
     if result.returncode:
         raise BuildError(f"Could not build main script: {entrypoint_path}")
-
-    subprocess.run(["npx", "eslint", "--fix", entrypoint_path])
 
     return BuildInfo(
         build_dir=build_dir,
