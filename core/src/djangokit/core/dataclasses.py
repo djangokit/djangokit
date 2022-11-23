@@ -5,8 +5,6 @@ from pathlib import Path
 from types import ModuleType
 from typing import List, Optional
 
-from .exceptions import BuildError
-
 
 @dataclass
 class PageInfo:
@@ -44,6 +42,9 @@ class PageInfo:
 
     layout_route_pattern: Optional[str] = None
     """React Router URL pattern for page relative to layout."""
+
+    def __hash__(self):
+        return id(self)
 
     @classmethod
     def from_path(cls, path: Path, root: Path) -> "PageInfo":
@@ -118,6 +119,9 @@ class LayoutInfo:
     children: List[PageInfo] = field(default_factory=list)
     """Pages using this layout."""
 
+    def __hash__(self):
+        return id(self)
+
     @classmethod
     def from_path(cls, path: Path, root: Path) -> "LayoutInfo":
         """Make a LayoutInfo instance from a file system path."""
@@ -170,6 +174,9 @@ class ApiInfo:
     url_pattern: str
     """URL pattern for API module."""
 
+    def __hash__(self):
+        return id(self)
+
     @classmethod
     def from_path(cls, path: Path, root: Path, root_package: str) -> "ApiInfo":
         """Make an ApiInfo instance from a file system path.
@@ -219,63 +226,6 @@ class ApiInfo:
 
         module = import_module(module_name)
         return cls(module=module, url_pattern=url_pattern)
-
-
-def get_routes(directory: Path, *, root=None, parent_layout=None) -> List[LayoutInfo]:
-    """Get routes in directory, recursively.
-
-    This organizes pages under their respective layouts.
-
-    """
-    routes = []
-
-    if root is None:
-        is_root = True
-        root = directory
-    else:
-        is_root = False
-
-    layout = LayoutInfo.from_dir(directory, root)
-
-    if layout:
-        routes.append(layout)
-    elif is_root:
-        raise BuildError(
-            f"A root layout is required but no layout component was "
-            f"found in {root} (searched for layout.tsx and layout.jsx)"
-        )
-    else:
-        layout = parent_layout
-
-    page = PageInfo.from_dir(directory, root)
-    if page:
-        if page.route_pattern == layout.route_pattern:
-            layout_route_pattern = ""
-        else:
-            layout_route_pattern = posixpath.relpath(
-                page.route_pattern,
-                layout.route_pattern,
-            )
-        page.layout_route_pattern = layout_route_pattern
-        layout.children.append(page)
-
-    for entry in directory.iterdir():
-        if entry.is_dir() and entry.name != "__pycache__":
-            routes.extend(get_routes(entry, root=root, parent_layout=layout))
-
-    return routes
-
-
-def find_pages(root: Path) -> List[PageInfo]:
-    """Find pages in root directory."""
-    paths = root.glob("**/page.[jt]sx")
-    return [PageInfo.from_path(path, root) for path in paths]
-
-
-def find_apis(root: Path, root_package: str) -> List[ApiInfo]:
-    """Find API modules in directory."""
-    paths = root.glob("**/api.py")
-    return [ApiInfo.from_path(path, root, root_package) for path in paths]
 
 
 def get_url_pattern(route_path: str) -> str:

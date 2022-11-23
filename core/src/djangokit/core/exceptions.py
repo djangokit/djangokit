@@ -4,3 +4,7 @@ class DjangoKitError(Exception):
 
 class BuildError(DjangoKitError):
     pass
+
+
+class RenderError(DjangoKitError):
+    pass

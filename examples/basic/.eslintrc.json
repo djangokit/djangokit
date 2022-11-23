@@ -1,6 +1,8 @@
 {
   "root": true,
-  "ignorePatterns": ["bundle.js"],
+  "ignorePatterns": [
+    "build"
+  ],
   "parser": "@typescript-eslint/parser",
   "env": {
     "browser": true

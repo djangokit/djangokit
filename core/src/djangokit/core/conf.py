@@ -23,9 +23,11 @@ import dataclasses
 import json
 import os
 from functools import cached_property
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import dotenv
+from django.apps import apps
 from django.conf import settings as django_settings
 from django.core.exceptions import ImproperlyConfigured
 
@@ -73,6 +75,24 @@ class Settings:
     def global_css(self) -> List[str]:
         """CSS files to link in app.html template."""
         return self._get_optional("global_css")
+
+    @cached_property
+    def app_dir(self) -> Path:
+        package = self.package
+        app = apps.get_app_config(package)
+        return Path(app.path)
+
+    @cached_property
+    def routes_dir(self) -> Path:
+        return self.app_dir / "routes"
+
+    @cached_property
+    def routes_package(self) -> Path:
+        return f"{self.package}.routes"
+
+    @cached_property
+    def static_build_dir(self) -> Path:
+        return self.app_dir / "static" / "build"
 
     def as_dict(self):
         """Return a dict with *all* DjangoKit settings.

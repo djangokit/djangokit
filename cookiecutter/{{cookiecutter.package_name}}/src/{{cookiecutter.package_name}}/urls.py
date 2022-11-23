@@ -1,8 +1,8 @@
 from django.contrib import admin
-from django.urls import path
-from djangokit.core import create_routes
+from django.urls import include, path
+from djangokit.core import get_route_urls
 
 urlpatterns = [
-    create_routes(),
+    path("", include(get_route_urls())),
     path("$admin/", admin.site.urls),
 ]
