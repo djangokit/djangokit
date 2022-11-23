@@ -15,6 +15,7 @@ class BuildInfo:
     build_dir: Path
     entrypoint_path: Path
     bundle_path: Path
+    markup: str
 
 
 def build(minify=False, request=None) -> BuildInfo:
@@ -31,56 +32,72 @@ def build(minify=False, request=None) -> BuildInfo:
     app = apps.get_app_config(package)
     app_dir = Path(app.path)
     build_dir = app_dir / "static" / "build"
-    entrypoint_path = build_dir / "main.tsx"
-    bundle_path = build_dir / "bundle.js"
+
+    client_template = "djangokit/main.client.jsx"
+    client_build_path = build_dir / "main.client.jsx"
+    client_bundle_path = build_dir / "bundle.client.js"
+
+    server_template = "djangokit/main.server.jsx"
+    server_build_path = build_dir / "main.server.jsx"
+    server_bundle_path = build_dir / "bundle.server.js"
+
     routes_dir = app_dir / "routes"
     routes = get_routes(routes_dir)
 
     if not build_dir.exists():
         build_dir.mkdir()
 
-    # Create entrypoint ------------------------------------------------
+    # Create client entrypoint -----------------------------------------
 
-    imports = []
-    for layout_info in routes:
-        imports.append(
-            {
-                "id": layout_info.id,
-                "route_pattern": layout_info.route_pattern,
-                "what": f"{{ default as Layout_{layout_info.id} }}",
-                "path": f"../../routes/{layout_info.import_path}",
-                "children": [
-                    {
-                        "id": page_info.id,
-                        "route_pattern": page_info.route_pattern,
-                        "what": f"{{ default as Page_{page_info.id} }}",
-                        "path": f"../../routes/{page_info.import_path}",
-                    }
-                    for page_info in layout_info.children
-                ],
-            }
-        )
+    context = {"routes": routes}
 
-    context = {
-        "imports": imports,
-        "routes": routes,
-    }
+    client_script = render_to_string(client_template, context, request)
+    with client_build_path.open("w") as fp:
+        fp.write(client_script)
 
-    main_script = render_to_string("djangokit/main.tsx", context, request)
-    with entrypoint_path.open("w") as fp:
-        fp.write(main_script)
+    server_script = render_to_string(server_template, context, request)
+    with server_build_path.open("w") as fp:
+        fp.write(server_script)
 
-    # Build bundle from entrypoint -------------------------------------
+    # Build client bundle from entrypoint ------------------------------
 
-    args = ["npx", "esbuild", "--bundle", entrypoint_path, f"--outfile={bundle_path}"]
+    args = [
+        "npx",
+        "esbuild",
+        "--bundle",
+        client_build_path,
+        f"--outfile={client_bundle_path}",
+    ]
     if minify:
         args.append("--minify")
     result = subprocess.run(args)
     if result.returncode:
-        raise BuildError(f"Could not build main script: {entrypoint_path}")
+        raise BuildError(f"Could not build client bundle from {client_build_path}")
+
+    # Create server entrypoint -----------------------------------------
+
+    result = subprocess.run(
+        [
+            "npx",
+            "esbuild",
+            "--bundle",
+            server_build_path,
+            f"--outfile={server_bundle_path}",
+        ]
+    )
+    if result.returncode:
+        raise BuildError(f"Could not build server bundle from {server_build_path}")
+
+    # Generate component markup (SSR) ----------------------------------
+
+    result = subprocess.run(["node", server_bundle_path], stdout=subprocess.PIPE)
+    if result.returncode:
+        raise BuildError(f"Could not run server bundle {server_bundle_path}")
+    markup = result.stdout.decode("utf-8").strip()
 
     return BuildInfo(
         build_dir=build_dir,
-        entrypoint_path=entrypoint_path,
-        bundle_path=bundle_path,
+        entrypoint_path=client_build_path,
+        bundle_path=client_bundle_path,
+        markup=markup,
     )
