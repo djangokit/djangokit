@@ -7,11 +7,6 @@ const routes = [
   {% browser_router_entries routes %}
 ];
 
-// Set to false to disable hydration and use client side rendering.
-const HYDRATE = true;
-
-const rootElement = document.getElementById("root");
-
 const App = () => {
   return (
     <React.StrictMode>
@@ -30,8 +25,13 @@ const App = () => {
   );
 };
 
-if (HYDRATE) {
-  hydrateRoot(rootElement, <App />);
+const rootElement = document.getElementById("root");
+
+// Set this to false to do client side rendering.
+const SSR = true;
+
+if (SSR) {
+  hydrateRoot(rootElement, <App/>);
 } else {
-  createRoot(rootElement).render(<App />);
+  createRoot(rootElement).render(<App/>)
 }
