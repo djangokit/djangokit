@@ -1,9 +1,11 @@
-/* Home Page */
-import { useApi } from "./api";
-import { Page } from "./models";
+import { useParams } from "react-router-dom";
+
+import { useApi } from "../api";
+import { Page } from "../models";
 
 export default function Page() {
-  const [data, error] = useApi<Page>("");
+  const { slug } = useParams();
+  const [data, error] = useApi<Page>(slug ?? "404");
 
   if (data) {
     return (

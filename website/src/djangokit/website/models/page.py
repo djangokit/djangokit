@@ -26,4 +26,4 @@ class Page(models.Model):
         }
 
     def __str__(self):
-        return f"Page: {self.title}"
+        return f"Page: {self.title} ({self.slug})"

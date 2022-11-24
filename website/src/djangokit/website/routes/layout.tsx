@@ -1,6 +1,7 @@
 /* Root Layout */
 import { Link, Outlet } from "react-router-dom";
 import { Container, Nav, Navbar } from "react-bootstrap";
+import { LinkContainer } from "react-router-bootstrap";
 
 function Layout() {
   return (
@@ -14,9 +15,12 @@ function Layout() {
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
             <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="me-auto">
-                <Link to="/docs" className="nav-link">
-                  Docs
-                </Link>
+                <LinkContainer to="/docs">
+                  <Nav.Link>Docs</Nav.Link>
+                </LinkContainer>
+                <LinkContainer to="/todo">
+                  <Nav.Link>TODO</Nav.Link>
+                </LinkContainer>
                 <Nav.Link href="https://github.com/djangokit">Code</Nav.Link>
               </Nav>
             </Navbar.Collapse>
@@ -30,6 +34,9 @@ function Layout() {
 
       <footer className="d-flex fixed-bottom p-4 border-top bg-light">
         <span className="flex-fill">&copy; DjangoKit 2022</span>
+        <a href="/$admin" target="djangokit_admin">
+          Admin
+        </a>
       </footer>
     </>
   );

@@ -26,7 +26,7 @@ export function useApi<D>(
     path = path.substring(1);
   }
 
-  const url = path === "" ? API_ROOT : `${API_ROOT}/{path}`;
+  const url = path === "" ? API_ROOT : `${API_ROOT}/${path}`;
 
   const [data, setData] = useState<D | null>(null);
   const [error, setError] = useState<Error | null>(null);
@@ -40,11 +40,13 @@ export function useApi<D>(
       } catch (err) {
         setData(null);
         setError({
-          statusCode: response?.status ?? -1,
+          statusCode: -1,
           message: (err as Error).message,
         });
         return;
       }
+
+      const status = response.status;
 
       let data: D;
 
@@ -53,7 +55,7 @@ export function useApi<D>(
       } catch (err) {
         setData(null);
         setError({
-          statusCode: response.status,
+          statusCode: status,
           message: (err as Error).message,
         });
         return;
