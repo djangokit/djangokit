@@ -1,1 +1,0 @@
-# DjangoKit Examples
