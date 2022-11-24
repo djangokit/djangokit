@@ -3,7 +3,6 @@ import os
 import subprocess
 import sys
 from getpass import getuser
-from pathlib import Path
 from typing import List
 
 import click
@@ -43,7 +42,8 @@ def createsuperuser(username: str = getuser(), email: str = None):
 @app.command()
 def makemigrations():
     """Create database migrations for project"""
-    run_django_command(["makemigrations", state.settings.package])
+    configure_settings_module()
+    run_django_command(["makemigrations", state.settings.app_label])
 
 
 @app.command()
@@ -241,7 +241,7 @@ def get_model_field(type_: str) -> str:
     if type_ == "text":
         return "models.TextField()"
     if type_ in ("bool", "boolean"):
-        return "models.BooleanField(max_length=255)"
+        return "models.BooleanField()"
     if type_ in ("int", "integer"):
         return "models.IntegerField()"
     if type_ == "date":
@@ -251,10 +251,10 @@ def get_model_field(type_: str) -> str:
     if type_ == "datetime":
         return "models.DateTimeField()"
     if type_ == "created":
-        return "models.DateTimeField(auto_now=True, auto_now_add=True)"
+        return "models.DateTimeField(auto_now_add=True)"
     if type_ == "updated":
         return "models.DateTimeField(auto_now=True)"
-    return f"models.{type_}"
+    return type_
 
 
 # Utilities ------------------------------------------------------------

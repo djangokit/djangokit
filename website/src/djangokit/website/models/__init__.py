@@ -5,3 +5,5 @@
     by Django.
 
 """
+
+from . page import Page

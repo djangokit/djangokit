@@ -1,17 +1,37 @@
 import React from "react";
-import ReactDOM from "react-dom";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createRoot, hydrateRoot } from 'react-dom/client';
+import { Route, Routes, BrowserRouter } from "react-router-dom";
 {% load djangokit %}
 {% route_imports routes %}
-const router = createBrowserRouter([
-{% browser_router_entries routes %}
-]);
+const routes = [
+  {% browser_router_entries routes %}
+];
 
-const root = document.getElementById("root");
+// Set to false to disable hydration and use client side rendering.
+const HYDRATE = true;
 
-ReactDOM.hydrate(
-  <React.StrictMode>
-    <RouterProvider router={router} />
-  </React.StrictMode>,
-  root,
-);
+const rootElement = document.getElementById("root");
+
+const App = () => {
+  return (
+    <React.StrictMode>
+      <BrowserRouter>
+        <Routes>
+          {routes.map(({ path, element, children }) => {
+            return <Route key={path} path={path} element={element}>
+              {children.map(({ path, element }) => {
+                return <Route key={path} path={path} element={element} />
+              })}
+            </Route>
+          })}
+        </Routes>
+      </BrowserRouter>
+    </React.StrictMode>
+  );
+};
+
+if (HYDRATE) {
+  hydrateRoot(rootElement, <App />);
+} else {
+  createRoot(rootElement).render(<App />);
+}

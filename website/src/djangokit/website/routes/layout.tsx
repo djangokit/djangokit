@@ -1,29 +1,27 @@
 /* Root Layout */
-
 import { Link, Outlet } from "react-router-dom";
+import { Container, Nav, Navbar } from "react-bootstrap";
 
 function Layout() {
   return (
     <>
-      <header className="p-4 border-bottom bg-light">
-        <nav className="navbar navbar-expand bg-light">
-          <Link to="/" className="navbar-brand">
-            Home
-          </Link>
-
-          <ul className="navbar-nav">
-            <li className="nav-item">
-              <Link to="/docs" className="nav-link">
-                Docs
-              </Link>
-            </li>
-            <li className="nav-item">
-              <a href="https://github.com/djangokit" className="nav-link">
-                Code
-              </a>
-            </li>
-          </ul>
-        </nav>
+      <header className="p-4 bg-light border-bottom">
+        <Navbar bg="light" expand="lg">
+          <Container fluid className="p-0">
+            <Link to="/" className="navbar-brand">
+              DjangoKit
+            </Link>
+            <Navbar.Toggle aria-controls="basic-navbar-nav" />
+            <Navbar.Collapse id="basic-navbar-nav">
+              <Nav className="me-auto">
+                <Link to="/docs" className="nav-link">
+                  Docs
+                </Link>
+                <Nav.Link href="https://github.com/djangokit">Code</Nav.Link>
+              </Nav>
+            </Navbar.Collapse>
+          </Container>
+        </Navbar>
       </header>
 
       <main className="p-4">

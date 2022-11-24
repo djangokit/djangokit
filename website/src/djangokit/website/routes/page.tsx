@@ -1,17 +1,43 @@
 /* Home Page */
+import { useApi } from "./fetch";
+
+interface Data {
+  title: string;
+  lead?: string;
+  content: string;
+}
 
 export default function Page() {
-  return (
-    <>
-      <h1>DjangoKit</h1>
+  const [data, error] = useApi<Data>("");
 
-      <p className="lead">DjangoKit is full stack meta-framework for Django.</p>
+  if (data) {
+    return (
+      <>
+        <h2>{data.title}</h2>
 
-      <p>
-        It&apos;s similar in spirit to frameworks such as Next.js, Remix, and
-        SvelteKit with the most obvious difference being that your back end code
-        is written in Python/Django rather than in JavaScript/Node.
-      </p>
-    </>
-  );
+        {data.lead ? (
+          <div
+            className="lead my-4"
+            dangerouslySetInnerHTML={{ __html: data.lead }}
+          />
+        ) : null}
+
+        <div dangerouslySetInnerHTML={{ __html: data.content }} />
+      </>
+    );
+  } else if (error) {
+    return (
+      <div className="alert alert-danger">
+        <p className="lead">
+          An error was encountered when fetching the data for this page :(
+        </p>
+
+        <p>Status code: {error.statusCode}</p>
+
+        <p>{error.message}</p>
+      </div>
+    );
+  } else {
+    return <div>Loading...</div>;
+  }
 }

@@ -1,5 +1,5 @@
 from django.contrib import admin
 
-# from .models import SomeModel
+from .models import Page
 
-# admin.site.register(SomeModel)
+admin.site.register(Page)
