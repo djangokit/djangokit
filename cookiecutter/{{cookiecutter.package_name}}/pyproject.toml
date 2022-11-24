@@ -11,7 +11,7 @@ packages = [
 ]
 
 include = [
-    "src/{{ cookiecutter.package_name }}/routes/**/*.{js,jsx,ts,tsx}",
+    "src/{{ cookiecutter.package_name }}/**/*.{css,js,jsx,ts,tsx}",
 ]
 
 [tool.poetry.dependencies]

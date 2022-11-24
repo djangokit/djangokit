@@ -11,7 +11,7 @@ packages = [
 ]
 
 include = [
-    "src/djangokit/website/routes/**/*.{js,jsx,ts,tsx}",
+    "src/djangokit/website/**/*.{ts,tsx}",
 ]
 
 [tool.poetry.dependencies]

@@ -50,6 +50,7 @@ def add_route(
     page_path = route_dir / f"page.{extension}"
     layout_path = route_dir / f"layout.{extension}"
     api_path = route_dir / f"api.py"
+    api_init_path = route_dir / f"__init__.py"
     name = name or route_dir.name.title()
 
     rel_route_dir = route_dir.relative_to(routes_dir.parent)
@@ -79,11 +80,19 @@ def add_route(
 
     if with_api:
         rel_api_path = api_path.relative_to(routes_dir.parent)
+        rel_api_init_path = api_init_path.relative_to(routes_dir.parent)
+
         if api_path.exists():
             console.warning(f"Overwriting API module for route: {rel_api_path}")
         else:
             console.info(f"Creating API module for route: {rel_api_path}")
         with api_path.open("w") as fp:
             fp.write(API_TEMPLATE)
+
+        if api_init_path.exists():
+            console.warning(f"Overwriting API init module for route: {rel_api_init_path}")
+        else:
+            console.info(f"Creating API init module for route: {rel_api_init_path}")
+        api_init_path.touch()
 
     console.success("Done")
