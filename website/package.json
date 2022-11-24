@@ -5,6 +5,7 @@
   "author": "Wyatt Baldwin",
   "license": "MIT",
   "dependencies": {
+    "@tanstack/react-query": "^4.16.1",
     "react": "^18.2.0",
     "react-bootstrap": "^2.6.0",
     "react-dom": "^18.2.0",

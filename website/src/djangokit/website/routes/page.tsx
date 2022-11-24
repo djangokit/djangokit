@@ -1,38 +1,42 @@
 /* Home Page */
-import { useApi } from "./api";
-import { Page } from "./models";
+import { useQuery } from "@tanstack/react-query";
+
+import { apiFetch } from "./api";
 
 export default function Page() {
-  const [data, error] = useApi<Page>("");
+  const { isLoading, isError, data, error } = useQuery({
+    queryKey: ["page-home"],
+    queryFn: async () => await apiFetch("home"),
+  });
 
-  if (data) {
-    return (
-      <>
-        <h2>{data.title}</h2>
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
-        {data.lead ? (
-          <div
-            className="lead my-4"
-            dangerouslySetInnerHTML={{ __html: data.lead }}
-          />
-        ) : null}
-
-        <div dangerouslySetInnerHTML={{ __html: data.content }} />
-      </>
-    );
-  } else if (error) {
+  if (isError) {
     return (
       <div className="alert alert-danger">
         <p className="lead">
-          An error was encountered when fetching the data for this page :(
+          An error was encountered while loading this page :(
         </p>
-
-        <p>Status code: {error.statusCode}</p>
 
         <p>{error.message}</p>
       </div>
     );
-  } else {
-    return <div>Loading...</div>;
   }
+
+  return (
+    <>
+      <h2>{data.title}</h2>
+
+      {data.lead ? (
+        <div
+          className="lead my-4"
+          dangerouslySetInnerHTML={{ __html: data.lead }}
+        />
+      ) : null}
+
+      <div dangerouslySetInnerHTML={{ __html: data.content }} />
+    </>
+  );
 }

@@ -7,17 +7,13 @@ As with these frameworks, DjangoKit has the goal of helping you get
 sites up and running quickly with minimal mucking about with setup and
 configuration.
 
-## Why / Features
+## Features
 
-- Allows the Python ecosystem to be leveraged in back end code where,
-  IMO, it shines
-- Makes it easy to set up a Django project using modern tools and code
-  layout
-- Makes it easy to create a page-oriented site with filesystem routing 
-  while also allowing you to use the full power of Django as needed
-- Makes it easy to integrate a React front end into a Django project
-- Provides a project template (via `cookiecutter`) and scaffolding
-  commands to add new models, routes, etc.
+- Easily set up a Django project with an integrated React front end
+- Server side rendering of React templates/components
+- Filesystem-based routing
+- Full power of Django available if needed
+- Tooling
 - Supports Python 3.7+
 - Supports Node 14+ (TODO: Decide on minimum supported Node version)
 

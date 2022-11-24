@@ -1,40 +1,44 @@
 import { useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
-import { useApi } from "../api";
-import { Page } from "../models";
+import { apiFetch } from "../api";
 
 export default function Page() {
   const { slug } = useParams();
-  const [data, error] = useApi<Page>(slug ?? "404");
 
-  if (data) {
-    return (
-      <>
-        <h2>{data.title}</h2>
+  const { isLoading, isError, data, error } = useQuery({
+    queryKey: [`page-${slug}`],
+    queryFn: async () => await apiFetch(slug ?? "404"),
+  });
 
-        {data.lead ? (
-          <div
-            className="lead my-4"
-            dangerouslySetInnerHTML={{ __html: data.lead }}
-          />
-        ) : null}
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
-        <div dangerouslySetInnerHTML={{ __html: data.content }} />
-      </>
-    );
-  } else if (error) {
+  if (isError) {
     return (
       <div className="alert alert-danger">
         <p className="lead">
-          An error was encountered when fetching the data for this page :(
+          An error was encountered while loading this page :(
         </p>
-
-        <p>Status code: {error.statusCode}</p>
 
         <p>{error.message}</p>
       </div>
     );
-  } else {
-    return <div>Loading...</div>;
   }
+
+  return (
+    <>
+      <h2>{data.title}</h2>
+
+      {data.lead ? (
+        <div
+          className="lead my-4"
+          dangerouslySetInnerHTML={{ __html: data.lead }}
+        />
+      ) : null}
+
+      <div dangerouslySetInnerHTML={{ __html: data.content }} />
+    </>
+  );
 }

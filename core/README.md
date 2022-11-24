@@ -1,4 +1,7 @@
 # DjangoKit Core
 
-This package provides the Python code that implements the core
-functionality of DjangoKit.
+This package implements the core functionality of DjangoKit.
+
+TODO:
+
+For more information...
