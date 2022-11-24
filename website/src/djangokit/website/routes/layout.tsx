@@ -5,9 +5,7 @@ function Layout() {
     <>
       <header>
         <nav>
-          <Link to="/">
-            Home
-          </Link>
+          <Link to="/">Home</Link>
         </nav>
       </header>
 
@@ -15,7 +13,7 @@ function Layout() {
         <Outlet />
       </main>
 
-      <footer>&copy; {{ cookiecutter.package_name }}</footer>
+      <footer>&copy; DjangoKit</footer>
     </>
   );
 }

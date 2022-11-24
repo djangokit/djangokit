@@ -1,8 +1,8 @@
-from djangokit.core.conf import load_dotenv, getenv
+from djangokit.core.conf import getenv, load_dotenv
 
 load_dotenv()
 
-PACKAGE = "{{ cookiecutter.package_name }}"
+PACKAGE = "djangokit.website"
 
 DJANGOKIT = {
     "package": PACKAGE,

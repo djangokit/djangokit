@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "djangokit-website"
+version = "0.1.0"
+description = "DjangoKit Website"
+authors = ["Wyatt Baldwin <Wyatt Baldwin>"]
+license = "MIT"
+readme = "README.md"
+
+packages = [
+    { include = "djangokit", from = "src" }
+]
+
+include = [
+    "src/djangokit/website/routes/**/*.{js,jsx,ts,tsx}",
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+djangokit-core = { path = "../core", develop = true }
+djangokit-cli = { path = "../cli", develop = true }
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.10.0"
+isort = "^5.10.1"
+mypy = "^0.990"
+pytest = "^7.2.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

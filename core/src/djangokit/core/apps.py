@@ -4,10 +4,10 @@ from django.core import checks
 from .checks import CHECKS
 
 
-class DjangoKitConfig(AppConfig):
+class DjangoKitCoreConfig(AppConfig):
     default = True
     name = "djangokit.core"
-    verbose_name = "DjangoKit"
+    verbose_name = "DjangoKit Core"
 
     def ready(self):
         for check in CHECKS:
