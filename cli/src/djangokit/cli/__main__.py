@@ -6,6 +6,7 @@ import typer
 from . import base  # noqa
 from . import build  # noqa
 from . import django  # noqa
+from . import routes  # noqa
 from .app import app
 
 app = typer.main.get_command(app)

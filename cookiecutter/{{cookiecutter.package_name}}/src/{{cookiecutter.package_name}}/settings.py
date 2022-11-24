@@ -6,7 +6,6 @@ PACKAGE = "{{ cookiecutter.package_name }}"
 
 DJANGOKIT = {
     "package": PACKAGE,
-    "global_css": ["global.css"],
 }
 
 DEBUG = getenv("DEBUG", False)

@@ -60,6 +60,10 @@ class Settings:
         "package": {
             "type": str,
         },
+        "app_label": {
+            "type": str,
+            "default_factory": lambda s: s.package.replace(".", "_"),
+        },
         "global_css": {
             "type": list,
             "default": ["global.css"],
@@ -72,15 +76,32 @@ class Settings:
         return self._get_required("package")
 
     @cached_property
+    def app_label(self) -> str:
+        """The project's Django app label.
+
+        Defaults to package name with dots replaced with underscores.
+
+        .. note::
+            In most cases, this shouldn't need to be set explicitly.
+            It's only needed if the project's app label differs from
+            its top level package name.
+
+        """
+        return self._get_optional("app_label")
+
+    @cached_property
     def global_css(self) -> List[str]:
         """CSS files to link in app.html template."""
         return self._get_optional("global_css")
 
     @cached_property
     def app_dir(self) -> Path:
-        package = self.package
-        app = apps.get_app_config(package)
+        app = apps.get_app_config(self.app_label)
         return Path(app.path)
+
+    @cached_property
+    def models_dir(self) -> Path:
+        return self.app_dir / "models"
 
     @cached_property
     def routes_dir(self) -> Path:
@@ -131,7 +152,16 @@ class Settings:
             value = self._dk_settings[name]
             self._check_type(name, value)
         else:
-            value = self.known_settings[name]
+            info = self.known_settings[name]
+            if "default" in info:
+                value = info["default"]
+            elif "default_factory" in info:
+                value = info["default_factory"](self)
+            else:
+                raise ImproperlyConfigured(
+                    "Optional setting must specify a default value or "
+                    "a default factory."
+                )
         return value
 
     def _check_type(self, name, value):

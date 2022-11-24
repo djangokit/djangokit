@@ -151,8 +151,7 @@ def add_model(
     configure_settings_module()
 
     console = state.console
-    package = state.settings.package
-    package_path = Path("src") / package
+    settings = state.settings
 
     # Add model --------------------------------------------------------
 
@@ -161,9 +160,9 @@ def add_model(
     class_name = "".join(word.capitalize() for word in singular_words)
     table_name = "_".join(singular_words)
 
-    models_path = package_path / "models"
-    init_path = models_path / "__init__.py"
-    model_path = models_path / f"{table_name}.py"
+    models_dir = settings.models_dir
+    init_path = models_dir / "__init__.py"
+    model_path = models_dir / f"{table_name}.py"
 
     console.header(f"Adding model {class_name} to {model_path}")
 
@@ -206,7 +205,7 @@ def add_model(
     # Register model with Django Admin ---------------------------------
 
     if register_admin:
-        admin_path = package_path / "admin.py"
+        admin_path = settings.app_dir / "admin.py"
         with admin_path.open("a") as fp:
             fp.write(f"\nfrom .models import {class_name}\n")
             fp.write(f"admin.site.register({class_name})")

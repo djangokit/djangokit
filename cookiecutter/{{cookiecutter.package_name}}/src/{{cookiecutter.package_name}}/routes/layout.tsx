@@ -1,3 +1,5 @@
+/* Root Layout */
+
 import { Link, Outlet } from "react-router-dom";
 
 function Layout() {

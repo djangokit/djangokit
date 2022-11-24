@@ -51,7 +51,7 @@ def check_settings(**kwargs):
             value = dk_settings[name]
             if not isinstance(value, type_):
                 errors.append(make_error("E002", name=name, type=type_, value=value))
-        elif "default" not in info:
+        elif not ("default" in info or "default_factory" in info):
             errors.append(make_error("E001", name=name))
 
     for name in dk_settings:
