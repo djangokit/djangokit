@@ -6,6 +6,10 @@ PACKAGE = "djangokit.website"
 
 DJANGOKIT = {
     "package": PACKAGE,
+    "global_css": [
+        "bootstrap.css",
+        "global.css",
+    ],
 }
 
 DEBUG = getenv("DEBUG", False)

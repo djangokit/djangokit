@@ -9,7 +9,7 @@ const routes = [
   {% browser_router_entries routes %}
 ];
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
 const App = () => {
   return (

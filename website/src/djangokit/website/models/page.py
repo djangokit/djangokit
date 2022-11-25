@@ -16,6 +16,7 @@ class Page(models.Model):
 
     def as_dict(self):
         return {
+            "id": self.id,
             "title": self.title,
             "slug": self.slug,
             "lead": markdown(self.lead) if self.lead else None,

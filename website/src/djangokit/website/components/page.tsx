@@ -5,7 +5,7 @@ interface Props {
   error: any;
 }
 
-export default function page({
+export default function Page({
   isLoading = false,
   isError = false,
   data = undefined,

@@ -1,7 +1,7 @@
 import posixpath
 from functools import lru_cache
 from os import path
-from pathlib import Path
+from pathlib import Path, PosixPath
 from typing import List
 
 from django.urls import path
@@ -47,16 +47,49 @@ def get_route_urls(page_view_class=PageView, api_view_class=ApiView) -> list:
     return urls
 
 
+def info_sorter(info):
+    """Key function for sorting info objects by URL pattern.
+
+    This can be used to sort info objects by URL pattern using the
+    following rules:
+
+    1. Patterns with more segments sort first
+    2. Segments in a given position are sorted using the following
+       rules:
+        1. Literal segments sort before pattern segments
+        2. Longer segments sort before shorter segments
+        3. Equal length segments are sorted lexicographically
+
+    The general idea is to force longer URLs to match before shorter
+    URLs and to prefer literal segments over pattern matching.
+
+    """
+    url_pattern = PosixPath(info.url_pattern)
+    parts = url_pattern.parts
+    return (-len(parts),) + tuple(
+        (
+            part.startswith("<"),
+            -len(part),
+            part,
+        )
+        for part in parts
+    )
+
+
 def find_pages(root: Path) -> List[PageInfo]:
     """Find pages in root directory."""
     paths = root.glob("**/page.[jt]sx")
-    return [PageInfo.from_path(page_path, root) for page_path in paths]
+    info = [PageInfo.from_path(page_path, root) for page_path in paths]
+    info.sort(key=info_sorter)
+    return info
 
 
 def find_apis(root: Path, root_package: str) -> List[ApiInfo]:
     """Find API modules in directory."""
     paths = root.glob("**/api.py")
-    return [ApiInfo.from_path(api_path, root, root_package) for api_path in paths]
+    info = [ApiInfo.from_path(api_path, root, root_package) for api_path in paths]
+    info.sort(key=info_sorter)
+    return info
 
 
 @lru_cache

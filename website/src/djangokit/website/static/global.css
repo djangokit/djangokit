@@ -1,0 +1,27 @@
+#root {
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas: "header" "main" "footer";
+}
+
+#root > header {
+  grid-area: header;
+  z-index: 100;
+}
+
+#root > main {
+  grid-area: main;
+  overflow: auto;
+}
+
+#root > footer {
+  grid-area: footer;
+  box-shadow: 0 -0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+  z-index: 100;
+}
+
+p:last-child {
+  margin-bottom: 0;
+}

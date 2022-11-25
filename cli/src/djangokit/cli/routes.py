@@ -90,7 +90,9 @@ def add_route(
             fp.write(API_TEMPLATE)
 
         if api_init_path.exists():
-            console.warning(f"Overwriting API init module for route: {rel_api_init_path}")
+            console.warning(
+                f"Overwriting API init module for route: {rel_api_init_path}"
+            )
         else:
             console.info(f"Creating API init module for route: {rel_api_init_path}")
         api_init_path.touch()
