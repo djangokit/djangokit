@@ -268,20 +268,20 @@ function ItemControls({
         <>
           <Button
             size="sm"
-            variant="outline-info"
-            title="Edit"
-            onClick={() => setEditing(true)}
-          >
-            <FaEdit />
-          </Button>
-
-          <Button
-            size="sm"
             variant="outline-success"
             title="Mark as completed"
             onClick={() => complete.mutate({ id: item.id })}
           >
             <FaCheck />
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline-info"
+            title="Edit"
+            onClick={() => setEditing(true)}
+          >
+            <FaEdit />
           </Button>
         </>
       )}
