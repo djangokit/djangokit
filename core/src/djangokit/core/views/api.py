@@ -57,10 +57,12 @@ class ApiView(View):
         1. A dict, which will be converted to JSON
         2. An HTTP status code (int), which will be converted to a JSON
            response with the specified status code
-        3. A status *code* and a dict, which will converted as both 1
-           and 2
-        4. None, which will be converted to a 204 No Content response
-        5. A Django response object when more control is needed over the
+        3. A status *code* and a dict, which will be converted to a JSON
+           response with the specified status code and data
+        4. A status *code* and a string, which will be converted to a
+           response with the specified status code and body
+        5. None, which will be converted to a 204 No Content response
+        6. A Django response object when more control is needed over the
            response
 
         If there's no API handler corresponding to the request's method,
@@ -96,13 +98,16 @@ class ApiView(View):
                     "(expected int)"
                 )
 
-            if not isinstance(data, dict):
-                raise TypeError(
-                    f"Handler returned unexpected data type {type(data)} "
-                    "(expected dict)"
-                )
+            if isinstance(data, dict):
+                return JsonResponse(data, status=status)
 
-            return JsonResponse(data, status=status)
+            if isinstance(data, str):
+                return HttpResponse(data, status=status)
+
+            raise TypeError(
+                f"Handler returned unexpected data type {type(data)} "
+                "(expected dict or str)"
+            )
 
         if isinstance(result, dict):
             return JsonResponse(result)

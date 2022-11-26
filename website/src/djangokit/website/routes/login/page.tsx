@@ -1,3 +1,5 @@
+import { useSearchParams } from "react-router-dom";
+
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import Stack from "react-bootstrap/Stack";
@@ -5,9 +7,13 @@ import Stack from "react-bootstrap/Stack";
 declare const CsrfTokenField;
 
 export default function Page() {
+  const [params, _] = useSearchParams();
+  const from = params.get("from") ?? "/";
+
   return (
     <Form method="post" action="/$api/login" className="container-lg">
       <CsrfTokenField />
+      <input name="from" type="hidden" value={from} />
       <Stack gap={4}>
         <h2>Log In</h2>
 

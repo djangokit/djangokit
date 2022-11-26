@@ -16,7 +16,9 @@ declare const CsrfTokenField;
 function Layout() {
   const currentUser = useCurrentUserContext();
   const location = useLocation();
-  const isLogin = location.pathname === "/login";
+  const currentPath = location.pathname;
+  const redirectPath = encodeURIComponent(currentPath);
+  const isLogin = currentPath === "/login";
 
   return (
     <>
@@ -46,13 +48,14 @@ function Layout() {
                 </Nav.Link>
 
                 {isLogin || currentUser.isAuthenticated ? null : (
-                  <LinkContainer to="/login">
-                    <Nav.Link>
-                      <Button size="sm" variant="outline-secondary">
-                        Log In
-                      </Button>
-                    </Nav.Link>
-                  </LinkContainer>
+                  <Nav.Link>
+                    <Link
+                      className="btn btn-sm btn-outline-secondary"
+                      to={`/login?from=${redirectPath}`}
+                    >
+                      Log In
+                    </Link>
+                  </Nav.Link>
                 )}
               </Nav>
             </Navbar.Collapse>
@@ -64,6 +67,7 @@ function Layout() {
             <div>{currentUser.username}</div>
             <Form method="post" action="/$api/logout">
               <CsrfTokenField />
+              <input name="from" type="hidden" value={currentPath} />
               <Button type="submit" size="sm" variant="outline-secondary">
                 Log Out
               </Button>
