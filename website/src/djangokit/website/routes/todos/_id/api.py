@@ -3,7 +3,8 @@ from django.shortcuts import get_object_or_404
 from django.utils.timezone import now
 from marshmallow import Schema, ValidationError, fields, validates_schema
 
-from ....models import TodoItem, TodoItemSchema
+from djangokit.website import auth
+from djangokit.website.models import TodoItem, TodoItemSchema
 
 
 def get(_request, id):
@@ -11,6 +12,8 @@ def get(_request, id):
     return TodoItemSchema().dump(item)
 
 
+@auth.require_authenticated
+@auth.require_superuser
 def delete(_request, id):
     item = get_object_or_404(TodoItem, id=id)
     item.delete()
@@ -26,6 +29,8 @@ class PatchSchema(Schema):
             raise ValidationError("PATCH of TodoItem requires at least one field")
 
 
+@auth.require_authenticated
+@auth.require_superuser
 def patch(request, id):
     item = get_object_or_404(TodoItem, id=id)
 

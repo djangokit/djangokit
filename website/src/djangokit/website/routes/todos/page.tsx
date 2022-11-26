@@ -3,53 +3,32 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import Button from "react-bootstrap/Button";
-import Card from "react-bootstrap/Card";
-import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
-import Row from "react-bootstrap/Row";
+
+import { FaCheck, FaEdit, FaPlus, FaSave } from "react-icons/all";
 
 import api, { useApiQuery } from "../../api";
-import { TodoItems } from "../../models";
+import { TodoItem, TodoItems } from "../../models";
+
+declare const useCurrentUserContext;
 
 export default function Page() {
-  const client = useQueryClient();
-
+  const currentUser = useCurrentUserContext();
   const { isLoading, isError, data, error } = useApiQuery<TodoItems>("todos");
 
-  const [createFormData, setCreateFormData] = useState({ content: "" });
+  const client = useQueryClient();
 
-  const onMutationSuccess = () => {
+  const onmutationsuccess = () => {
     client.invalidateQueries({ queryKey: ["todos"] });
   };
 
   const create = useMutation({
     mutationFn: ({ content }: { content: string }) =>
       api.post("todos", { content }),
-    onSuccess: onMutationSuccess,
+    onSuccess: onmutationsuccess,
   });
 
-  const updateContent = useMutation({
-    mutationFn: ({ id, content }: { id: number; content: string }) =>
-      api.patch(`todos/${id}`, { content }),
-    onSuccess: onMutationSuccess,
-  });
-
-  const complete = useMutation({
-    mutationFn: ({ id }: { id: number }) =>
-      api.patch(`todos/${id}`, { completed: true }),
-    onSuccess: onMutationSuccess,
-  });
-
-  const uncomplete = useMutation({
-    mutationFn: ({ id }: { id: number }) =>
-      api.patch(`todos/${id}`, { completed: false }),
-    onSuccess: onMutationSuccess,
-  });
-
-  const remove = useMutation({
-    mutationFn: ({ id }: { id: number }) => api.delete(`todos/${id}`),
-    onSuccess: onMutationSuccess,
-  });
+  const [createFormData, setCreateFormData] = useState({ content: "" });
 
   if (isLoading) {
     return <div>Loading TODO items...</div>;
@@ -68,113 +47,255 @@ export default function Page() {
     );
   }
 
+  const items = data.items;
+  const numItems = items.length;
+
   return (
     <>
       <h2>TODO</h2>
 
-      <Form
-        className="mb-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          create.mutate(createFormData);
-          setCreateFormData({ content: "" });
-        }}
-      >
-        <Form.Control
-          as="textarea"
-          required
-          placeholder="Do stuff"
-          className="mb-2"
-          value={createFormData.content}
-          onChange={(event) =>
-            setCreateFormData({ content: event.target.value })
-          }
-        ></Form.Control>
+      {currentUser.isSuperuser ? (
+        <div className="mb-4">
+          <Form
+            className="d-flex flex-row gap-2 mb-1"
+            onSubmit={(event) => {
+              event.preventDefault();
+              create.mutate(createFormData);
+              setCreateFormData({ content: "" });
+            }}
+          >
+            <Form.Control
+              as="textarea"
+              required
+              placeholder="Do all the things and then all the stuff..."
+              className="flex-fill"
+              value={createFormData.content}
+              onChange={(event) =>
+                setCreateFormData({ content: event.target.value })
+              }
+            ></Form.Control>
 
-        <div className="d-flex align-items-center justify-content-center">
-          <Button type="submit">Add</Button>
+            <div className="d-flex justify-content-center">
+              <Button type="submit" disabled={!createFormData.content}>
+                <FaPlus />
+              </Button>
+            </div>
+          </Form>
+          <div className="text-muted small">NOTE: You can use Markdown</div>
         </div>
-      </Form>
+      ) : null}
 
-      <hr />
-
-      {data.items.length ? (
-        data.items.map((item) => (
-          <Card key={item.id} className="mb-4">
-            <Card.Body>
-              {item.completed ? (
-                <Card.Text className="text-muted">
-                  <del dangerouslySetInnerHTML={{ __html: item.content }} />
-                </Card.Text>
-              ) : (
-                <Form.Control
-                  as="textarea"
-                  defaultValue={item.rawContent}
-                  onBlur={(event) =>
-                    updateContent.mutate({
-                      id: item.id,
-                      content: event.target.value,
-                    })
-                  }
-                ></Form.Control>
-              )}
-            </Card.Body>
-
-            <Card.Footer className="small fw-light fst-italic">
-              <Row
-                xs={1}
-                md={2}
-                className="align-items-center justify-content-between"
-              >
-                <Col className="text-center text-md-start mb-2 mb-md-0">
-                  {item.completed ? (
-                    <>
-                      Completed {new Date(item.completed).toLocaleDateString()}{" "}
-                      at {new Date(item.completed).toLocaleTimeString()}
-                    </>
-                  ) : (
-                    <>
-                      Created {new Date(item.created).toLocaleDateString()}{" "}
-                      {new Date(item.created).toLocaleTimeString()}
-                    </>
-                  )}
-                </Col>
-
-                <Col className="d-flex justify-content-end">
-                  {item.completed ? (
-                    <Button
-                      size="sm"
-                      variant="warning"
-                      onClick={() => uncomplete.mutate({ id: item.id })}
-                    >
-                      Uncomplete
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline-success"
-                      onClick={() => complete.mutate({ id: item.id })}
-                    >
-                      Complete
-                    </Button>
-                  )}
-
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    className="ms-2"
-                    onClick={() => remove.mutate({ id: item.id })}
-                  >
-                    Delete
-                  </Button>
-                </Col>
-              </Row>
-            </Card.Footer>
-          </Card>
-        ))
+      {numItems ? (
+        <>
+          <h3>
+            {numItems} thing{numItems === 1 ? "" : "s"} to do
+          </h3>
+          <div className="d-flex flex-column gap-4">
+            {items.map((item) => (
+              <Item key={item.id} item={item} />
+            ))}
+          </div>
+        </>
       ) : (
-        <div>No todo items!</div>
+        <div className="alert alert-success">Nothing to do!</div>
       )}
+    </>
+  );
+}
+
+function Item({ item }: { item: TodoItem }) {
+  const currentUser = useCurrentUserContext();
+
+  const [rawContent, setRawContent] = useState(item.rawContent);
+  const [editing, setEditing] = useState(false);
+
+  const client = useQueryClient();
+
+  const onmutationsuccess = () => {
+    client.invalidateQueries({ queryKey: ["todos"] });
+  };
+
+  const updateContent = useMutation({
+    mutationFn: ({ id, content }: { id: number; content: string }) =>
+      api.patch(`todos/${id}`, { content }),
+    onSuccess: onmutationsuccess,
+  });
+
+  const complete = useMutation({
+    mutationFn: ({ id }: { id: number }) =>
+      api.patch(`todos/${id}`, { completed: true }),
+    onSuccess: onmutationsuccess,
+  });
+
+  const uncomplete = useMutation({
+    mutationFn: ({ id }: { id: number }) =>
+      api.patch(`todos/${id}`, { completed: false }),
+    onSuccess: onmutationsuccess,
+  });
+
+  const remove = useMutation({
+    mutationFn: ({ id }: { id: number }) => api.delete(`todos/${id}`),
+    onSuccess: onmutationsuccess,
+  });
+
+  return (
+    <div className="d-flex border rounded">
+      <div className="flex-fill p-2 border-end">
+        <ItemContent
+          item={item}
+          rawContent={rawContent}
+          setRawContent={setRawContent}
+          editing={editing}
+        />
+      </div>
+
+      {currentUser.isSuperuser ? (
+        <div className="p-2 d-flex flex-column justify-content-center gap-2">
+          <ItemControls
+            item={item}
+            rawContent={rawContent}
+            editing={editing}
+            setEditing={setEditing}
+            updateContent={updateContent}
+            complete={complete}
+            uncomplete={uncomplete}
+            remove={remove}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ItemContent({
+  item,
+  rawContent,
+  setRawContent,
+  editing,
+}: {
+  item: TodoItem;
+  rawContent: string;
+  setRawContent: any;
+  editing: boolean;
+}) {
+  if (item.completed) {
+    return (
+      <del
+        className="text-muted"
+        title={`Completed ${new Date(item.completed).toLocaleString()}`}
+        dangerouslySetInnerHTML={{ __html: item.content }}
+      />
+    );
+  }
+
+  if (editing) {
+    return (
+      <Form.Control
+        as="textarea"
+        value={rawContent}
+        style={{ height: "16rem" }}
+        onChange={(event) => setRawContent(event.target.value)}
+      />
+    );
+  }
+
+  return (
+    <div
+      title={`Created ${new Date(item.created).toLocaleString()}`}
+      dangerouslySetInnerHTML={{ __html: item.content }}
+    />
+  );
+}
+
+function ItemControls({
+  item,
+  rawContent,
+  editing,
+  setEditing,
+  updateContent,
+  complete,
+  uncomplete,
+  remove,
+}: {
+  item: TodoItem;
+  rawContent: string;
+  editing: boolean;
+  setEditing: any;
+  updateContent: any;
+  complete: any;
+  uncomplete: any;
+  remove: any;
+}) {
+  if (editing) {
+    return (
+      <>
+        <Button
+          size="sm"
+          variant="outline-primary"
+          title="Save changes"
+          onClick={() => {
+            updateContent.mutate({ id: item.id, content: rawContent });
+            setEditing(false);
+          }}
+        >
+          <FaSave />
+        </Button>
+
+        <Button
+          size="sm"
+          variant="outline-danger"
+          title="Discard changes / cancel editing"
+          onClick={() => setEditing(false)}
+        >
+          &times;
+        </Button>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {item.completed ? (
+        <Button
+          size="sm"
+          variant="outline-warning"
+          title="Mark as not completed"
+          onClick={() => uncomplete.mutate({ id: item.id })}
+        >
+          <FaCheck />
+        </Button>
+      ) : (
+        <>
+          <Button
+            size="sm"
+            variant="outline-info"
+            title="Edit"
+            onClick={() => setEditing(true)}
+          >
+            <FaEdit />
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline-success"
+            title="Mark as completed"
+            onClick={() => complete.mutate({ id: item.id })}
+          >
+            <FaCheck />
+          </Button>
+        </>
+      )}
+
+      <Button
+        size="sm"
+        variant="outline-danger"
+        onClick={() =>
+          confirm("Delete TODO item?") && remove.mutate({ id: item.id })
+        }
+        title="Delete!"
+      >
+        &times;
+      </Button>
     </>
   );
 }
