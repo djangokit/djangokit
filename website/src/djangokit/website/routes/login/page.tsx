@@ -7,7 +7,7 @@ import Stack from "react-bootstrap/Stack";
 declare const CsrfTokenField;
 
 export default function Page() {
-  const [params, _] = useSearchParams();
+  const [params] = useSearchParams();
   const from = params.get("from") ?? "/";
 
   return (

@@ -10,7 +10,6 @@ from djangokit.website.models import TodoItem
 def get(_request):
     """Get all todo items."""
     items = TodoItem.objects.all().order_by("completed", "created")
-    items = [item.as_dict() for item in items]
     return {"items": items}
 
 
@@ -26,5 +25,4 @@ def post(request):
     content = content.strip()
     if not content:
         return HttpResponseBadRequest("Todo item content cannot be empty")
-    item = TodoItem.objects.create(content=content)
-    return item.as_dict()
+    return TodoItem.objects.create(content=content)

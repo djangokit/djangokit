@@ -1,8 +1,7 @@
 from django.shortcuts import get_object_or_404
 
-from ...models import Page, PageSchema
+from ...models import Page
 
 
 def get(_request, slug):
-    page = get_object_or_404(Page, slug=slug)
-    return PageSchema().dump(page)
+    return get_object_or_404(Page, slug=slug)

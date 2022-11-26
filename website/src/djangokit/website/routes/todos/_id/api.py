@@ -4,12 +4,11 @@ from django.utils.timezone import now
 from marshmallow import Schema, ValidationError, fields, validates_schema
 
 from djangokit.website import auth
-from djangokit.website.models import TodoItem, TodoItemSchema
+from djangokit.website.models import TodoItem
 
 
 def get(_request, id):
-    item = get_object_or_404(TodoItem, id=id)
-    return TodoItemSchema().dump(item)
+    return get_object_or_404(TodoItem, id=id)
 
 
 @auth.require_authenticated

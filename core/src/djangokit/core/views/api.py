@@ -2,8 +2,11 @@ from functools import cached_property
 from typing import Dict
 
 from django.core.exceptions import ImproperlyConfigured
-from django.http import HttpResponse, JsonResponse
+from django.db import models
+from django.http import HttpResponse
 from django.views.generic import View
+
+from ..http import JsonResponse
 
 
 class ApiView(View):
@@ -54,12 +57,13 @@ class ApiView(View):
 
         API handlers can return one of the following:
 
-        1. A dict, which will be converted to JSON
+        1. A dict or a Model instance, which will be converted to JSON
         2. An HTTP status code (int), which will be converted to a JSON
            response with the specified status code
-        3. A status *code* and a dict, which will be converted to a JSON
-           response with the specified status code and data
-        4. A status *code* and a string, which will be converted to a
+        3. A status code *and* a dict or Model instance, which will be
+           converted to a JSON response with the specified status code
+           and data
+        4. A status code *and* a string, which will be converted to a
            response with the specified status code and body
         5. None, which will be converted to a 204 No Content response
         6. A Django response object when more control is needed over the
@@ -80,6 +84,10 @@ class ApiView(View):
         if result is None:
             return HttpResponse(204)
 
+        # XXX: Most common case?
+        if isinstance(result, (dict, models.Model)):
+            return JsonResponse(result)
+
         if isinstance(result, int):
             return JsonResponse({}, status=result)
 
@@ -98,7 +106,7 @@ class ApiView(View):
                     "(expected int)"
                 )
 
-            if isinstance(data, dict):
+            if isinstance(data, (dict, models.Model)):
                 return JsonResponse(data, status=status)
 
             if isinstance(data, str):
@@ -106,16 +114,15 @@ class ApiView(View):
 
             raise TypeError(
                 f"Handler returned unexpected data type {type(data)} "
-                "(expected dict or str)"
+                "(expected dict, Model, or str)"
             )
 
-        if isinstance(result, dict):
-            return JsonResponse(result)
-
+        # XXX: Least common case?
         if isinstance(result, HttpResponse):
             return result
 
         raise TypeError(
             f"Handler returned unexpected object type {type(result)} "
-            "(expected dict, int, Tuple[int, dict], None or HttpResponse)."
+            "(expected dict, Model, int, Tuple[int, dict], "
+            "Tuple[int, Model], None or HttpResponse)."
         )
