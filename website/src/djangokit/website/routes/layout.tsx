@@ -48,7 +48,7 @@ function Layout() {
                 </Nav.Link>
 
                 {isLogin || currentUser.isAuthenticated ? null : (
-                  <Nav.Link>
+                  <Nav.Link as="div">
                     <Link
                       className="btn btn-sm btn-outline-secondary"
                       to={`/login?from=${redirectPath}`}
