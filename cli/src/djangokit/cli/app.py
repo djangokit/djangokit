@@ -23,7 +23,7 @@ class State:
     quiet: bool = False
     dotenv_path: Path = Path(".env")
     dotenv_settings: dict = field(default_factory=dict)
-    settings: Settings = field(default_factory=lambda: settings)
+    settings: Settings = None
     console: Console = Console(highlight=False)
     cwd: Path = Path.cwd()
     has_node_modules: bool = (Path.cwd() / "node_modules").exists()
@@ -43,3 +43,4 @@ def main(env: str = state.env, quiet: bool = state.quiet, dotenv_path: Path = ".
     state.quiet = quiet
     state.dotenv_path = dotenv_path
     state.dotenv_settings = dotenv_settings(dotenv_path)
+    state.settings = settings

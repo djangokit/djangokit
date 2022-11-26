@@ -19,6 +19,7 @@ python = "^3.11"
 djangokit-core = { path = "../core", develop = true }
 djangokit-cli = { path = "../cli", develop = true }
 markdown = "^3.4.1"
+marshmallow = "^3.19.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.10.0"

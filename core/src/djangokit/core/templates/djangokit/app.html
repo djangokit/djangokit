@@ -16,10 +16,6 @@
       <link rel="stylesheet" href="{% static path %}">
     {% endfor %}
 
-    <script>
-      const CSRF_TOKEN = "{{ csrf_token }}";
-    </script>
-
     <script defer src="{% static 'build/bundle.client.js' %}"></script>
   </head>
 

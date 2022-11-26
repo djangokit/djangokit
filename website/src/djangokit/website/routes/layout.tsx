@@ -1,11 +1,23 @@
 /* Root Layout */
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
+
+import Form from "react-bootstrap/Form";
+import Button from "react-bootstrap/Button";
 import Container from "react-bootstrap/Container";
-import Navbar from "react-bootstrap/Navbar";
-import Nav from "react-bootstrap/Nav";
 import LinkContainer from "react-router-bootstrap/LinkContainer";
+import Nav from "react-bootstrap/Nav";
+import Navbar from "react-bootstrap/Navbar";
+
+import { FaBookReader, FaGithub } from "react-icons/fa";
+
+declare const useCurrentUserContext;
+declare const CsrfTokenField;
 
 function Layout() {
+  const currentUser = useCurrentUserContext();
+  const location = useLocation();
+  const isLogin = location.pathname === "/login";
+
   return (
     <>
       <header className="p-4 bg-light border-bottom shadow-sm">
@@ -16,18 +28,48 @@ function Layout() {
             </Link>
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
             <Navbar.Collapse id="basic-navbar-nav">
-              <Nav className="me-auto">
+              <Nav className="ms-auto">
                 <LinkContainer to="/docs">
-                  <Nav.Link>Docs</Nav.Link>
+                  <Nav.Link className="d-flex align-items-center">
+                    <FaBookReader />
+                    <span className="ms-1">Docs</span>
+                  </Nav.Link>
                 </LinkContainer>
-                <LinkContainer to="/todos">
-                  <Nav.Link>TODO</Nav.Link>
-                </LinkContainer>
-                <Nav.Link href="https://github.com/djangokit">Code</Nav.Link>
+
+                <Nav.Link
+                  title="DjangoKit Code on GitHub"
+                  href="https://github.com/djangokit"
+                  className="d-flex align-items-center"
+                >
+                  <FaGithub />
+                  <span className="d-lg-none ms-1">Code</span>
+                </Nav.Link>
+
+                {isLogin || currentUser.isAuthenticated ? null : (
+                  <LinkContainer to="/login">
+                    <Nav.Link>
+                      <Button size="sm" variant="outline-secondary">
+                        Log In
+                      </Button>
+                    </Nav.Link>
+                  </LinkContainer>
+                )}
               </Nav>
             </Navbar.Collapse>
           </Container>
         </Navbar>
+
+        {currentUser.isAuthenticated ? (
+          <div className="d-flex align-items-center justify-content-end gap-2 small text-muted">
+            <div>{currentUser.username}</div>
+            <Form method="post" action="/$api/logout">
+              <CsrfTokenField />
+              <Button type="submit" size="sm" variant="outline-secondary">
+                Log Out
+              </Button>
+            </Form>
+          </div>
+        ) : null}
       </header>
 
       <main className="p-4">
@@ -35,14 +77,21 @@ function Layout() {
       </main>
 
       <footer className="d-flex align-items-center px-4 py-2 border-top bg-light small">
-        <span className="flex-fill">&copy; DjangoKit 2022</span>
-        <a
-          href="/$admin/"
-          target="djangokit_admin"
-          className="btn btn-sm btn-outline-secondary"
-        >
-          Admin
-        </a>
+        <span>&copy; DjangoKit 2022</span>
+
+        <Nav className="ms-auto">
+          <Nav.Item>
+            <LinkContainer to="/todos">
+              <Nav.Link>TODO</Nav.Link>
+            </LinkContainer>
+          </Nav.Item>
+
+          <Nav.Item>
+            <Nav.Link href="/$admin/" target="djangokit_admin">
+              Admin
+            </Nav.Link>
+          </Nav.Item>
+        </Nav>
       </footer>
     </>
   );

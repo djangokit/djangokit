@@ -25,27 +25,27 @@ interface Options extends RequestInit {
   data?: Params;
 }
 
-/**
- * Given a relative API URL, return a URL object.
- *
- * @param path API path, relative to API root
- * @param params Query parameters
- */
-function getApiUrl(apiPath: string, params?: Params): URL {
-  if (apiPath.charAt(0) === "/") {
-    apiPath = apiPath.substring(1);
-  }
-  apiPath = apiPath === "" ? API_ROOT : `${API_ROOT}/${apiPath}`;
-  const url = new URL(`${location.origin}${apiPath}`);
-  if (params) {
-    Object.entries(params).forEach(([name, value]) => {
-      url.searchParams.append(name, `${value}`);
-    });
-  }
-  return url;
-}
-
 const api = {
+  /**
+   * Given a relative API URL, return a URL object.
+   *
+   * @param path API path, relative to API root
+   * @param params Query parameters
+   */
+  getApiUrl(apiPath: string, params?: Params): URL {
+    if (apiPath.charAt(0) === "/") {
+      apiPath = apiPath.substring(1);
+    }
+    apiPath = apiPath === "" ? API_ROOT : `${API_ROOT}/${apiPath}`;
+    const url = new URL(`${location.origin}${apiPath}`);
+    if (params) {
+      Object.entries(params).forEach(([name, value]) => {
+        url.searchParams.append(name, `${value}`);
+      });
+    }
+    return url;
+  },
+
   /**
    * API fetch wrapper.
    *
@@ -53,9 +53,7 @@ const api = {
    * @param options Fetch options
    * @throws {ApiError | AbortError}
    */
-  async fetch<M>(path: string, options?: Options) {
-    options = options ?? {};
-
+  async fetch<M>(path: string, options: Options = {}) {
     options.headers = options.headers ?? {};
     options.headers["X-CSRFToken"] = CSRF_TOKEN;
 
@@ -63,7 +61,7 @@ const api = {
       options.body = JSON.stringify(options.data);
     }
 
-    const url = getApiUrl(path, options.params);
+    const url = this.getApiUrl(path, options.params);
 
     let response;
 
@@ -76,6 +74,11 @@ const api = {
         throw new ApiError(fetchErr.message.replace(/\.$/, ""));
       }
       throw fetchErr;
+    }
+
+    if (response.redirected) {
+      window.location = response.url;
+      return {} as any;
     }
 
     // The response is not okay when its status >= 300.
@@ -120,7 +123,7 @@ export function useApiQuery<M>(
   path: string,
   queryKey?: any
 ): ReturnType<typeof useQuery<M, ApiError>> {
-  return useQuery<any, ApiError>({
+  return useQuery<M, ApiError>({
     queryKey: queryKey ?? [path],
     retry: false,
     queryFn: async () => await api.fetch(path),

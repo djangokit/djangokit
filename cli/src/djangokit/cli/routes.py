@@ -35,11 +35,18 @@ def get(request):
 def add_route(
     path: str = Argument(..., help="Route path relative to routes directory"),
     name: str = Option(None, help="Route name"),
-    with_layout: bool = Option(False, help="Create layout too?"),
-    with_api: bool = Option(False, help="Create API module too?"),
+    page: bool = Option(True, help="Create page?"),
+    layout: bool = Option(False, help="Create layout too?"),
+    api: bool = Option(False, help="Create API module too?"),
     extension: str = Option("tsx", help="Page & layout file name extension"),
 ):
-    """Add a route"""
+    """Add a route
+
+    By default, a new page component with *no* layout and *no* API is
+    created. To create a page with an API, use the `--api` flag. To
+    create an API-only route, use the `--no-page` flag.
+
+    """
     configure_settings_module()
 
     console = state.console
@@ -62,14 +69,15 @@ def add_route(
         console.info(f"Creating directory for route: {rel_route_dir}")
         route_dir.mkdir(parents=True)
 
-    if page_path.exists():
-        console.warning(f"Overwriting page for route: {rel_page_path}")
-    else:
-        console.info(f"Creating page for route: {rel_page_path}")
-    with page_path.open("w") as fp:
-        fp.write(PAGE_TEMPLATE.format(name=name))
+    if page:
+        if page_path.exists():
+            console.warning(f"Overwriting page for route: {rel_page_path}")
+        else:
+            console.info(f"Creating page for route: {rel_page_path}")
+        with page_path.open("w") as fp:
+            fp.write(PAGE_TEMPLATE.format(name=name))
 
-    if with_layout:
+    if layout:
         rel_layout_path = layout_path.relative_to(routes_dir.parent)
         if layout_path.exists():
             console.warning(f"Overwriting layout for route: {rel_layout_path}")
@@ -78,7 +86,7 @@ def add_route(
         with layout_path.open("w") as fp:
             fp.write(LAYOUT_TEMPLATE)
 
-    if with_api:
+    if api:
         rel_api_path = api_path.relative_to(routes_dir.parent)
         rel_api_init_path = api_init_path.relative_to(routes_dir.parent)
 

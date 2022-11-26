@@ -55,8 +55,12 @@ class ApiView(View):
         API handlers can return one of the following:
 
         1. A dict, which will be converted to JSON
-        2. None, which will be converted to a 204 No Content response
-        3. A Django response object when more control is needed over the
+        2. An HTTP status code (int), which will be converted to a JSON
+           response with the specified status code
+        3. A status *code* and a dict, which will converted as both 1
+           and 2
+        4. None, which will be converted to a 204 No Content response
+        5. A Django response object when more control is needed over the
            response
 
         If there's no API handler corresponding to the request's method,
@@ -64,17 +68,49 @@ class ApiView(View):
 
         """
         method = request.method.lower()
-        handler = self.allowed_methods.get(method)
 
-        if not handler:
+        if method not in self.allowed_methods:
             return self.http_method_not_allowed(request, *args, **kwargs)
 
+        handler = self.allowed_methods[method]
         result = handler(request, *args, **kwargs)
 
         if result is None:
             return HttpResponse(204)
 
-        if not isinstance(result, HttpResponse):
-            result = JsonResponse(result)
+        if isinstance(result, int):
+            return JsonResponse({}, status=result)
 
-        return result
+        if isinstance(result, tuple):
+            if len(result) != 2:
+                raise TypeError(
+                    f"Handler returned tuple with unexpected length {len(result)} "
+                    "(expected 2)"
+                )
+
+            status, data = result
+
+            if not isinstance(status, int):
+                raise TypeError(
+                    f"Handler returned unexpected HTTP status type {type(status)} "
+                    "(expected int)"
+                )
+
+            if not isinstance(data, dict):
+                raise TypeError(
+                    f"Handler returned unexpected data type {type(data)} "
+                    "(expected dict)"
+                )
+
+            return JsonResponse(data, status=status)
+
+        if isinstance(result, dict):
+            return JsonResponse(result)
+
+        if isinstance(result, HttpResponse):
+            return result
+
+        raise TypeError(
+            f"Handler returned unexpected object type {type(result)} "
+            "(expected dict, int, Tuple[int, dict], None or HttpResponse)."
+        )

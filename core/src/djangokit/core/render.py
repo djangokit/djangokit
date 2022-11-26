@@ -1,4 +1,5 @@
 import subprocess
+from pathlib import Path
 
 from django.http import HttpRequest
 from django.template.loader import render_to_string
@@ -32,31 +33,40 @@ def render(request: HttpRequest) -> str:
     """
     from .routes import get_route_info  # noqa: avoid circular import
 
-    template = "djangokit/main.server.jsx"
     build_dir = settings.static_build_dir
-    build_path = build_dir / "main.server.jsx"
+    main_path = build_dir / "main.server.jsx"
     bundle_path = build_dir / "bundle.server.js"
 
     # Create entrypoint with routes ------------------------------------
 
+    module_templates = (
+        "djangokit/context.jsx",
+        "djangokit/routes.jsx",
+        "djangokit/server-app.jsx",
+        "djangokit/main.server.jsx",
+    )
+
     context = {"routes": get_route_info(settings.routes_dir)}
-    server_script = render_to_string(template, context, request)
-    with build_path.open("w") as fp:
-        fp.write(server_script)
+
+    for template in module_templates:
+        path = build_dir / Path(template).name
+        content = render_to_string(template, context, request)
+        with path.open("w") as fp:
+            fp.write(content)
 
     # Create SSR script bundle from entrypoint -------------------------
 
-    result = subprocess.run(
-        [
-            "npx",
-            "esbuild",
-            "--bundle",
-            build_path,
-            f"--outfile={bundle_path}",
-        ]
-    )
+    args = [
+        "npx",
+        "esbuild",
+        main_path,
+        "--bundle",
+        f"--inject:{build_dir / 'context.jsx'}",
+        f"--outfile={bundle_path}",
+    ]
+    result = subprocess.run(args)
     if result.returncode:
-        raise RenderError(f"Could not build SSR script bundle from {build_path}")
+        raise RenderError(f"Could not build SSR script bundle from {main_path}")
 
     # Run the script and capture its output ----------------------------
 

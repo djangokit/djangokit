@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -26,34 +27,46 @@ def build(minify=False, request=None) -> Path:
     """
     from .routes import get_route_info  # noqa: avoid circular import
 
-    template = "djangokit/main.client.jsx"
     build_dir = settings.static_build_dir
-    build_path = build_dir / "main.client.jsx"
+    main_path = build_dir / "main.client.jsx"
     bundle_path = build_dir / "bundle.client.js"
 
-    if not build_dir.exists():
-        build_dir.mkdir()
+    if build_dir.exists():
+        shutil.rmtree(build_dir)
+
+    build_dir.mkdir()
 
     # Create entrypoint with routes ------------------------------------
 
+    module_templates = (
+        "djangokit/context.jsx",
+        "djangokit/routes.jsx",
+        "djangokit/client-app.jsx",
+        "djangokit/main.client.jsx",
+    )
+
     context = {"routes": get_route_info(settings.routes_dir)}
-    client_script = render_to_string(template, context, request)
-    with build_path.open("w") as fp:
-        fp.write(client_script)
+
+    for template in module_templates:
+        path = build_dir / Path(template).name
+        content = render_to_string(template, context, request)
+        with path.open("w") as fp:
+            fp.write(content)
 
     # Create client bundle from entrypoint -----------------------------
 
     args = [
         "npx",
         "esbuild",
+        main_path,
         "--bundle",
-        build_path,
+        f"--inject:{build_dir / 'context.jsx'}",
         f"--outfile={bundle_path}",
     ]
     if minify:
         args.append("--minify")
     result = subprocess.run(args)
     if result.returncode:
-        raise BuildError(f"Could not build client bundle from {build_path}")
+        raise BuildError(f"Could not build client bundle from {main_path}")
 
-    return build_path
+    return main_path

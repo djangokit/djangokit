@@ -1,6 +1,7 @@
 """API for todo item collection."""
 import json
 
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseBadRequest
 
 from ...models import TodoItem
@@ -13,6 +14,7 @@ def get(_request):
     return {"items": items}
 
 
+@login_required
 def post(request):
     """Create a todo item."""
     data = json.loads(request.body)
