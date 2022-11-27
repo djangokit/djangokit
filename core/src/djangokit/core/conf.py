@@ -48,11 +48,10 @@ class Settings:
     or the default value defined in `known_settings` will be used.
 
     .. note::
-        Settings are cached the first time they're accessed and can be
-        cleared using `settings.clear()` or individually using
-        `del settings.<name>`. Clearing is only necessary if the
-        `DJANGOKIT` settings are dynamically updated after Django
-        startup (e.g., in tests).
+        Settings are cached the first time they're accessed. Individual
+        settings can be cleared using `del settings.<name>`. Clearing is
+        only necessary if the `DJANGOKIT` settings are dynamically
+        updated after Django startup (e.g., in tests).
 
     """
 
@@ -123,12 +122,6 @@ class Settings:
 
         """
         return {name: getattr(self, name) for name in self.known_settings}
-
-    def clear(self):
-        """Clear all cached DjangoKit settings."""
-        for name in self.known_settings:
-            if hasattr(self, name):
-                delattr(self, name)
 
     @property
     def _dk_settings(self):

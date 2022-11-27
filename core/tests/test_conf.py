@@ -14,7 +14,7 @@ class TestConf(SimpleTestCase):
             conf.settings.unknown
 
     def test_get_setting_with_incorrect_type(self):
-        conf.settings.clear()
+        del conf.settings.package
         with self.settings(DJANGOKIT={"package": 1}):
             with self.assertRaises(ImproperlyConfigured):
                 conf.settings.package
