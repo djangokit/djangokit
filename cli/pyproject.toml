@@ -15,16 +15,17 @@ python = "^3.7"
 djangokit-core = { path = "../core", develop = true }
 tomli = { version = "^2.0.1", python = "<3.11" }
 typer = { version = "^0.7.0", extras = ["all"] }
-
-[tool.poetry.scripts]
-dk = "djangokit.cli.__main__:app"
-djangokit = "djangokit.cli.__main__:app"
+watchdog = "^2.1.9"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.10.0"
 isort = "^5.10.1"
 mypy = "^0.990"
 pytest = "^7.2.0"
+
+[tool.poetry.scripts]
+dk = "djangokit.cli.__main__:app"
+djangokit = "djangokit.cli.__main__:app"
 
 [build-system]
 requires = ["poetry-core"]

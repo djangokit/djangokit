@@ -8,7 +8,7 @@ from .conf import settings
 from .exceptions import BuildError
 
 
-def build(minify=False, request=None) -> Path:
+def build(minify=False) -> Path:
     """Build React app bundle for client.
 
     Steps:
@@ -49,7 +49,7 @@ def build(minify=False, request=None) -> Path:
 
     for template in module_templates:
         path = build_dir / Path(template).name
-        content = render_to_string(template, context, request)
+        content = render_to_string(template, context)
         with path.open("w") as fp:
             fp.write(content)
 

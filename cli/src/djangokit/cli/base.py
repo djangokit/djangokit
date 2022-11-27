@@ -3,6 +3,7 @@ from click.core import ParameterSource
 from typer import Abort, Context, Exit
 
 from .app import app, state
+from .build import build_command
 from .django import run_django_command
 from .utils import run, run_node_command, run_poetry_command
 
@@ -18,8 +19,11 @@ def setup(python_version=None):
 
 
 @app.command()
-def start():
+def start(watch: bool = True):
     """Run dev server & watch files"""
+    console = state.console
+    build_command(watch=watch, join=False)
+    console.header("Running Django dev server")
     run_django_command("runserver")
 
 

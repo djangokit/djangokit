@@ -10,8 +10,8 @@ import Navbar from "react-bootstrap/Navbar";
 
 import { FaBookReader, FaGithub } from "react-icons/fa";
 
-declare const useCurrentUserContext;
 declare const CsrfTokenField;
+declare const useCurrentUserContext;
 
 function Layout() {
   const currentUser = useCurrentUserContext();

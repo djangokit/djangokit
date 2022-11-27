@@ -27,6 +27,7 @@ class State:
     console: Console = Console(highlight=False)
     cwd: Path = Path.cwd()
     has_node_modules: bool = (Path.cwd() / "node_modules").exists()
+    django_settings_module: str = None
 
 
 state = State()

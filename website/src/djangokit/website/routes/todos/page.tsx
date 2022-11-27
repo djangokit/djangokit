@@ -10,6 +10,7 @@ import { FaCheck, FaEdit, FaPlus, FaSave } from "react-icons/all";
 import api, { useApiQuery } from "../../api";
 import { TodoItem, TodoItems } from "../../models";
 
+declare const CsrfTokenField;
 declare const useCurrentUserContext;
 
 export default function Page() {
@@ -81,6 +82,7 @@ export default function Page() {
               </Button>
             </div>
           </Form>
+
           <div className="text-muted small">NOTE: You can use Markdown</div>
         </div>
       ) : null}

@@ -2,10 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 
 import { Page } from "./models";
 
-declare global {
-  const CSRF_TOKEN: string;
-}
-
 const API_ROOT = "/$api";
 
 class ApiError extends Error {
@@ -46,6 +42,33 @@ const api = {
     return url;
   },
 
+  isSafeMethod(method: string): boolean {
+    return ["GET", "HEAD", "OPTIONS"].includes(method);
+  },
+
+  /**
+   * Get CSRF token from `csrftoken` cookie.
+   *
+   * If the token isn't present, `null` will be returned.
+   */
+  getCsrfTokenFromCookies(csrfTokenCookieName = "csrftoken"): string | null {
+    if (!document.cookie) {
+      return null;
+    }
+    const cookies = document.cookie.split(";");
+    for (const cookie of cookies) {
+      const parts = cookie.trim().split("=");
+      const name = (parts[0] ?? "").trim();
+      if (name === csrfTokenCookieName) {
+        const value = parts.slice(1).join("=").trim();
+        if (value) {
+          return decodeURIComponent(value);
+        }
+      }
+    }
+    return null;
+  },
+
   /**
    * API fetch wrapper.
    *
@@ -54,8 +77,16 @@ const api = {
    * @throws {ApiError | AbortError}
    */
   async fetch<M>(path: string, options: Options = {}) {
+    options.method = options.method ?? "GET";
     options.headers = options.headers ?? {};
-    options.headers["X-CSRFToken"] = CSRF_TOKEN;
+
+    if (!this.isSafeMethod(options.method)) {
+      const csrfToken = this.getCsrfTokenFromCookies();
+      if (csrfToken === null) {
+        throw new ApiError("Could not read CSRF token from cookies");
+      }
+      options.headers["X-CSRFToken"] = csrfToken ?? "";
+    }
 
     if (options.data) {
       options.body = JSON.stringify(options.data);

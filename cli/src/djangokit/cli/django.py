@@ -271,6 +271,9 @@ def configure_settings_module() -> str:
     and the name of the settings module is returned.
 
     """
+    if state.django_settings_module:
+        return state.django_settings_module
+
     import django
 
     console = state.console
@@ -290,6 +293,7 @@ def configure_settings_module() -> str:
         os.environ[key] = settings_module
 
     django.setup()
+    state.django_settings_module = settings_module
     return settings_module
 
 

@@ -8,7 +8,7 @@ from .conf import settings
 from .exceptions import RenderError
 
 
-def render(request: HttpRequest) -> str:
+def render(request: HttpRequest, minify=False) -> str:
     """Server side render React app based on request URL.
 
     Steps:
@@ -64,6 +64,8 @@ def render(request: HttpRequest) -> str:
         f"--inject:{build_dir / 'context.jsx'}",
         f"--outfile={bundle_path}",
     ]
+    if minify:
+        args.append("--minify")
     result = subprocess.run(args)
     if result.returncode:
         raise RenderError(f"Could not build SSR script bundle from {main_path}")

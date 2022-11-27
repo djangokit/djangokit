@@ -2,7 +2,6 @@ import React, { createContext, useContext } from "react";
 
 // CSRF ----------------------------------------------------------------
 
-export const CSRF_TOKEN = "{{ csrf_token }}";
 export const CsrfContext = createContext("{{ csrf_token }}");
 
 export function useCsrfContext() {
@@ -11,6 +10,8 @@ export function useCsrfContext() {
 
 /**
  * Renders a hidden input field with the CSRF token.
+ *
+ * NOTE: This is only intended for use with static HTML forms.
  */
 export function CsrfTokenField() {
   const csrfToken = useCsrfContext();
