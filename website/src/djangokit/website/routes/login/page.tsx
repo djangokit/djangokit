@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import Stack from "react-bootstrap/Stack";
 
-import Form from "../../components/form";
+import Form from "../../components/Form";
 
 export default function Page() {
   const [params] = useSearchParams();

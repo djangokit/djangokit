@@ -7,8 +7,10 @@ import Button from "react-bootstrap/Button";
 import { FaCheck, FaEdit, FaPlus, FaSave } from "react-icons/all";
 
 import api, { useApiQuery } from "../../api";
-import Form from "../../components/form";
 import { TodoItem, TodoItems } from "../../models";
+import Form from "../../components/Form";
+import ErrorMessage from "../../components/ErrorMessage";
+import Loader from "../../components/Loader";
 
 declare const useCurrentUserContext;
 
@@ -31,19 +33,15 @@ export default function Page() {
   const [createFormData, setCreateFormData] = useState({ content: "" });
 
   if (isLoading) {
-    return <div>Loading TODO items...</div>;
+    return <Loader>Loading TODO items...</Loader>;
   }
 
   if (isError) {
     return (
-      <div className="alert alert-danger">
-        <h2>An error was encountered while loading TODO items</h2>
-
-        <div className="lead">
-          <span>{error.message}</span>
-          {error?.statusCode ? <span> ({error.statusCode})</span> : null}
-        </div>
-      </div>
+      <ErrorMessage
+        title="An error was encountered while loading TODO items"
+        error={error}
+      />
     );
   }
 

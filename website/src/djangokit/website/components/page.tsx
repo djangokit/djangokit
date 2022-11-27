@@ -1,3 +1,6 @@
+import ErrorMessage from "./ErrorMessage";
+import Loader from "./Loader";
+
 interface Props {
   isLoading: boolean;
   isError: boolean;
@@ -12,19 +15,15 @@ export default function Page({
   error = undefined,
 }: Props) {
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <Loader>Loading page...</Loader>;
   }
 
   if (isError) {
     return (
-      <div className="alert alert-danger">
-        <h2>An error was encountered while loading this page</h2>
-
-        <div className="lead">
-          <span>{error.message}</span>
-          {error?.statusCode ? <span> ({error.statusCode})</span> : null}
-        </div>
-      </div>
+      <ErrorMessage
+        title="An error was encountered while loading this page"
+        error={error}
+      />
     );
   }
 

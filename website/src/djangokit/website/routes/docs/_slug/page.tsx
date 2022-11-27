@@ -1,25 +1,19 @@
 import { useParams } from "react-router-dom";
 
 import { usePageQuery } from "../../../api";
+import ErrorMessage from "../../../components/ErrorMessage";
+import Loader from "../../../components/Loader";
 
 export default function Page() {
   const { slug } = useParams();
   const { isLoading, isError, data, error } = usePageQuery(`doc-${slug}`);
 
   if (isLoading) {
-    return <div>Loading doc {slug}...</div>;
+    return <Loader>Loading doc {slug}...</Loader>;
   }
 
   if (isError) {
-    return (
-      <div className="alert alert-danger">
-        <h2>Could not load doc {slug} :(</h2>
-        <div className="lead">
-          <span>{error.message}</span>
-          {error?.statusCode ? <span> ({error.statusCode})</span> : null}
-        </div>
-      </div>
-    );
+    return <ErrorMessage title="Could not load doc {slug} :(" error={error} />;
   }
 
   return (

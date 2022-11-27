@@ -9,7 +9,7 @@ import Navbar from "react-bootstrap/Navbar";
 
 import { FaBookReader, FaGithub } from "react-icons/fa";
 
-import Form from "../components/form";
+import Form from "../components/Form";
 
 declare const useCurrentUserContext;
 
