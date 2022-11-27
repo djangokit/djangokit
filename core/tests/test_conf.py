@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.test import SimpleTestCase
 
@@ -16,5 +17,6 @@ class TestConf(SimpleTestCase):
     def test_get_setting_with_incorrect_type(self):
         del conf.settings.package
         with self.settings(DJANGOKIT={"package": 1}):
+            self.assertEqual(settings.DJANGOKIT["package"], 1)
             with self.assertRaises(ImproperlyConfigured):
                 conf.settings.package

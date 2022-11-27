@@ -135,7 +135,7 @@ class Settings:
         """
         return {name: getattr(self, name) for name in self.known_settings}
 
-    @cached_property
+    @property
     def _settings(self):
         """Retrieve `DJANGOKIT` dict from Django settings module."""
         try:

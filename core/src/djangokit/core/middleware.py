@@ -1,7 +1,7 @@
 import json
 
-from django.http import HttpRequest
 from django.core.exceptions import BadRequest
+from django.http import HttpRequest
 
 
 def djangokit_middleware(get_response):
