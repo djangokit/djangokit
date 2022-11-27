@@ -3,7 +3,7 @@ import subprocess
 from typing import List, Union
 
 Arg = Union[str, List[str]]
-Args = List[Arg]
+Args = Union[Arg, List[Arg]]
 
 
 def run(args: Args) -> subprocess.CompletedProcess:
@@ -42,9 +42,8 @@ def run_poetry_command(args: Args) -> subprocess.CompletedProcess:
 def subprocess_run(args: List[str]) -> subprocess.CompletedProcess:
     from ..app import state
 
-    if not state.quiet:
-        state.console.command(">", " ".join(args))
-    return subprocess.run(args)
+    state.console.command(">", " ".join(args))
+    return subprocess.run(args, stdout=subprocess.DEVNULL if state.quiet else None)
 
 
 def process_args(args: Args) -> List[str]:
@@ -62,7 +61,7 @@ def process_args(args: Args) -> List[str]:
     return args
 
 
-def flatten_args(args: List) -> List[str]:
+def flatten_args(args: Args) -> List[str]:
     """Flatten args into a single list of strings.
 
     If an arg is `None`, it will be removed (this is a convenience for

@@ -10,9 +10,10 @@ from .conf import settings
 from .dataclasses import ApiInfo, LayoutInfo, PageInfo
 from .exceptions import BuildError
 from .views import ApiView, PageView
+from .views import csrf as csrf_views
+from .views import user as user_views
 
 
-@lru_cache
 def get_route_urls(page_view_class=PageView, api_view_class=ApiView) -> list:
     """Find file-based page & API routes and return URLs for them.
 
@@ -32,7 +33,11 @@ def get_route_urls(page_view_class=PageView, api_view_class=ApiView) -> list:
         ]
 
     """
-    urls = []
+    urls = [
+        path("$api/csrf-token", csrf_views.get_token),
+        path("$api/current-user", user_views.get_current_user),
+    ]
+
     page_info = find_pages(settings.routes_dir)
     api_info = find_apis(settings.routes_dir, settings.routes_package)
 

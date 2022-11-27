@@ -10,7 +10,6 @@ import { FaCheck, FaEdit, FaPlus, FaSave } from "react-icons/all";
 import api, { useApiQuery } from "../../api";
 import { TodoItem, TodoItems } from "../../models";
 
-declare const CsrfTokenField;
 declare const useCurrentUserContext;
 
 export default function Page() {
@@ -156,6 +155,7 @@ function Item({ item }: { item: TodoItem }) {
           <ItemControls
             item={item}
             rawContent={rawContent}
+            setRawContent={setRawContent}
             editing={editing}
             setEditing={setEditing}
             updateContent={updateContent}
@@ -212,6 +212,7 @@ function ItemContent({
 function ItemControls({
   item,
   rawContent,
+  setRawContent,
   editing,
   setEditing,
   updateContent,
@@ -221,6 +222,7 @@ function ItemControls({
 }: {
   item: TodoItem;
   rawContent: string;
+  setRawContent: any;
   editing: boolean;
   setEditing: any;
   updateContent: any;
@@ -247,7 +249,10 @@ function ItemControls({
           size="sm"
           variant="outline-danger"
           title="Discard changes / cancel editing"
-          onClick={() => setEditing(false)}
+          onClick={() => {
+            setRawContent(item.rawContent);
+            setEditing(false);
+          }}
         >
           &times;
         </Button>

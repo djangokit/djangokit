@@ -44,12 +44,15 @@ MIDDLEWARE = [
 STATIC_ROOT = getenv("STATIC_ROOT", "static")
 STATIC_URL = "static/"
 
+app_dirs_loader = "django.template.loaders.app_directories.Loader"
+cached_loader = "django.template.loaders.cached.Loader"
+template_loaders = [app_dirs_loader] if DEBUG else [(cached_loader, [app_dirs_loader])]
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
-        "APP_DIRS": True,
         "OPTIONS": {
+            "loaders": template_loaders,
             "context_processors": [
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",

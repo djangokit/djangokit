@@ -1,7 +1,7 @@
 from django.views.generic import TemplateView
 
+from ..build import make_server_bundle, render_bundle
 from ..conf import settings as dk_settings
-from ..render import render
 
 
 class PageView(TemplateView):
@@ -26,4 +26,6 @@ class PageView(TemplateView):
         }
 
     def render(self):
-        return render(self.request)
+        bundle_path = make_server_bundle(self.request)
+        markup = render_bundle(bundle_path)
+        return markup

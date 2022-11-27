@@ -7,7 +7,7 @@ from . import schema
 
 class TodoItemSchema(Schema):
     id = fields.Integer(required=True)
-    rawContent = fields.String(required=True)
+    rawContent = fields.String(attribute="content", required=True)
     content = schema.MarkdownField(required=True)
     created = fields.DateTime(required=True)
     updated = fields.DateTime(required=True)
@@ -18,7 +18,7 @@ class TodoItem(models.Model):
     class Meta:
         db_table = "todo_item"
 
-    serializer_class = TodoItemSchema
+    serializer_factory = TodoItemSchema
 
     content = models.TextField()
     created = models.DateTimeField(auto_now_add=True)

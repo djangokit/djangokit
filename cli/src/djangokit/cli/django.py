@@ -297,12 +297,11 @@ def configure_settings_module() -> str:
     return settings_module
 
 
-def run_django_command(args: Args, quiet=False) -> subprocess.CompletedProcess:
+def run_django_command(args: Args) -> subprocess.CompletedProcess:
     """Run a Django management command."""
     console = state.console
     settings_module = configure_settings_module()
-    if not quiet:
-        newline = "\n" if args else ""
-        console.print(f'DJANGO_SETTINGS_MODULE = "{settings_module}"{newline}')
+    newline = "\n" if args else ""
+    console.print(f'DJANGO_SETTINGS_MODULE = "{settings_module}"{newline}')
     args = ["poetry", "run", "django-admin"] + process_args(args)
     return subprocess_run(args)

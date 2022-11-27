@@ -4,8 +4,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 import djangokit.core
-from djangokit.core.build import build
-from djangokit.core.render import render
+from djangokit.core.build import make_client_bundle, make_server_bundle, render_bundle
 from djangokit.core.utils import make_request
 from typer import Option
 from watchdog.events import FileSystemEvent, PatternMatchingEventHandler
@@ -16,8 +15,9 @@ from .django import configure_settings_module
 from .utils.console import Console
 
 
-@app.command(name="build")
-def build_command(
+@app.command()
+def build_client(
+    minify=True,
     watch: bool = Option(False, help="Watch files and rebuild automatically?"),
     join: bool = Option(False, help="Only relevant with --watch"),
 ):
@@ -28,10 +28,15 @@ def build_command(
     """
     configure_settings_module()
     console = state.console
-    minify = state.env == "production"
+
+    build_kwargs = {
+        "env": state.env,
+        "minify": minify,
+        "quiet": state.quiet,
+    }
 
     console.header("Building front end (CSR)")
-    build(minify=minify)
+    make_client_bundle(**build_kwargs)
     console.print()
 
     if watch:
@@ -39,7 +44,7 @@ def build_command(
         app_dir = state.settings.app_dir
 
         handlers = [
-            Handler(callable=build, kwargs={"minify": minify}),
+            Handler(callable=make_client_bundle, kwargs=build_kwargs),
         ]
 
         event_handlers = [
@@ -64,8 +69,8 @@ def build_command(
                 observer.join()
 
 
-@app.command(name="render")
-def render_command(path: str = "/"):
+@app.command()
+def ssr(path: str = "/"):
     """Render front end (SSR)
 
     The SSR bundle *is* request dependent--in particular, on the request
@@ -73,8 +78,15 @@ def render_command(path: str = "/"):
 
     """
     configure_settings_module()
-    minify = state.env == "production"
-    render(make_request(path), minify=minify)
+    request = make_request(path)
+    render_kwargs = {
+        "env": state.env,
+        "minify": state.env == "production",
+        "quiet": state.quiet,
+    }
+    bundle_path = make_server_bundle(request, **render_kwargs)
+    markup = render_bundle(bundle_path)
+    print(markup, flush=True)
 
 
 @dataclasses.dataclass

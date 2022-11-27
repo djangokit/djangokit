@@ -46,3 +46,5 @@ def patch(request, id):
         item.completed = now() if completed else None
 
     item.save()
+    item.refresh_from_db()
+    return item
