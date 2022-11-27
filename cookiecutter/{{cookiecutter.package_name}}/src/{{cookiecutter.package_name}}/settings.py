@@ -39,6 +39,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "djangokit.core.middleware.djangokit_middleware",
 ]
 
 STATIC_ROOT = getenv("STATIC_ROOT", "static")

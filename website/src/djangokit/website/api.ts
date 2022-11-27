@@ -79,6 +79,7 @@ const api = {
   async fetch<M>(path: string, options: Options = {}) {
     options.method = options.method ?? "GET";
     options.headers = options.headers ?? {};
+    options.headers["X-Requested-With"] = "fetch";
 
     if (!this.isSafeMethod(options.method)) {
       const csrfToken = this.getCsrfTokenFromCookies();
@@ -90,6 +91,7 @@ const api = {
 
     if (options.data) {
       options.body = JSON.stringify(options.data);
+      options.headers["Content-Type"] = "application/json";
     }
 
     const url = this.getApiUrl(path, options.params);

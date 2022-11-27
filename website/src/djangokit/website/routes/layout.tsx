@@ -1,7 +1,6 @@
 /* Root Layout */
 import { Link, Outlet, useLocation } from "react-router-dom";
 
-import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import Container from "react-bootstrap/Container";
 import LinkContainer from "react-router-bootstrap/LinkContainer";
@@ -10,7 +9,8 @@ import Navbar from "react-bootstrap/Navbar";
 
 import { FaBookReader, FaGithub } from "react-icons/fa";
 
-declare const CsrfTokenField;
+import Form from "../components/form";
+
 declare const useCurrentUserContext;
 
 function Layout() {
@@ -66,7 +66,6 @@ function Layout() {
           <div className="d-flex align-items-center justify-content-end gap-2 small text-muted">
             <div>{currentUser.username}</div>
             <Form method="post" action="/$api/logout">
-              <CsrfTokenField />
               <input name="from" type="hidden" value={currentPath} />
               <Button type="submit" size="sm" variant="outline-secondary">
                 Log Out

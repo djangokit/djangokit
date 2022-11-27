@@ -24,12 +24,13 @@ import json
 import os
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import dotenv
 from django.apps import apps
 from django.conf import settings as django_settings
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.module_loading import import_string
 
 from .checks import make_error
 
@@ -66,6 +67,10 @@ class Settings:
         "global_css": {
             "type": list,
             "default": ["global.css"],
+        },
+        "serialize_current_user": {
+            "type": str,
+            "default": "djangokit.core.user.serialize_current_user",
         },
     }
 
@@ -114,6 +119,13 @@ class Settings:
     def static_build_dir(self) -> Path:
         return self.app_dir / "static" / "build"
 
+    @cached_property
+    def serialize_current_user(self) -> Callable[[Any], Dict[str, Any]]:
+        serializer = self._get_optional("serialize_current_user")
+        if isinstance(serializer, str):
+            serializer = import_string(serializer)
+        return serializer
+
     def as_dict(self):
         """Return a dict with *all* DjangoKit settings.
 
@@ -123,8 +135,8 @@ class Settings:
         """
         return {name: getattr(self, name) for name in self.known_settings}
 
-    @property
-    def _dk_settings(self):
+    @cached_property
+    def _settings(self):
         """Retrieve `DJANGOKIT` dict from Django settings module."""
         try:
             return django_settings.DJANGOKIT
@@ -133,16 +145,16 @@ class Settings:
             raise ImproperlyConfigured(err.msg)
 
     def _get_required(self, name):
-        if name in self._dk_settings:
-            value = self._dk_settings[name]
+        if name in self._settings:
+            value = self._settings[name]
             self._check_type(name, value)
             return value
         err = make_error("E001", name)
         raise ImproperlyConfigured(err.msg)
 
     def _get_optional(self, name):
-        if name in self._dk_settings:
-            value = self._dk_settings[name]
+        if name in self._settings:
+            value = self._settings[name]
             self._check_type(name, value)
         else:
             info = self.known_settings[name]
@@ -162,6 +174,10 @@ class Settings:
         if not isinstance(value, type_):
             err = make_error("E002", name=name, type=type_, value=value)
             raise ImproperlyConfigured(err.msg)
+
+    def __getattr__(self, name):
+        """Proxy Django settings."""
+        return getattr(django_settings, name)
 
 
 settings = Settings()

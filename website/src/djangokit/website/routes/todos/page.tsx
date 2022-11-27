@@ -3,11 +3,11 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import Button from "react-bootstrap/Button";
-import Form from "react-bootstrap/Form";
 
 import { FaCheck, FaEdit, FaPlus, FaSave } from "react-icons/all";
 
 import api, { useApiQuery } from "../../api";
+import Form from "../../components/form";
 import { TodoItem, TodoItems } from "../../models";
 
 declare const useCurrentUserContext;
@@ -57,6 +57,8 @@ export default function Page() {
       {currentUser.isSuperuser ? (
         <div className="mb-4">
           <Form
+            method="post"
+            action="/$api/todos"
             className="d-flex flex-row gap-2 mb-1"
             onSubmit={(event) => {
               event.preventDefault();
@@ -66,6 +68,7 @@ export default function Page() {
           >
             <Form.Control
               as="textarea"
+              name="content"
               required
               placeholder="Do all the things and then all the stuff..."
               className="flex-fill"

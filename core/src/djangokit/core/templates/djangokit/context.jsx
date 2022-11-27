@@ -8,16 +8,6 @@ export function useCsrfContext() {
   return useContext(CsrfContext);
 }
 
-/**
- * Renders a hidden input field with the CSRF token.
- *
- * NOTE: This is only intended for use with static HTML forms.
- */
-export function CsrfTokenField() {
-  const csrfToken = useCsrfContext();
-  return <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />;
-}
-
 // User ----------------------------------------------------------------
 
 export const ANONYMOUS_USER = {
