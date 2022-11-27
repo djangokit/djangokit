@@ -17,7 +17,7 @@ from .utils.console import Console
 
 @app.command()
 def build_client(
-    minify=True,
+    minify: bool = True,
     watch: bool = Option(False, help="Watch files and rebuild automatically?"),
     join: bool = Option(False, help="Only relevant with --watch"),
 ):

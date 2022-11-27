@@ -103,14 +103,12 @@ def get_route_info(
     *,
     root=None,
     parent_layout=None,
-) -> List[LayoutInfo]:
+) -> LayoutInfo:
     """Get route info for routes in directory, recursively.
 
     This organizes pages under their respective layouts.
 
     """
-    routes = []
-
     if root is None:
         is_root = True
         root = directory
@@ -119,30 +117,30 @@ def get_route_info(
 
     layout = LayoutInfo.from_dir(directory, root)
 
-    if layout:
-        routes.append(layout)
-    elif is_root:
-        raise BuildError(
-            f"A root layout is required but no layout component was "
-            f"found in {root} (searched for layout.tsx and layout.jsx)"
-        )
-    else:
-        layout = parent_layout
+    if not layout:
+        if is_root:
+            raise BuildError(
+                f"A root layout is required but no layout component was "
+                f"found in {root} (searched for layout.jsx and layout.tsx)"
+            )
+        else:
+            layout = parent_layout
 
     page = PageInfo.from_dir(directory, root)
     if page:
-        if page.route_pattern == layout.route_pattern:
+        layout_route_pattern = posixpath.relpath(
+            page.route_pattern,
+            layout.route_pattern,
+        )
+        if layout_route_pattern == ".":
             layout_route_pattern = ""
-        else:
-            layout_route_pattern = posixpath.relpath(
-                page.route_pattern,
-                layout.route_pattern,
-            )
         page.layout_route_pattern = layout_route_pattern
         layout.children.append(page)
 
     for entry in directory.iterdir():
-        if entry.is_dir() and entry.name != "__pycache__":
-            routes.extend(get_route_info(entry, root=root, parent_layout=layout))
+        if entry.is_dir() and not entry.name.startswith("__"):
+            nested_layout = get_route_info(entry, root=root, parent_layout=layout)
+            if nested_layout is not layout:
+                layout.children.append(nested_layout)
 
-    return routes
+    return layout

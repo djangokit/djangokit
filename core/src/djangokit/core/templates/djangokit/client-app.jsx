@@ -6,7 +6,7 @@ import { ANONYMOUS_USER, CsrfContext, CurrentUserContext } from "./context";
 import routes from "./routes";
 
 const queryClient = new QueryClient();
-const browserRouter = createBrowserRouter(routes);
+const router = createBrowserRouter(routes);
 
 export default function ClientApp() {
   const [csrfToken, setCsrfToken] = useState("");
@@ -41,7 +41,7 @@ export default function ClientApp() {
       <CsrfContext.Provider value={csrfToken}>
         <CurrentUserContext.Provider value={currentUser}>
           <QueryClientProvider client={queryClient}>
-            <RouterProvider router={browserRouter} />
+            <RouterProvider router={router} />
           </QueryClientProvider>
         </CurrentUserContext.Provider>
       </CsrfContext.Provider>

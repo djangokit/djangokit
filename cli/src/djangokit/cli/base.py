@@ -19,10 +19,10 @@ def setup(python_version=None):
 
 
 @app.command()
-def start(watch: bool = True):
+def start(minify: bool = True, watch: bool = True):
     """Run dev server & watch files"""
     console = state.console
-    build_client(watch=watch, join=False)
+    build_client(minify=minify, watch=watch, join=False)
     console.header("Running Django dev server")
     run_django_command("runserver")
 

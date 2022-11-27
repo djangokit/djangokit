@@ -18,6 +18,7 @@ class PageSchema(Schema):
 class Page(models.Model):
     class Meta:
         db_table = "page"
+        ordering = ["order", "title"]
 
     serializer_factory = PageSchema
 
@@ -28,6 +29,15 @@ class Page(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     published = models.BooleanField(default=False)
+    order = models.PositiveIntegerField(default=0)
+
+    @property
+    def is_doc(self):
+        return self.slug.startswith("doc-")
 
     def __str__(self):
-        return f"Page: {self.title} ({self.slug})"
+        prefix = "[DOC] " if self.is_doc else ""
+        return (
+            f"{prefix}Page: {self.title} "
+            f"(slug={self.slug}, published={self.published}, order={self.order})"
+        )

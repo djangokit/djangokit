@@ -116,7 +116,7 @@ def make_bundle(
 
     context = {
         "env": env,
-        "routes": get_route_info(settings.routes_dir),
+        "route_info": get_route_info(settings.routes_dir),
     }
 
     for template, build_path in templates:

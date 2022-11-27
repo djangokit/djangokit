@@ -1,9 +1,10 @@
 import posixpath
 from dataclasses import dataclass, field
+from functools import cached_property
 from importlib import import_module
 from pathlib import Path
 from types import ModuleType
-from typing import List, Optional
+from typing import List, Optional, Union
 
 
 @dataclass
@@ -93,6 +94,18 @@ class PageInfo:
             return cls.from_path(path, root)
         return None
 
+    @cached_property
+    def imports(self):
+        return [
+            f'import {{ default as Page_{self.id} }} from "../../routes/{self.import_path}";',
+        ]
+
+    @cached_property
+    def routes(self):
+        return (
+            f'{{ path: "{self.layout_route_pattern}", element: <Page_{self.id} /> }},'
+        )
+
 
 @dataclass
 class LayoutInfo:
@@ -116,8 +129,8 @@ class LayoutInfo:
     
     """
 
-    children: List[PageInfo] = field(default_factory=list)
-    """Pages using this layout."""
+    children: List[Union["LayoutInfo", PageInfo]] = field(default_factory=list)
+    """Nested layouts and pages using this layout."""
 
     def __hash__(self):
         return id(self)
@@ -164,6 +177,33 @@ class LayoutInfo:
         if path.exists():
             return LayoutInfo.from_path(path, root)
         return None
+
+    @cached_property
+    def sorted_children(self):
+        return sorted(self.children, key=lambda c: (isinstance(c, LayoutInfo), c.id))
+
+    @cached_property
+    def imports(self):
+        imports = [
+            f'import {{ default as Layout_{self.id} }} from "../../routes/{self.import_path}";',
+        ]
+        for child in self.sorted_children:
+            imports.extend(child.imports)
+        return imports
+
+    @cached_property
+    def routes(self):
+        child_routes = [child.routes for child in self.sorted_children]
+        child_routes = "\n    ".join(child_routes)
+        return f"""\
+{{
+  path: "{self.route_pattern}",
+  element: <Layout_{self.id} />,
+  children: [
+    {child_routes}
+  ],
+}},
+"""
 
 
 @dataclass
