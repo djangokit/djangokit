@@ -1,6 +1,7 @@
 # Common ignore patterns for all DjangoKit packages
 .mypy_cache/
 .pytest_cache/
+.tox/
 .venv/
 node_modules/
 package-lock.json
