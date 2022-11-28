@@ -10,7 +10,7 @@ from .conf import settings
 from .exceptions import BuildError, RenderError
 
 
-def make_client_bundle(env=None, minify=True, quiet=None) -> Path:
+def make_client_bundle(env=None, minify=True, source_map=False, quiet=None) -> Path:
     """Build React app bundle for client.
 
     .. note::
@@ -31,6 +31,7 @@ def make_client_bundle(env=None, minify=True, quiet=None) -> Path:
         ],
         env=env,
         minify=minify,
+        source_map=source_map,
         quiet=quiet,
     )
 
@@ -39,6 +40,7 @@ def make_server_bundle(
     request: HttpRequest,
     env=None,
     minify=False,
+    source_map=False,
     quiet=None,
 ) -> str:
     """Build React app bundle for server side rendering."""
@@ -53,6 +55,7 @@ def make_server_bundle(
         ],
         env=env,
         minify=minify,
+        source_map=source_map,
         quiet=quiet,
         request=request,
     )
@@ -78,6 +81,7 @@ def make_bundle(
     *,
     env=None,
     minify=True,
+    source_map=False,
     quiet=None,
     request: Optional[HttpRequest] = None,
 ) -> Path:
@@ -99,7 +103,6 @@ def make_bundle(
     bundle_path = build_dir / bundle_name
 
     build_dir.mkdir(exist_ok=True)
-    bundle_path.unlink(missing_ok=True)
 
     # Create entrypoint with routes ------------------------------------
 
@@ -111,9 +114,6 @@ def make_bundle(
         for name in module_names
     )
 
-    for _, build_path in templates:
-        build_path.unlink(missing_ok=True)
-
     context = {
         "env": env,
         "route_info": get_route_info(settings.routes_dir),
@@ -124,19 +124,20 @@ def make_bundle(
         with build_path.open("w") as fp:
             fp.write(content)
 
-    # Create client bundle from entrypoint -----------------------------
+    # Create bundle from entrypoint ------------------------------------
 
     args = [
         "npx",
         "esbuild",
         entrypoint_path,
         "--bundle",
-        "--sourcemap",
         f"--inject:{build_dir / 'context.jsx'}",
         f"--outfile={bundle_path}",
     ]
     if minify:
         args.append("--minify")
+    if source_map:
+        args.append("--sourcemap")
     if quiet:
         args.append("--log-level=error")
     result = subprocess.run(args)
