@@ -29,7 +29,7 @@ def dotenv_settings(path=".env") -> Dict[str, Optional[str]]:
     return processed_values
 
 
-def getenv(name: str, default: Any = NOT_SET) -> Any:
+def getenv(name: str, default: Any = NOT_SET, expected_type: type = NOT_SET) -> Any:
     """Get setting from environment.
 
     If no default is specified, the setting *must* be present in the
@@ -45,9 +45,20 @@ def getenv(name: str, default: Any = NOT_SET) -> Any:
             )
     elif name in os.environ:
         value = os.environ[name]
-        value = convert_env_val(value)
     else:
-        value = default
+        return default
+
+    value = convert_env_val(value)
+
+    if expected_type is not NOT_SET:
+        if not isinstance(value, expected_type):
+            expected_type_name = expected_type.__name__
+            type_name = value.__class__.__name__
+            raise ImproperlyConfigured(
+                f"Setting {name} has incorrect type. Expected "
+                f"{expected_type_name}; got {type_name}."
+            )
+
     return value
 
 
@@ -57,16 +68,3 @@ def convert_env_val(value: str) -> Any:
     except ValueError:
         pass
     return value
-
-
-def djangokit_settings_from_env():
-    package = getenv("DJANGOKIT_PACKAGE")
-    return {
-        "package": package,
-        "app_label": getenv("DJANGOKIT_APP_LABEL", package.replace(".", "_")),
-        "global_css": getenv("DJANGOKIT_GLOBAL_CSS", ["global.css"]),
-        "serialize_current_user": getenv(
-            "DJANGOKIT_SERIALIZE_CURRENT_USER",
-            "djangokit.core.user.serialize_current_user",
-        ),
-    }
