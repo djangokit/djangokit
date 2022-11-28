@@ -1,4 +1,5 @@
 """Django commands and utilities."""
+import json
 import os
 import subprocess
 import sys
@@ -261,7 +262,7 @@ def get_model_field(type_: str) -> str:
 # Utilities ------------------------------------------------------------
 
 
-def configure_settings_module():
+def configure_settings_module(**env_vars):
     """Configure Django settings module.
 
     Settings module discovery if the `DJANGO_SETTINGS_MODULE`
@@ -282,6 +283,17 @@ def configure_settings_module():
     import django
 
     os.environ["DJANGO_SETTINGS_MODULE"] = state.django_settings_module
+
+    for name, val in env_vars.items():
+        if isinstance(val, str):
+            env_val = val
+        else:
+            try:
+                env_val = json.dumps(val)
+            except ValueError:
+                env_val = str(val)
+        os.environ[name] = env_val
+
     django.setup()
     state.django_settings_module_configured = True
 

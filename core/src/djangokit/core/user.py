@@ -1,19 +1,19 @@
 from typing import Any, Dict
 
 
-def serialize_current_user(user: Any) -> Dict[str, Any]:
+def current_user_serializer(user: Any) -> Dict[str, Any]:
     """Serialize the current user into a dict.
 
     Serialization of the current user can be customized by adding
-    `serialize_current_user` to your `DJANGOKIT` settings::
+    `current_user_serializer` to your `DJANGOKIT` settings::
 
         # settings.py
         DJANGOKIT = {
-            "serialize_current_user": "my_package.user.serialize_current_user",
+            "current_user_serializer": "my_package.user.current_user_serializer",
             ...
         }
 
-    `serialize_current_user` must point at a function that takes a user
+    `current_user_serializer` must point at a function that takes a user
     object and returns an object that can be JSON-serialized (typically
     a dict).
 

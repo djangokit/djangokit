@@ -10,7 +10,12 @@ from .conf import settings
 from .exceptions import BuildError, RenderError
 
 
-def make_client_bundle(env=None, minify=True, source_map=False, quiet=None) -> Path:
+def make_client_bundle(
+    env=None,
+    minify=True,
+    source_map=False,
+    quiet=None,
+) -> Path:
     """Build React app bundle for client.
 
     .. note::
@@ -117,6 +122,7 @@ def make_bundle(
     context = {
         "env": env,
         "route_info": get_route_info(settings.routes_dir),
+        "settings": settings,
     }
 
     for template, build_path in templates:

@@ -17,16 +17,23 @@ from .utils.console import Console
 
 @app.command()
 def build_client(
+    ssr: bool = Option(True, envvar="DJANGOKIT_SSR"),
     minify: bool = True,
     watch: bool = Option(False, help="Watch files and rebuild automatically?"),
     join: bool = Option(False, help="Only relevant with --watch"),
 ):
-    """Build front end bundle (CSR)
+    """Build front end bundle
 
-    The CSR bundle is *not* request dependent.
+    The front end bundle is *not* request dependent.
+
+    .. note::
+        By default, the front end bundle is configured to hydrate
+        server-rendered markup. You can use the `--no-ssr` anti-flag to
+        enable client side-only rendering--i.e., configure the bundle to
+        render into the React root instead.
 
     """
-    configure_settings_module()
+    configure_settings_module(DJANGOKIT_SSR=ssr)
     console = state.console
 
     build_kwargs = {
@@ -37,6 +44,8 @@ def build_client(
     }
 
     console.header("Building front end (CSR)")
+    if not ssr:
+        console.warning("SSR disabled")
     make_client_bundle(**build_kwargs)
     console.print()
 
@@ -71,13 +80,8 @@ def build_client(
 
 
 @app.command()
-def ssr(path: str = "/"):
-    """Render front end (SSR)
-
-    The SSR bundle *is* request dependent--in particular, on the request
-    path.
-
-    """
+def render_markup(path: str = "/"):
+    """Render markup for the specified request path"""
     configure_settings_module()
     request = make_request(path)
     minify = state.env == "production"

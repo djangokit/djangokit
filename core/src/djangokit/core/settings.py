@@ -77,14 +77,17 @@ template_loaders = [app_dirs_loader] if debug else [(cached_loader, [app_dirs_lo
 
 
 # NOTE: This only includes defaults that differ from Django's global
-#       defaults.
+#       defaults. If a setting doesn't have a default here, Django's
+#       global default will be used.
 defaults = Settings(
     # DjangoKit
+    # XXX: Keep in sync with `.conf.Settings.known_settings`.
     DJANGOKIT={
         "package": djangokit_package,
         "app_label": djangokit_package.replace(".", "_"),
         "global_css": ["global.css"],
-        "serialize_current_user": "djangokit.core.user.serialize_current_user",
+        "current_user_serializer": "djangokit.core.user.current_user_serializer",
+        "ssr": True,
     },
     # Basics
     ROOT_URLCONF="djangokit.core.urls",

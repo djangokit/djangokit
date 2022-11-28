@@ -1,7 +1,7 @@
 from django.views.generic import TemplateView
 
 from ..build import make_server_bundle, render_bundle
-from ..conf import settings as dk_settings
+from ..conf import settings
 
 
 class PageView(TemplateView):
@@ -18,14 +18,14 @@ class PageView(TemplateView):
     @property
     def extra_context(self):
         return {
-            "settings": dk_settings.as_dict(),
-            "react": {
-                "markup": self.render(),
-            },
+            "settings": settings.as_dict(),
+            "markup": self.render(),
             "page_path": self.page_path,
         }
 
     def render(self):
+        if not settings.ssr:
+            return None
         bundle_path = make_server_bundle(self.request)
         markup = render_bundle(bundle_path)
         return markup

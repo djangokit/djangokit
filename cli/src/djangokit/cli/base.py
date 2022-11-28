@@ -1,6 +1,6 @@
 """Base commands."""
 from click.core import ParameterSource
-from typer import Abort, Context, Exit
+from typer import Abort, Context, Exit, Option
 
 from .app import app, state
 from .build import build_client
@@ -19,10 +19,31 @@ def setup(python_version=None):
 
 
 @app.command()
-def start(minify: bool = True, watch: bool = True):
-    """Run dev server & watch files"""
+def start(
+    ssr: bool = Option(True, envvar="DJANGOKIT_SSR"),
+    minify: bool = True,
+    watch: bool = True,
+):
+    """Run dev server & watch files
+
+    By default, pages are server-rendered (SSR) and the client bundle
+    hydrates the rendered markup. The `--no-ssr` anti-flag can be used
+    to disable server side rendering and enable client side-only
+    rendering (CSR):
+
+    1. The client bundle will be configured to render into the React
+       root rather than hydrating it.
+    2. When a page is loaded in the browser, the server side bundle and
+       markup will not be generated--the page will be rendered only on
+       the client.
+
+    Disabling SSR can be useful during development because CSR is *much*
+    faster. This is because the client bundle can be rebuilt
+    automatically when any source file is changed.
+
+    """
     console = state.console
-    build_client(minify=minify, watch=watch, join=False)
+    build_client(ssr=ssr, minify=minify, watch=watch, join=False)
     console.header("Running Django dev server")
     run_django_command("runserver")
 

@@ -59,6 +59,7 @@ class Settings:
 
     """
 
+    # XXX: Keep in sync with `.settings.defaults.DJANGOKIT`.
     known_settings = {
         "package": {
             "type": str,
@@ -71,9 +72,13 @@ class Settings:
             "type": list,
             "default": ["global.css"],
         },
-        "serialize_current_user": {
+        "current_user_serializer": {
             "type": str,
-            "default": "djangokit.core.user.serialize_current_user",
+            "default": "djangokit.core.user.current_user_serializer",
+        },
+        "ssr": {
+            "type": bool,
+            "default": True,
         },
     }
 
@@ -102,11 +107,15 @@ class Settings:
         return self._get_optional("global_css")
 
     @cached_property
-    def serialize_current_user(self) -> Callable[[Any], Dict[str, Any]]:
-        serializer = self._get_optional("serialize_current_user")
+    def current_user_serializer(self) -> Callable[[Any], Dict[str, Any]]:
+        serializer = self._get_optional("current_user_serializer")
         if isinstance(serializer, str):
             serializer = import_string(serializer)
         return serializer
+
+    @cached_property
+    def ssr(self) -> bool:
+        return self._get_optional("ssr")
 
     # Derived settings -------------------------------------------------
     #
