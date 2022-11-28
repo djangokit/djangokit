@@ -93,8 +93,8 @@ export default function Page() {
             {numItems} thing{numItems === 1 ? "" : "s"} to do
           </h3>
           <div className="d-flex flex-column gap-4">
-            {items.map((item) => (
-              <Item key={item.id} item={item} />
+            {items.map((item, i) => (
+              <Item key={item.id} item={item} cardinal={i + 1} />
             ))}
           </div>
         </>
@@ -105,7 +105,7 @@ export default function Page() {
   );
 }
 
-function Item({ item }: { item: TodoItem }) {
+function Item({ item, cardinal }: { item: TodoItem; cardinal: number }) {
   const currentUser = useCurrentUserContext();
 
   const [rawContent, setRawContent] = useState(item.rawContent);
@@ -142,6 +142,10 @@ function Item({ item }: { item: TodoItem }) {
 
   return (
     <div className="d-flex border rounded">
+      <div className="d-flex flex-column align-items-center justify-content-center p-2 text-bg-light border-end">
+        {cardinal}.
+      </div>
+
       <div className="flex-fill p-2 border-end">
         <ItemContent
           item={item}
@@ -152,7 +156,7 @@ function Item({ item }: { item: TodoItem }) {
       </div>
 
       {currentUser.isSuperuser ? (
-        <div className="p-2 d-flex flex-column justify-content-center gap-2">
+        <div className="p-2 d-flex flex-column justify-content-center gap-2 text-bg-light">
           <ItemControls
             item={item}
             rawContent={rawContent}
@@ -248,7 +252,7 @@ function ItemControls({
 
         <Button
           size="sm"
-          variant="outline-danger"
+          variant="outline-secondary"
           title="Discard changes / cancel editing"
           onClick={() => {
             setRawContent(item.rawContent);
