@@ -32,6 +32,7 @@ def build_client(
     build_kwargs = {
         "env": state.env,
         "minify": minify,
+        "source_map": minify,
         "quiet": state.quiet,
     }
 
@@ -79,9 +80,11 @@ def ssr(path: str = "/"):
     """
     configure_settings_module()
     request = make_request(path)
+    minify = state.env == "production"
     render_kwargs = {
         "env": state.env,
-        "minify": state.env == "production",
+        "minify": minify,
+        "source_map": minify,
         "quiet": state.quiet,
     }
     bundle_path = make_server_bundle(request, **render_kwargs)

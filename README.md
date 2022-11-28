@@ -14,8 +14,8 @@ configuration.
 - Filesystem-based routing
 - Full power of Django available if needed
 - Tooling
-- Supports Python 3.7+
-- Supports Node 14+ (TODO: Decide on minimum supported Node version)
+- Supports Python 3.8+
+- Supports Node 16+
 
 ## Getting Started
 

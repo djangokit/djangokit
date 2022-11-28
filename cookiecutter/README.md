@@ -6,24 +6,26 @@ done for you up front (and the setup is somewhat opinionated).
 
 ## Prerequisites
 
-Before proceeding, you'll need to install the `poetry` and
-`cookiecutter` packages.
+- Install the version of Python you want to use. Versions 3.8 and up are
+  supported.
+ 
+- Install `poetry` and `cookiecutter`.
 
-> TIP: [pipx](https://pypa.github.io/pipx/) is a good way to install
-> command line tools like `poetry` and `cookiecutter`.
+  > TIP: [pipx](https://pypa.github.io/pipx/) is a good way to install
+  > command line tools like `poetry` and `cookiecutter`.
 
-If you're on a Mac and using Homebrew, you can run the following
-commands:
+  If you're on a Mac and using Homebrew, you can run the following
+  commands:
 
-    brew install pipx
-    pipx install poetry
-    pipx install cookiecutter
+      brew install pipx
+      pipx install poetry
+      pipx install cookiecutter
 
-Other options for installing these packages can be found in their
-respective docs:
+  Other options for installing these packages can be found in their
+  respective docs:
 
-- https://python-poetry.org/docs/#installation
-- https://cookiecutter.readthedocs.io/en/stable/installation.html
+  - https://python-poetry.org/docs/#installation
+  - https://cookiecutter.readthedocs.io/en/stable/installation.html
 
 ## Create Your DjangoKit-based Project
 

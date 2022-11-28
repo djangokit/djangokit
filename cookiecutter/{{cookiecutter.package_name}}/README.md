@@ -2,20 +2,25 @@
 
 ## Prerequisites
 
-Before proceeding, you'll need to install the `poetry` package.
+- Install the version of Python you want to use. Versions 3.8 and up are
+  supported.
 
-> TIP: [pipx](https://pypa.github.io/pipx/) is a good way to install
-> command line tools like `poetry`.
+- Install the version of Node.js you want to use. Versions 16 and up are
+  supported.
 
-If you're on a Mac and using Homebrew, you can run the following
-commands:
+- Install `poetry`.
 
-    brew install pipx
-    pipx install poetry
+  > TIP: [pipx](https://pypa.github.io/pipx/) is a good way to install
+  > command line tools like `poetry`.
 
-Other options for installing `poetry` can be found in its docs:
+  If you're on a Mac and using Homebrew, you can run the following
+  commands:
 
-- https://python-poetry.org/docs/#installation
+      brew install pipx
+      pipx install poetry
+
+  Other options for installing `poetry` can be found in its docs:
+  https://python-poetry.org/docs/#installation
 
 ## Install and Run Your Project
 
