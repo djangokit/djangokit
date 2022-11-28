@@ -1,7 +1,7 @@
-# Common ignore patterns for core and cli packages
-/*/.mypy_cache/
-/*/.pytest_cache/
-/*/.venv/
-/*/node_modules/
-/*/package-lock.json
-/*/poetry.lock
+# Common ignore patterns for all DjangoKit packages
+.mypy_cache/
+.pytest_cache/
+.venv/
+node_modules/
+package-lock.json
+poetry.lock

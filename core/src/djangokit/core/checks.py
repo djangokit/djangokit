@@ -10,10 +10,7 @@ MESSAGES = {
         "Django settings module."
     ),
     # Vars: name
-    "E001": (
-        "DjangoKit setting {name} must be set in your project's Django "
-        "settings module as a key of the DJANGOKIT setting."
-    ),
+    "E001": "DjangoKit setting {name} must be set in your project's settings.",
     # Vars: name, type, value
     "E002": (
         "DjangoKit setting {name} has incorrect type. Expected "

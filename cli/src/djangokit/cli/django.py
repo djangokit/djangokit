@@ -53,18 +53,15 @@ def migrate():
 
 
 @app.command()
-def show_settings(env_only: bool = False, name: str = None):
+def show_settings(dotenv: bool = False, name: str = None):
     """Show Django settings"""
     console = state.console
     configure_settings_module()
 
-    if env_only:
-        console.header("Django settings loaded from environment variables:")
+    if dotenv:
         settings = state.dotenv_settings
     else:
         from django.conf import settings
-
-        console.header(f"All Django settings for project (excludes defaults):")
 
         settings._setup()
         explicit = settings._explicit_settings
@@ -74,13 +71,17 @@ def show_settings(env_only: bool = False, name: str = None):
     max_width = min(120, console.width)
 
     if name:
+        console.header(f"Showing the specified setting only:")
         if name in settings:
             settings = {name: settings[name]}
             newline = ""
         else:
             console.error(f"Setting does not exist: {name}")
-            raise typer.Exit()
+            raise typer.Abort()
+    elif dotenv:
+        console.header("Settings loaded from .env file(s):")
     else:
+        console.header(f"All Django settings for project (excludes defaults):")
         newline = "\n"
 
     for name in sorted(settings):
@@ -260,48 +261,33 @@ def get_model_field(type_: str) -> str:
 # Utilities ------------------------------------------------------------
 
 
-def configure_settings_module() -> str:
+def configure_settings_module():
     """Configure Django settings module.
 
-    If the `DJANGO_SETTINGS_MODULE` environment variable isn't present
-    or isn't set, this will read `DJANGO_SETTINGS_MODULE` from the
-    project's `.env` file and set it as an env var.
+    Settings module discovery if the `DJANGO_SETTINGS_MODULE`
+    environment variable isn't already set:
+
+    1. If `DJANGO_SETTINGS_MODULE` is present in the project's .env
+       file, the `DJANGO_SETTINGS_MODULE` env var is set to that value.
+    2. Otherwise, the `DJANGO_SETTINGS_MODULE` env var is set to the
+       default value: "djangokit.core.settings".
 
     After `DJANGO_SETTINGS_MODULE` is set, `django.setup()` is called
     and the name of the settings module is returned.
 
     """
-    if state.django_settings_module:
-        return state.django_settings_module
+    if state.django_settings_module_configured:
+        return
 
     import django
 
-    console = state.console
-    dotenv_settings = state.dotenv_settings
-    key = "DJANGO_SETTINGS_MODULE"
-
-    if os.getenv(key):
-        settings_module = os.environ[key]
-    else:
-        if key not in dotenv_settings:
-            console.error(
-                f"The {key} environment variable is required to run Django commands.\n"
-                f"It can be set directly or in the project's .env file."
-            )
-            raise typer.Abort()
-        settings_module = dotenv_settings[key]
-        os.environ[key] = settings_module
-
+    os.environ["DJANGO_SETTINGS_MODULE"] = state.django_settings_module
     django.setup()
-    state.django_settings_module = settings_module
-    return settings_module
+    state.django_settings_module_configured = True
 
 
 def run_django_command(args: Args) -> subprocess.CompletedProcess:
     """Run a Django management command."""
-    console = state.console
-    settings_module = configure_settings_module()
-    newline = "\n" if args else ""
-    console.print(f'DJANGO_SETTINGS_MODULE = "{settings_module}"{newline}')
+    configure_settings_module()
     args = ["poetry", "run", "django-admin"] + process_args(args)
     return subprocess_run(args)

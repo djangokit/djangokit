@@ -1,4 +1,5 @@
 .env*
+!.env.public
 *.sqlite3
 .mypy_cache/
 .pytest_cache/

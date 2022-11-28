@@ -1,6 +1,8 @@
 .PHONY = test
 test:
-	DJANGO_SETTINGS_MODULE=djangokit.core.test.settings \
+	DJANGO_SETTINGS_MODULE=djangokit.core.settings \
+	  DJANGO_TEST=true \
+	  DJANGOKIT_PACKAGE="djangokit.core.test" \
 	  poetry run pytest -rA --doctest-modules --disable-warnings
 
 .PHONY = check

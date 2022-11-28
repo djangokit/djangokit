@@ -1,7 +1,16 @@
 from django.db import models
+from django.http import HttpRequest
 from django.http import JsonResponse as DjangoJsonResponse
 
 from .serializers import JsonEncoder
+
+
+def make_request(path="/", path_info=None):
+    """Make a request object with the specified path."""
+    request = HttpRequest()
+    request.path = path
+    request.path_info = path_info or path
+    return request
 
 
 class JsonResponse(DjangoJsonResponse):

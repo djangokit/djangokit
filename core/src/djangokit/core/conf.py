@@ -1,9 +1,17 @@
 """DjangoKit settings.
 
-DjangoKit settings are set in the `DJANGOKIT` dict in a project's Django
-settings module::
+DjangoKit settings are set in your project's .env file(s) along with
+env-specific Django settings:
 
-    DJANGOKIT = {"package": "my_app"}
+    # .env.public - public settings common to all environments
+    DJANGOKIT_PACKAGE="my_app"
+    DJANGOKIT_GLOBAL_CSS=["styles.css"]
+
+    # .env - env-specific settings
+    DJANGO_DEBUG=true
+    DJANGO_SECRET_KEY="xxx"
+
+> NOTE: You can use JSON values for the settings in your .env files.
 
 When accessing a project's DjangoKit settings, it's generally preferable
 to use the `settings` object exported from this module rather than
@@ -20,21 +28,16 @@ automatically be used if it's not set in the `DJANGOKIT` dict::
 
 """
 import dataclasses
-import json
-import os
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List
 
-import dotenv
 from django.apps import apps
 from django.conf import settings as django_settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.module_loading import import_string
 
 from .checks import make_error
-
-NOT_SET = object()
 
 
 @dataclasses.dataclass
@@ -99,6 +102,17 @@ class Settings:
         return self._get_optional("global_css")
 
     @cached_property
+    def serialize_current_user(self) -> Callable[[Any], Dict[str, Any]]:
+        serializer = self._get_optional("serialize_current_user")
+        if isinstance(serializer, str):
+            serializer = import_string(serializer)
+        return serializer
+
+    # Derived settings -------------------------------------------------
+    #
+    # These are not directly settable in a project.
+
+    @cached_property
     def app_dir(self) -> Path:
         app = apps.get_app_config(self.app_label)
         return Path(app.path)
@@ -119,12 +133,7 @@ class Settings:
     def static_build_dir(self) -> Path:
         return self.app_dir / "static" / "build"
 
-    @cached_property
-    def serialize_current_user(self) -> Callable[[Any], Dict[str, Any]]:
-        serializer = self._get_optional("serialize_current_user")
-        if isinstance(serializer, str):
-            serializer = import_string(serializer)
-        return serializer
+    # Utilities --------------------------------------------------------
 
     def as_dict(self):
         """Return a dict with *all* DjangoKit settings.
@@ -176,42 +185,12 @@ class Settings:
             raise ImproperlyConfigured(err.msg)
 
     def __getattr__(self, name):
-        """Proxy Django settings."""
+        """Proxy Django settings.
+
+        XXX: Is this useful and/or a good idea?
+
+        """
         return getattr(django_settings, name)
 
 
 settings = Settings()
-
-
-def load_dotenv(path=".env") -> bool:
-    """Load settings from .env file into environ."""
-    return dotenv.load_dotenv(path)
-
-
-def dotenv_settings(path=".env") -> Dict[str, Optional[str]]:
-    """Load settings from .env file into environ."""
-    values = dotenv.dotenv_values(path)
-    processed_values = {}
-    for name, value in values.items():
-        processed_values[name] = convert_env_val(value)
-    return processed_values
-
-
-def getenv(name: str, default: Any = NOT_SET) -> Any:
-    """Get setting from environ."""
-    if default is NOT_SET:
-        value = os.environ[name]
-    elif name in os.environ:
-        value = os.environ[name]
-        value = convert_env_val(value)
-    else:
-        value = default
-    return value
-
-
-def convert_env_val(value: str) -> Any:
-    try:
-        value = json.loads(value)
-    except ValueError:
-        pass
-    return value

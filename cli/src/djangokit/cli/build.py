@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 import djangokit.core
 from djangokit.core.build import make_client_bundle, make_server_bundle, render_bundle
-from djangokit.core.utils import make_request
+from djangokit.core.http import make_request
 from typer import Option
 from watchdog.events import FileSystemEvent, PatternMatchingEventHandler
 from watchdog.observers import Observer
