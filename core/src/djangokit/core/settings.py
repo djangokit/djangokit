@@ -211,7 +211,17 @@ def import_additional_settings():
     """
     module_name = getenv("DJANGO_ADDITIONAL_SETTINGS_MODULE", None)
     if module_name:
-        module = importlib.import_module(module_name)
+        try:
+            module = importlib.import_module(module_name)
+        except ImportError:
+            raise ImportError(
+                "The additional Django settings module "
+                f"`{module_name}`, which was specified via the "
+                "DJANGO_ADDITIONAL_SETTINGS_MODULE environment "
+                "variable, could not be imported. Check that the "
+                "module path is correct and that all imports in the "
+                "module are valid."
+            )
         for name, val in vars(module).items():
             if name.isupper():
                 settings[name] = val
