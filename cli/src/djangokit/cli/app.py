@@ -5,6 +5,7 @@ used to add commands.
 
 """
 import enum
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -12,7 +13,6 @@ import typer
 from click.core import ParameterSource
 from djangokit.core.conf import Settings, settings
 from djangokit.core.env import dotenv_settings as get_dotenv_settings
-from rich.console import NULL_FILE
 from typer import Context, Option
 
 from .utils import Console
@@ -91,7 +91,8 @@ def main(
         env = Env.production
 
     if quiet:
-        state.console.file = NULL_FILE
+        # TODO: Is there a better way to do this?
+        state.console.file = open(os.devnull, "wb")
 
     dotenv_settings = get_dotenv_settings(dotenv_path)
 

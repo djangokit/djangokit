@@ -22,7 +22,6 @@
   hosts:
     - web
   become: true
-  become_user: djangokit
   roles:
     - base
     - deploy

@@ -33,22 +33,12 @@ server {
     ssl_ciphers HIGH:SEED:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!RSAPSK:!aDH:!aECDH:!EDH-DSS-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA:!SRP;
     ssl_prefer_server_ciphers on;
 
-    location /admin {
-        uwsgi_pass unix:/run/uwsgi/app/{{ hostname }}/socket;
-        include uwsgi_params;
-    }
-
-    location /api/static {
-        alias {{ remote_current_backend }}/static;
-    }
-
-    location /api {
-        uwsgi_pass unix:/run/uwsgi/app/{{ hostname }}/socket;
-        include uwsgi_params;
+    location /static {
+        alias {{ remote_current_app }}/static;
     }
 
     location / {
-        root {{ remote_current_frontend }};
-        try_files $uri /index.html =404;
+        uwsgi_pass unix:/run/uwsgi/app/{{ hostname }}/socket;
+        include uwsgi_params;
     }
 }

@@ -2,7 +2,7 @@
 master = true
 plugins = python3
 
-uid = mystops
+uid = djangokit
 gid = www-data
 
 workers = 2
@@ -11,9 +11,9 @@ threads = 4
 
 logto2 = /sites/{{ hostname }}/uwsgi.log
 
-chdir = /sites/{{ hostname }}/current/backend
-virtualenv = /sites/{{ hostname }}/current/backend/venv
-wsgi-file = /sites/{{ hostname }}/current/backend/wsgi.py
+chdir = /sites/{{ hostname }}/current/app
+virtualenv = /sites/{{ hostname }}/current/app/venv
+wsgi-file = /sites/{{ hostname }}/current/app/wsgi.py
 
 single-interpreter = true
 

@@ -18,14 +18,14 @@
     dest: "{{ remote_site_root }}/current"
     state: link
 
-- name: Create back and front end directories for version
+- name: Create app and static directories for version
   file:
     path: "{{ item }}"
     state: directory
     mode: 0751
   with_items:
-    - "{{ remote_backend_dir }}"
-    - "{{ remote_frontend_dir }}"
+    - "{{ remote_app_dir }}"
+    - "{{ remote_static_dir }}"
 
 - name: Create pip directories
   file:
@@ -37,23 +37,23 @@
     - "{{ remote_pip_cache_dir }}"
     - "{{ remote_pip_wheel_dir }}"
 
-# Back end
+# App
 
-- name: Copy and extract back end build archive
+- name: Copy and extract app build archive
   tags:
-    - deploy-backend
+    - deploy-app
   unarchive:
-    src: "{{ backend_build_archive }}"
+    src: "{{ app_build_archive }}"
     dest: "{{ remote_build_dir }}"
     mode: 0751
 
 - name: Set ownership of Django static directory
   tags:
-    - deploy-backend
+    - deploy-app
   become: true
   become_user: root
   file:
-    path: "{{ remote_backend_dir }}/static"
+    path: "{{ remote_app_dir }}/static"
     state: directory
     group: www-data
     mode: u=rwx,g=rX,o=
@@ -61,8 +61,8 @@
 
 - name: Create virtualenv for site
   tags:
-    - deploy-backend
-    - install-backend
+    - deploy-app
+    - install-app
     - create-virtualenv
   pip:
     name:
@@ -75,18 +75,18 @@
 
 - name: Find old wheels
   tags:
-    - deploy-backend
-    - install-backend
+    - deploy-app
+    - install-app
   find:
     paths: "{{ remote_pip_wheel_dir }}"
     patterns:
-      - "mystops-*.whl"
+      - "djangokit*.whl"
   register: old_wheels
 
 - name: Remove old wheels
   tags:
-    - deploy-backend
-    - install-backend
+    - deploy-app
+    - install-app
   file:
     path: "{{ item.path }}"
     state: absent
@@ -94,8 +94,8 @@
 
 - name: Build wheel for site
   tags:
-    - deploy-backend
-    - install-backend
+    - deploy-app
+    - install-app
   command: >
     {{ remote_venv }}/bin/pip wheel
     --find-links {{ remote_dist_dir }}
@@ -103,7 +103,7 @@
     --wheel-dir {{ remote_pip_wheel_dir }}
     {{ package }}
 
-- name: Install back end package
+- name: Install app
   tags:
     - install
   pip:
@@ -113,24 +113,24 @@
     virtualenv: "{{ remote_venv }}"
     extra_args: --find-links {{ remote_pip_wheel_dir }} --no-compile --no-index
 
-# Front end
+# Static files
 
-- name: Copy front end files
+- name: Copy static files
   tags:
-    - deploy-frontend
+    - deploy-static
   synchronize:
     src: "{{ root }}/build/"
-    dest: "{{ remote_frontend_dir }}"
+    dest: "{{ remote_static_dir }}"
     rsync_path: sudo -u {{ site_user }} rsync
     delete: true
 
-- name: Set ownership & permissions of front end files
+- name: Set ownership & permissions of static end files
   become: true
   become_user: root
   tags:
-    - deploy-frontend
+    - deploy-static
   file:
-    path: "{{ remote_frontend_dir }}"
+    path: "{{ remote_static_dir }}"
     state: directory
     recurse: true
     owner: "{{ site_user }}"
@@ -142,7 +142,7 @@
 - name: Run Django migrations
   command: ./run migrate
   args:
-    chdir: "{{ remote_backend_dir }}"
+    chdir: "{{ remote_app_dir }}"
 
 # Copy uWSGI app config and restart uWSGI
 
@@ -152,7 +152,7 @@
   become: true
   become_user: root
   template:
-    src: "mystops.ini.j2"
+    src: "djangokit.ini.j2"
     dest: "/etc/uwsgi/apps-enabled/{{ hostname }}.ini"
 
 - name: Restart uWSGI
@@ -187,7 +187,7 @@
   become: true
   become_user: root
   template:
-    src: "mystops.conf.j2"
+    src: "djangokit.conf.j2"
     dest: "/etc/nginx/conf.d/{{ hostname }}.conf"
 
 - name: Restart Nginx
@@ -230,7 +230,7 @@
   cron:
     name: MAILTO
     env: true
-    job: contact@mystops.io
+    job: contact@djangokit.org
 
 - name: Add cron SHELL environment variable
   tags:
@@ -239,14 +239,3 @@
     name: SHELL
     env: true
     job: /bin/bash
-
-- name: Add cron job for loading TriMet data
-  tags:
-    - cron
-  cron:
-    name: Load TriMet data
-    hour: "2"
-    minute: "37"
-    job: >-
-      cd {{ remote_backend_dir }} &&
-      ./run -e {{ env }} get-stops --overwrite load-stops load-routes load-stop-routes

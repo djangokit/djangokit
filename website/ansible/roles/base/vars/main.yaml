@@ -6,37 +6,34 @@ site_user: "djangokit"
 
 # Local ----------------------------------------------------------------
 
-# Local backend build directory
-backend_build_root: "{{ root }}/dist"
-backend_build_dir: "{{ backend_build_root }}/backend"
+# Local app build directory
+app_build_root: "{{ root }}/dist"
+app_build_dir: "{{ app_build_root }}/app"
 
-backend_build_archive_name: "backend.tgz"
-backend_build_archive: "{{ backend_build_root }}/{{ backend_build_archive_name }}"
+app_build_archive_name: "app.tgz"
+app_build_archive: "{{ app_build_root }}/{{ app_build_archive_name }}"
 
+static_build_root: "{{ root }}/src/djangokit/website/static/build"
 django_static_root: "{{ root }}/static"
 
 # Remote ---------------------------------------------------------------
 
 remote_site_root: "/sites/{{ hostname }}"
 remote_current_root: "{{ remote_site_root }}/current"
-remote_current_backend: "{{ remote_current_root }}/backend"
-remote_current_frontend: "{{ remote_current_root }}/frontend"
+remote_current_app: "{{ remote_current_root }}/app"
+remote_current_static: "{{ remote_current_root }}/static"
 
 remote_pip_root: "{{ remote_site_root }}/pip"
 remote_pip_cache_dir: "{{ remote_pip_root }}/cache"
 remote_pip_wheel_dir: "{{ remote_pip_root }}/wheels"
 
-# Contains backend and frontend subdirectories
+# Contains app and static subdirectories
 remote_build_dir: "{{ remote_site_root }}/{{ version }}"
 
-# Backend
-remote_backend_dir: "{{ remote_build_dir }}/backend"
-remote_dist_dir: "{{ remote_backend_dir }}/dist"
-remote_venv: "{{ remote_backend_dir }}/venv"
+# App
+remote_app_dir: "{{ remote_build_dir }}/app"
+remote_dist_dir: "{{ remote_app_dir }}/dist"
+remote_venv: "{{ remote_app_dir }}/venv"
 
-# Frontend
-remote_frontend_dir: "{{ remote_build_dir }}/frontend"
-
-database_name: mystops
-database_user: mystops
-database_password: mystops
+# Static
+remote_static_dir: "{{ remote_build_dir }}/static"
