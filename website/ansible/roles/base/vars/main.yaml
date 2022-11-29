@@ -1,0 +1,42 @@
+---
+root: "{{ playbook_dir }}/.."
+
+package: "djangokit.website"
+site_user: "djangokit"
+
+# Local ----------------------------------------------------------------
+
+# Local backend build directory
+backend_build_root: "{{ root }}/dist"
+backend_build_dir: "{{ backend_build_root }}/backend"
+
+backend_build_archive_name: "backend.tgz"
+backend_build_archive: "{{ backend_build_root }}/{{ backend_build_archive_name }}"
+
+django_static_root: "{{ root }}/static"
+
+# Remote ---------------------------------------------------------------
+
+remote_site_root: "/sites/{{ hostname }}"
+remote_current_root: "{{ remote_site_root }}/current"
+remote_current_backend: "{{ remote_current_root }}/backend"
+remote_current_frontend: "{{ remote_current_root }}/frontend"
+
+remote_pip_root: "{{ remote_site_root }}/pip"
+remote_pip_cache_dir: "{{ remote_pip_root }}/cache"
+remote_pip_wheel_dir: "{{ remote_pip_root }}/wheels"
+
+# Contains backend and frontend subdirectories
+remote_build_dir: "{{ remote_site_root }}/{{ version }}"
+
+# Backend
+remote_backend_dir: "{{ remote_build_dir }}/backend"
+remote_dist_dir: "{{ remote_backend_dir }}/dist"
+remote_venv: "{{ remote_backend_dir }}/venv"
+
+# Frontend
+remote_frontend_dir: "{{ remote_build_dir }}/frontend"
+
+database_name: mystops
+database_user: mystops
+database_password: mystops

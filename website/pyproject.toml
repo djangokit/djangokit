@@ -22,10 +22,37 @@ markdown = "^3.4.1"
 marshmallow = "^3.19.0"
 
 [tool.poetry.group.dev.dependencies]
+ansible = "^7.0.0"
 black = "^22.10.0"
 isort = "^5.10.1"
 mypy = "^0.990"
 pytest = "^7.2.0"
+runcommands = "^1.0a70"
+
+[tool.runcommands.globals]
+env = "development"
+
+[tool.runcommands.envs]
+development = {}
+production = { hostname = "djangokit.org" }
+
+[tool.runcommands.args]
+# NOTE: These default args allow these commands to be run without
+#       needing to specify the env via `run -e production <command>`
+ansible.env = "production"
+ansible.hostname = "djangokit.org"
+
+provision.env = "production"
+provision.hostname = "djangokit.org"
+
+prepare.env = "production"
+prepare.hostname = "djangokit.org"
+
+deploy.env = "production"
+deploy.hostname = "djangokit.org"
+
+upgrade_remote.env = "production"
+upgrade_remote.hostname = "djangokit.org"
 
 [build-system]
 requires = ["poetry-core"]

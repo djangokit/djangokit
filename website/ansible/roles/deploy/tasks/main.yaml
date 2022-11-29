@@ -1,0 +1,252 @@
+---
+# Create directories for version
+
+- name: Remove existing directory for version
+  file:
+    path: "{{ remote_build_dir }}"
+    state: absent
+
+- name: Create directory for version
+  file:
+    path: "{{ remote_build_dir }}"
+    state: directory
+    mode: 0751
+
+- name: Create current link to directory for version
+  file:
+    src: "{{ remote_build_dir }}"
+    dest: "{{ remote_site_root }}/current"
+    state: link
+
+- name: Create back and front end directories for version
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0751
+  with_items:
+    - "{{ remote_backend_dir }}"
+    - "{{ remote_frontend_dir }}"
+
+- name: Create pip directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0750
+  with_items:
+    - "{{ remote_pip_root }}"
+    - "{{ remote_pip_cache_dir }}"
+    - "{{ remote_pip_wheel_dir }}"
+
+# Back end
+
+- name: Copy and extract back end build archive
+  tags:
+    - deploy-backend
+  unarchive:
+    src: "{{ backend_build_archive }}"
+    dest: "{{ remote_build_dir }}"
+    mode: 0751
+
+- name: Set ownership of Django static directory
+  tags:
+    - deploy-backend
+  become: true
+  become_user: root
+  file:
+    path: "{{ remote_backend_dir }}/static"
+    state: directory
+    group: www-data
+    mode: u=rwx,g=rX,o=
+    recurse: true
+
+- name: Create virtualenv for site
+  tags:
+    - deploy-backend
+    - install-backend
+    - create-virtualenv
+  pip:
+    name:
+      - pip
+      - setuptools
+      - wheel
+    state: latest
+    virtualenv: "{{ remote_venv }}"
+    virtualenv_command: "/usr/bin/python3 -m venv"
+
+- name: Find old wheels
+  tags:
+    - deploy-backend
+    - install-backend
+  find:
+    paths: "{{ remote_pip_wheel_dir }}"
+    patterns:
+      - "mystops-*.whl"
+  register: old_wheels
+
+- name: Remove old wheels
+  tags:
+    - deploy-backend
+    - install-backend
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ old_wheels.files }}"
+
+- name: Build wheel for site
+  tags:
+    - deploy-backend
+    - install-backend
+  command: >
+    {{ remote_venv }}/bin/pip wheel
+    --find-links {{ remote_dist_dir }}
+    --cache-dir {{ remote_pip_cache_dir }}
+    --wheel-dir {{ remote_pip_wheel_dir }}
+    {{ package }}
+
+- name: Install back end package
+  tags:
+    - install
+  pip:
+    name:
+      - "{{ package }}"
+    state: present
+    virtualenv: "{{ remote_venv }}"
+    extra_args: --find-links {{ remote_pip_wheel_dir }} --no-compile --no-index
+
+# Front end
+
+- name: Copy front end files
+  tags:
+    - deploy-frontend
+  synchronize:
+    src: "{{ root }}/build/"
+    dest: "{{ remote_frontend_dir }}"
+    rsync_path: sudo -u {{ site_user }} rsync
+    delete: true
+
+- name: Set ownership & permissions of front end files
+  become: true
+  become_user: root
+  tags:
+    - deploy-frontend
+  file:
+    path: "{{ remote_frontend_dir }}"
+    state: directory
+    recurse: true
+    owner: "{{ site_user }}"
+    group: www-data
+    mode: u=rwX,g=rX,o=
+
+# Database migrations
+
+- name: Run Django migrations
+  command: ./run migrate
+  args:
+    chdir: "{{ remote_backend_dir }}"
+
+# Copy uWSGI app config and restart uWSGI
+
+- name: Copy uWSGI app config
+  tags:
+    - deploy-uwsgi
+  become: true
+  become_user: root
+  template:
+    src: "mystops.ini.j2"
+    dest: "/etc/uwsgi/apps-enabled/{{ hostname }}.ini"
+
+- name: Restart uWSGI
+  tags:
+    - deploy-uwsgi
+  become: true
+  become_user: root
+  service:
+    name: uwsgi
+    state: restarted
+  async: 1000
+  poll: 0
+  register: uwsgi_restart
+
+- name: Check uWSGI restart
+  tags:
+    - deploy-uwsgi
+  become: true
+  become_user: root
+  async_status:
+    jid: "{{ uwsgi_restart.ansible_job_id }}"
+  register: job_result
+  until: job_result.finished
+  retries: 6
+  delay: 10
+
+# Copy Nginx app config and restart Nginx
+
+- name: Copy app Nginx config
+  tags:
+    - deploy-nginx
+  become: true
+  become_user: root
+  template:
+    src: "mystops.conf.j2"
+    dest: "/etc/nginx/conf.d/{{ hostname }}.conf"
+
+- name: Restart Nginx
+  tags:
+    - deploy-nginx
+  become: true
+  become_user: root
+  service:
+    name: nginx
+    state: restarted
+  async: 1000
+  poll: 0
+  register: nginx_restart
+
+- name: Check Nginx restart
+  tags:
+    - deploy-nginx
+  become: true
+  become_user: root
+  async_status:
+    jid: "{{ nginx_restart.ansible_job_id }}"
+  register: job_result
+  until: job_result.finished
+  retries: 6
+  delay: 10
+
+# Cron
+
+- name: Add cron HOME environment variable
+  tags:
+    - cron
+  cron:
+    name: HOME
+    env: true
+    job: "{{ remote_site_root }}"
+
+- name: Add cron MAILTO environment variable
+  tags:
+    - cron
+  cron:
+    name: MAILTO
+    env: true
+    job: contact@mystops.io
+
+- name: Add cron SHELL environment variable
+  tags:
+    - cron
+  cron:
+    name: SHELL
+    env: true
+    job: /bin/bash
+
+- name: Add cron job for loading TriMet data
+  tags:
+    - cron
+  cron:
+    name: Load TriMet data
+    hour: "2"
+    minute: "37"
+    job: >-
+      cd {{ remote_backend_dir }} &&
+      ./run -e {{ env }} get-stops --overwrite load-stops load-routes load-stop-routes

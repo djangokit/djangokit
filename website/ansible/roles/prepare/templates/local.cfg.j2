@@ -1,0 +1,14 @@
+[{{ env }}]
+extends = "{{ package }}:local.base.cfg"
+
+DEBUG = false
+ALLOWED_HOSTS = ["{{ hostname }}"]
+
+DOTENV_PATH = "{{ remote_build_dir }}/.env"
+
+DATABASES.default.HOST = "localhost"
+DATABASES.default.USER = "{{ package }}"
+DATABASES.default.PASSWORD = "{{ package }}"
+DATABASES.default.NAME = "{{ package }}"
+
+TRIMET.data_dir = "{{ remote_site_root }}/data/trimet"

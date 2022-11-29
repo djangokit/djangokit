@@ -1,0 +1,130 @@
+---
+# Back end
+
+- name: Remove local back end build root
+  tags:
+    - prepare-backend
+    - prepare-backend-clean
+    - deploy-backend
+  file:
+    path: "{{ backend_build_root }}"
+    state: absent
+
+- name: Create local back end build directory for version
+  tags:
+    - prepare-backend
+    - deploy-backend
+  file:
+    path: "{{ backend_build_dir }}"
+    state: directory
+
+- name: Copy local settings file to build directory
+  tags:
+    - prepare-backend
+    - prepare-copy-files
+    - deploy-backend
+  copy:
+    src: "{{ root }}/.env.{{ env }}"
+    dest: "{{ backend_build_dir }}/.env"
+
+- name: Copy .env file to build directory
+  tags:
+    - prepare-backend
+    - prepare-copy-files
+    - deploy-backend
+  template:
+    src: "local.cfg.j2"
+    dest: "{{ backend_build_dir }}/local.cfg"
+
+- name: Copy RunCommands console script wrapper to build directory
+  tags:
+    - prepare-backend
+    - prepare-copy-files
+    - deploy-backend
+  template:
+    src: "run.j2"
+    dest: "{{ backend_build_dir }}/run"
+    mode: 0750
+
+- name: Copy RunCommands module to build directory
+  tags:
+    - prepare-backend
+    - prepare-copy-files
+    - deploy-backend
+  copy:
+    src: "{{ root }}/commands.py"
+    dest: "{{ backend_build_dir }}"
+
+- name: Copy RunCommands config to build directory
+  tags:
+    - prepare-backend
+    - prepare-copy-files
+    - deploy-backend
+  copy:
+    src: "{{ root }}/pyproject.toml"
+    dest: "{{ backend_build_dir }}"
+
+- name: Copy WSGI module to build directory
+  tags:
+    - prepare-backend
+    - prepare-copy-files
+    - deploy-backend
+  template:
+    src: "wsgi.py.j2"
+    dest: "{{ backend_build_dir }}/wsgi.py"
+
+- name: Build source distribution
+  tags:
+    - prepare-backend
+    - deploy-backend
+    - build-distribution
+  command: poetry build --format wheel
+
+- name: Copy source distribution to build directory
+  tags:
+    - prepare-backend
+    - deploy-backend
+    - build-distribution
+  copy:
+    src: "{{ item }}"
+    dest: "{{ backend_build_dir }}/dist/"
+  with_fileglob:
+    - "{{ backend_build_root }}/mystops*.whl"
+
+- name: Collect Django static files
+  tags:
+    - prepare-backend
+    - deploy-backend
+    - collectstatic
+  command: runcommands django -- collectstatic
+  args:
+    chdir: "{{ backend_build_dir }}"
+  environment:
+    DYLD_LIBRARY_PATH: "/opt/homebrew/lib"
+
+- name: Create build archive
+  tags:
+    - prepare-backend
+    - deploy-backend
+    - create-build-archive
+  archive:
+    path: "{{ backend_build_dir }}"
+    dest: "{{ backend_build_archive }}"
+
+# Front end
+
+- name: Remove local front end build root
+  tags:
+    - prepare-frontend
+    - prepare-frontend-clean
+    - deploy-frontend
+  file:
+    path: "{{ root }}/build"
+    state: absent
+
+- name: Build front end
+  tags:
+    - prepare-frontend
+    - prepare-frontend-build
+    - deploy-frontend
+  command: npm run build

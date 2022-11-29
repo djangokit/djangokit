@@ -1,0 +1,54 @@
+server {
+    server_name {{ hostname }};
+
+    listen 80;
+    listen [::]:80;
+
+    if ($host != $server_name) {
+        return 403;
+    }
+
+    return 301 https://$host$request_uri;
+}
+
+server {
+    server_name {{ hostname }};
+
+    listen 443 ssl;
+    listen [::]:443 ssl;
+
+    if ($host != $server_name) {
+        return 403;
+    }
+
+    access_log /var/log/nginx/{{ hostname }}.access.log;
+    error_log /var/log/nginx/{{ hostname }}.error.log;
+
+    ssl_certificate /etc/letsencrypt/live/{{ hostname }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ hostname }}/privkey.pem;
+    ssl_dhparam /etc/pki/nginx/{{ hostname }}.pem;
+    ssl_session_cache shared:SSL:1m;
+    ssl_session_timeout 10m;
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    ssl_ciphers HIGH:SEED:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!RSAPSK:!aDH:!aECDH:!EDH-DSS-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA:!SRP;
+    ssl_prefer_server_ciphers on;
+
+    location /admin {
+        uwsgi_pass unix:/run/uwsgi/app/{{ hostname }}/socket;
+        include uwsgi_params;
+    }
+
+    location /api/static {
+        alias {{ remote_current_backend }}/static;
+    }
+
+    location /api {
+        uwsgi_pass unix:/run/uwsgi/app/{{ hostname }}/socket;
+        include uwsgi_params;
+    }
+
+    location / {
+        root {{ remote_current_frontend }};
+        try_files $uri /index.html =404;
+    }
+}

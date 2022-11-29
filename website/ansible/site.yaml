@@ -1,0 +1,29 @@
+---
+- name: Provision
+  hosts:
+    - web
+  become: true
+  roles:
+    - base
+    - provision
+  tags:
+    - provision
+
+- name: Prepare
+  hosts:
+    - localhost
+  roles:
+    - base
+    - prepare
+  tags:
+    - prepare
+
+- name: Deploy
+  hosts:
+    - web
+  become: true
+  become_user: djangokit
+  roles:
+    - base
+    - deploy
+  tags: deploy

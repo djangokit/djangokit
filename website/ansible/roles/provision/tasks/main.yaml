@@ -1,0 +1,135 @@
+---
+- name: Set host name
+  tags:
+    - provision-hostname
+  hostname:
+    name: "{{ hostname }}"
+
+- name: Set timezone
+  tags:
+    - provision-timezone
+  timezone:
+    name: America/Los_Angeles
+
+- name: Update packages
+  tags:
+    - provision-update-packages
+  apt:
+    name: "*"
+    state: latest
+    force_apt_get: true
+
+- name: Install packages
+  tags:
+    - provision-install-packages
+  apt:
+    name: "{{ item }}"
+    state: latest
+    force_apt_get: true
+  with_items:
+    - nodejs
+    - python3
+    - uwsgi
+    - uwsgi-plugin-python3
+
+- name: Enable uWSGI
+  tags:
+    - enable-uwsgi
+  service:
+    name: uwsgi
+    enabled: true
+
+# Configure BASH
+
+- name: Configure BASH
+  tags:
+    - provision-bash
+  lineinfile:
+    path: /etc/bash.bashrc
+    line: "{{ item }}"
+  with_items:
+    - 'set -o vi'
+    - 'bind -m vi-insert "\C-l":clear-screen'
+    - 'export EDITOR=vim'
+
+# SSL (Let's Encrypt)
+
+- name: Install certbot
+  tags:
+    - provision-ssl
+  apt:
+    name: certbot
+    state: latest
+    force_apt_get: true
+
+- name: Create cert
+  tags:
+    - provision-ssl
+  command: >
+    certbot
+    certonly
+    --agree-tos
+    --domain {{ hostname }}
+    --email letsencrypt@wyattbaldwin.com
+    --standalone
+    --non-interactive
+  args:
+    creates: /etc/letsencrypt/live/{{ hostname }}/fullchain.pem
+
+- name: Create /etc/pki/nginx for DH params
+  tags:
+    - provision-ssl
+  file:
+    path: /etc/pki/nginx
+    state: directory
+
+- name: Create DH params
+  tags:
+    - provision-ssl
+  openssl_dhparam:
+    path: /etc/pki/nginx/{{ hostname }}.pem
+    size: 2048
+    select_crypto_backend: openssl
+
+# Nginx
+
+- name: Install Nginx
+  tags:
+    - provision-nginx
+  apt:
+    name: nginx
+    state: latest
+    force_apt_get: true
+
+- name: Remove unused Nginx config
+  tags:
+    - provision-nginx
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - /etc/nginx/fastcgi.conf
+    - /etc/nginx/fastcgi_params
+    - /etc/nginx/sites-available
+    - /etc/nginx/sites-enabled
+    - /etc/nginx/snippets
+    - /var/www/html/index.nginx-debian.html
+  notify: "restart nginx"
+
+- name: Copy Nginx config
+  tags:
+    - provision-nginx
+  copy:
+    src: nginx.conf
+    dest: /etc/nginx/
+  notify: "restart nginx"
+
+# Site (directory containing site versions)
+
+- name: Create application user and home directory
+  tags:
+    - provision-site
+  user:
+    name: "{{ site_user }}"
+    home: "{{ remote_site_root }}"
+    shell: /bin/bash
