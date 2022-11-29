@@ -301,12 +301,16 @@ def configure_settings_module(**env_vars):
     and the name of the settings module is returned.
 
     """
-    if state.django_settings_module_configured:
+    if state.settings_module_configured:
         return
 
     import django
 
-    os.environ["DJANGO_SETTINGS_MODULE"] = state.django_settings_module
+    os.environ["DJANGO_SETTINGS_MODULE"] = state.settings_module
+
+    if state.additional_settings_module:
+        module = state.additional_settings_module
+        os.environ["DJANGO_ADDITIONAL_SETTINGS_MODULE"] = module
 
     for name, val in env_vars.items():
         if isinstance(val, str):
@@ -319,7 +323,7 @@ def configure_settings_module(**env_vars):
         os.environ[name] = env_val
 
     django.setup()
-    state.django_settings_module_configured = True
+    state.settings_module_configured = True
 
 
 def run_django_command(args: Args) -> subprocess.CompletedProcess:

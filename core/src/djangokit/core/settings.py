@@ -1,7 +1,7 @@
 """Default settings used by DjangoKit projects.
 
-Settings are set via environment variables in a project's `.env` file(s)
-and/or using standard OS mechanisms.
+Settings can be set via environment variables in a project's `.env`
+file(s) and/or using standard OS mechanisms.
 
 .. note::
     ALL Django settings can be set via environment variables.
@@ -23,24 +23,57 @@ name:
 
     DJANGOKIT_PACKAGE="myapp"
 
-Database settings are a special case due to nesting. They can be defined
-using the following convention (note the double underscores):
+Nested Settings
+---------------
+
+Cache and database settings are a special case due to nesting. They can
+be defined using the following convention (note the double underscores
+and case sensitivity):
 
     DJANGO_DATABASES_<name>__<key>__<subkey>
 
 For example, to override the default database settings:
 
     # .env
-    DJANGO_DATABASES_DEFAULT__ENGINE="django.contrib.gis.db.backends.postgis"
-    DJANGO_DATABASES_DEFAULT__USER="some_user"
-    DJANGO_DATABASES_DEFAULT__PASSWORD="some_password"
-    DJANGO_DATABASES_DEFAULT__HOST="some.host"
+    DJANGO_DATABASES_default__ENGINE="django.contrib.gis.db.backends.postgis"
+    DJANGO_DATABASES_default__USER="some_user"
+    DJANGO_DATABASES_default__PASSWORD="some_password"
+    DJANGO_DATABASES_default__HOST="some.host"
 
 .. todo:
     Support DATABASE_URL? It might be possible to use the
     django-database-url package for this.
 
+Settings for Third Party Apps
+----------------------------
+
+Settings for third party Django apps can be specified via env vars too.
+To do so, add the third party settings prefix to the
+`DJANGO_ENV_PREFIXES` env var like so then specify the settings as
+usual::
+
+    # .env
+    DJANGO_ENV_PREFIXES=["THIRD_PARTY"]
+
+    THIRD_PARTY_A="AAA"
+    THIRD_PARTY_B="BBB"
+
+.. note::
+    Unlike Django settings, the `THIRD_PARTY` prefix will *not* be
+    stripped.
+
+Advanced Settings
+-----------------
+
+It's also possible to load settings from an additional settings module.
+To do so, set the `DJANGO_ADDITIONAL_SETTINGS_MODULE` env var to point
+at a settings module with additional settings.
+
+These additional settings will override the defaults provided here but
+any env settings will still take precedence.
+
 """
+import importlib
 from os import environ
 from uuid import uuid4
 
@@ -57,8 +90,8 @@ class Settings:
     required = object()
 
     def __init__(self, **kwargs):
-        for name, value in kwargs.items():
-            setattr(self, name, value)
+        for name, val in kwargs.items():
+            setattr(self, name, val)
 
     def __contains__(self, name):
         return name in self.__dict__
@@ -164,64 +197,137 @@ ROOT_URLCONF = getenv("DJANGO_ROOT_URLCONF", defaults.ROOT_URLCONF)
 
 settings = globals()
 
-# Find any DjangoKit settings defined in the environment and add them to
-# the local settings.
-for name in defaults.DJANGOKIT:
-    env_name = f"DJANGOKIT_{name.upper()}"
-    if env_name in environ:
-        value = getenv(env_name)
-        DJANGOKIT[name] = value
+
+def import_additional_settings():
+    """Import another settings module and add its settings.
+
+    This is useful if the additional settings are complex and would be
+    hard or impossible to specify as environment variables.
+
+    .. note::
+        Settings specified via environment variables will override
+        settings specified in an additional settings module.
+
+    """
+    module_name = getenv("DJANGO_ADDITIONAL_SETTINGS_MODULE", None)
+    if module_name:
+        module = importlib.import_module(module_name)
+        for name, val in vars(module).items():
+            if name.isupper():
+                settings[name] = val
 
 
-# Find any Django settings defined in the environment and add them to
-# the local settings. If a setting isn't defined in the environment and
-# has a default defined above, the default will be used. Otherwise, the
-# setting will be left unset (leaving it Do be handled internally by
-# Django).
-for name in vars(global_settings):
-    env_name = f"DJANGO_{name}"
-    if env_name in environ:
-        value = getenv(env_name)
-        settings[name] = value
-    elif name in defaults:
-        value = defaults[name]
-        settings[name] = value
+def add_djangokit_settings():
+    """Add DjangoKit settings defined in the environment."""
+    for name in defaults.DJANGOKIT:
+        env_name = f"DJANGOKIT_{name.upper()}"
+        if env_name in environ:
+            val = getenv(env_name)
+            DJANGOKIT[name] = val
 
-# Process nested database settings.
-db_settings = settings["DATABASES"]
-prefix = "DJANGO_DATABASES_"
-prefix_len = len(prefix)
-for env_name in environ:
-    if not env_name.startswith(prefix):
-        continue
 
-    path = env_name[prefix_len:]
-    segments = path.split("__")
-    num_segments = len(segments)
+def add_django_settings():
+    """Add Django settings defined in the environment.
 
-    if num_segments < 2:
-        raise ImproperlyConfigured(
-            f"Database setting name is not valid: {env_name}. "
-            "Expected format is DJANGO_DATABASES_<key>={...} or"
-            "DJANGO_DATABASES_<key>__<subkey>=<value>."
-        )
+    If a Django setting isn't defined in the environment and has a
+    default defined in `defaults`, the default will be used. Otherwise,
+    the setting will be left unset (leaving it to be handled internally
+    by Django).
 
-    db_key = segments[0].lower()  # e.g. default
-    db_settings.setdefault(db_key)
+    """
+    for name in vars(global_settings):
+        env_name = f"DJANGO_{name}"
+        if env_name in environ:
+            val = getenv(env_name)
+            settings[name] = val
+        elif name in defaults:
+            val = defaults[name]
+            settings[name] = val
 
-    obj = db_settings[db_key]
-    for segment in segments[1:-1]:
-        obj = obj.setdefault(segment, {})
-    value = getenv(env_name)
-    obj[segments[-1]] = value
 
-# Add settings under other prefixes.
-# NOTE: Prefixes are *not* stripped.
-# TODO: Support nested settings (using __ syntax as above)?
-env_prefixes = getenv("DJANGO_ENV_PREFIXES", None, list)
-if env_prefixes:
-    env_prefixes = [f"{prefix}_" for prefix in env_prefixes]
-    for name in environ:
-        if any(name.startswith(prefix) for prefix in env_prefixes):
-            value = getenv(name)
-            settings[name] = value
+def process_nested_settings(name, env_prefix=None):
+    """This is used to process settings like CACHES & DATABASES.
+
+    It expects the root setting to exist and to contain keys like
+    "default" that contain the settings for a given cache, database,
+    etc.
+
+    After stripping the env prefix, the env var name is split on double
+    underscores into segments corresponding to sub-dicts of the root
+    setting. For each segment, a sub-dict is added if not already
+    present.
+
+    Args:
+        name:
+            The name of the setting (e.g. "DATABASES").
+
+        env_prefix:
+            The env prefix (e.g., "DJANGO_DATABASES_")
+
+    For example, onsider the following .env file::
+
+        # .env
+        DJANGO_DATABASES_default__HOST="some.host"
+
+    This will set `DATABASES["default"]["HOST"] = "some.host"`.
+
+    .. note::
+
+    """
+    if name in settings:
+        root_setting = settings[name]
+    else:
+        default = getattr(global_settings, name, {})
+        root_setting = settings[name] = default
+
+    env_prefix = env_prefix or f"DJANGO_{name}_"
+    env_prefix_len = len(env_prefix)
+
+    for env_name in environ:
+        if not env_name.startswith(env_prefix):
+            continue
+
+        path = env_name[env_prefix_len:]
+        segments = path.split("__")
+        num_segments = len(segments)
+
+        if num_segments < 2:
+            raise ImproperlyConfigured(
+                f"Database setting name is not valid: {env_name}. "
+                "Expected format is {env_prefix}<key>={...} or"
+                "{env_prefix}<key>__<subkey>=<value>."
+            )
+
+        key = segments[0]
+        root_setting.setdefault(key)
+
+        setting = root_setting[key]
+        for segment in segments[1:-1]:
+            setting = setting.setdefault(segment, {})
+        val = getenv(env_name)
+        setting[segments[-1]] = val
+
+
+def add_other_env_settings():
+    """Add settings under other env prefixes.
+
+    .. note:: Prefixes are *not* stripped.
+
+    .. todo: Support nested settings (using __ syntax as above)?
+
+    """
+    env_prefixes = getenv("DJANGO_ENV_PREFIXES", None, list)
+    if env_prefixes:
+        env_prefixes = [f"{prefix}_" for prefix in env_prefixes]
+        for name in environ:
+            if any(name.startswith(prefix) for prefix in env_prefixes):
+                val = getenv(name)
+                settings[name] = val
+
+
+import_additional_settings()
+add_djangokit_settings()
+add_django_settings()
+process_nested_settings("CACHES")
+process_nested_settings("DATABASES")
+add_other_env_settings()
