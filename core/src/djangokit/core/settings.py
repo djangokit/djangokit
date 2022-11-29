@@ -214,3 +214,14 @@ for env_name in environ:
         obj = obj.setdefault(segment, {})
     value = getenv(env_name)
     obj[segments[-1]] = value
+
+# Add settings under other prefixes.
+# NOTE: Prefixes are *not* stripped.
+# TODO: Support nested settings (using __ syntax as above)?
+env_prefixes = getenv("DJANGO_ENV_PREFIXES", None, list)
+if env_prefixes:
+    env_prefixes = [f"{prefix}_" for prefix in env_prefixes]
+    for name in environ:
+        if any(name.startswith(prefix) for prefix in env_prefixes):
+            value = getenv(name)
+            settings[name] = value

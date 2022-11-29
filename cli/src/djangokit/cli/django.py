@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 from getpass import getuser
+from fnmatch import fnmatch
 from typing import List
 
 import click
@@ -54,7 +55,17 @@ def migrate():
 
 
 @app.command()
-def show_settings(dotenv: bool = False, name: str = None):
+def show_settings(
+    dotenv: bool = False,
+    only: str = typer.Option(
+        None,
+        help=(
+            "Show only the specified setting or settings matching a "
+            "pattern. Patterns use fnmatch syntax. As a special case, "
+            "`PREFIX_` is equivalent to `PREFIX_*`."
+        ),
+    ),
+):
     """Show Django settings"""
     console = state.console
     configure_settings_module()
@@ -71,16 +82,29 @@ def show_settings(dotenv: bool = False, name: str = None):
 
     max_width = min(120, console.width)
 
-    if name:
+    if only:
         console.header(f"Showing the specified setting only:")
-        if name in settings:
-            settings = {name: settings[name]}
-            newline = ""
+        if only in settings:
+            matching_settings = {only: settings[only]}
         else:
-            console.error(f"Setting does not exist: {name}")
+            matching_settings = {}
+            for name, val in settings.items():
+                if fnmatch(name, only):
+                    matching_settings[name] = val
+            if not matching_settings and only.endswith("_"):
+                pattern = f"{only}*"
+                for name, val in settings.items():
+                    if fnmatch(name, pattern):
+                        matching_settings[name] = val
+        if matching_settings:
+            settings = matching_settings
+            newline = "\n" if len(settings) > 1 else ""
+        else:
+            console.error(f"Could not find matching setting(s): {only}")
             raise typer.Abort()
     elif dotenv:
         console.header("Settings loaded from .env file(s):")
+        newline = "\n"
     else:
         console.header(f"All Django settings for project (excludes defaults):")
         newline = "\n"
