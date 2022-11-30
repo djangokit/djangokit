@@ -290,7 +290,7 @@ function useInterval(callback, delay, condition) {
   }, [callback]);
 
   useEffect(() => {
-    if (delay !== null && condition) {
+    if (condition) {
       const tick = () => {
         if (savedCallback.current) {
           savedCallback.current();
