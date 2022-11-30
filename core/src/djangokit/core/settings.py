@@ -47,20 +47,11 @@ For example, to override the default database settings:
 Settings for Third Party Apps
 ----------------------------
 
-Settings for third party Django apps can be specified via env vars too.
-To do so, add the third party settings prefix to the
-`DJANGO_ENV_PREFIXES` env var like so then specify the settings as
-usual::
+Settings for third party Django apps can be specified via env vars too,
+in the same manner as other Django settings::
 
-    # .env
-    DJANGO_ENV_PREFIXES=["THIRD_PARTY"]
-
-    THIRD_PARTY_A="AAA"
-    THIRD_PARTY_B="BBB"
-
-.. note::
-    Unlike Django settings, the `THIRD_PARTY` prefix will *not* be
-    stripped.
+    DJANGO_THIRD_PARTY_A="AAA"
+    DJANGO_THIRD_PARTY_B="BBB"
 
 Advanced Settings
 -----------------
@@ -318,26 +309,8 @@ def process_nested_settings(name, env_prefix=None):
         setting[segments[-1]] = val
 
 
-def add_other_env_settings():
-    """Add settings under other env prefixes.
-
-    .. note:: Prefixes are *not* stripped.
-
-    .. todo: Support nested settings (using __ syntax as above)?
-
-    """
-    env_prefixes = getenv("DJANGO_ENV_PREFIXES", None, list)
-    if env_prefixes:
-        env_prefixes = [f"{prefix}_" for prefix in env_prefixes]
-        for name in environ:
-            if any(name.startswith(prefix) for prefix in env_prefixes):
-                val = getenv(name)
-                settings[name] = val
-
-
 import_additional_settings()
 add_djangokit_settings()
 add_django_settings()
 process_nested_settings("CACHES")
 process_nested_settings("DATABASES")
-add_other_env_settings()
