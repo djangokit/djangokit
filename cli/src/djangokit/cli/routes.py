@@ -21,7 +21,12 @@ export default function Layout() {
 
 PAGE_TEMPLATE = """\
 export default function Page() {{
-  return <h1>{name}</h1>;
+  return (
+    <>
+      <h1>{name}</h1>
+      <div>...</div>
+    </>
+  );
 }}
 """
 
