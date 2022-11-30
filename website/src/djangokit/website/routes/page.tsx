@@ -1,10 +1,10 @@
 /* Home Page */
-import Button from "react-bootstrap/Button";
 import LinkContainer from "react-router-bootstrap/LinkContainer";
+import { FaRocket } from "react-icons/fa";
 
 import { usePageQuery } from "../api";
 import PageComponent from "../components/page";
-import { FaRocket } from "react-icons/fa";
+import IconButton from "../components/IconButton";
 
 export default function Page() {
   const { isLoading, isError, data, error } = usePageQuery("home");
@@ -18,10 +18,7 @@ export default function Page() {
       />
       <div className="mt-5 d-flex align-items-center justify-content-center">
         <LinkContainer to="/docs/get-started">
-          <Button className="d-flex align-items-center">
-            <FaRocket className="me-1" />
-            <span>Get Started</span>
-          </Button>
+          <IconButton icon={<FaRocket />}>Get Started</IconButton>
         </LinkContainer>
       </div>
     </>
