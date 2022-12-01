@@ -3,7 +3,7 @@
 
 - name: Remove existing directory for version
   become: true
-  become_user: "{{ site_user }}"
+  become_user: root
   file:
     path: "{{ remote_build_dir }}"
     state: absent
@@ -17,12 +17,12 @@
     mode: 0751
 
 - name: Create current link to directory for version
+  become: true
+  become_user: "{{ site_user }}"
   file:
     src: "{{ remote_build_dir }}"
     dest: "{{ remote_site_root }}/current"
     state: link
-    owner: "{{ site_user }}"
-    group: "{{ site_user }}"
 
 - name: Create app and static directories for version
   file:
@@ -164,9 +164,15 @@
 # Database migrations
 
 - name: Run Django migrations
+  tags:
+    - deploy-migrations
   become: true
   become_user: "{{ site_user }}"
-  command: ./venv/bin/dk migrate
+  environment:
+    - DJANGOKIT_PACKAGE: "{{ package }}"
+    - DJANGO_SETTINGS_MODULE: "djangokit.core.settings"
+    - DJANGO_DATABASES_default__NAME: "{{ remote_site_root }}/db.sqlite3"
+  command: ./venv/bin/django-admin migrate
   args:
     chdir: "{{ remote_app_dir }}"
 

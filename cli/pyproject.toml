@@ -12,7 +12,8 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
-djangokit-core = { path = "../core", develop = true }
+djangokit-core = "*"
+#djangokit-core = { path = "../core", develop = true }
 tomli = { version = "^2.0.1", python = "<3.11" }
 typer = { version = "^0.7.0", extras = ["all"] }
 watchdog = "^2.1.9"

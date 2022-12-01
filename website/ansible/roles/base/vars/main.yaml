@@ -9,7 +9,7 @@ site_user: "djangokit"
 # Local ----------------------------------------------------------------
 
 # Local app build directory
-app_build_root: "{{ root }}/dist"
+app_build_root: "{{ root }}/build"
 app_build_dir: "{{ app_build_root }}/app"
 
 app_build_archive_name: "app.tgz"
