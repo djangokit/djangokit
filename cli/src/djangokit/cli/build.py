@@ -121,11 +121,7 @@ class WatchEventHandler(PatternMatchingEventHandler):
         self.console = console
 
         patterns = patterns or [f"*.{ext}" for ext in self.default_extensions]
-
-        # NOTE: The way watchdog does matching doesn't seem to allow
-        #       specifying *anything* under a given directory, hence
-        #       this hack to specify multiple sub-levels manually.
-        ignore_patterns = ignore_patterns or ["build/*", "build/*/*"]
+        ignore_patterns = ignore_patterns or ["build/*"]
 
         super().__init__(
             patterns=patterns,
@@ -143,5 +139,11 @@ class WatchEventHandler(PatternMatchingEventHandler):
         console.warning(f"Detected change in {root_dir}")
         console.warning(f"File: {rel_src_path}")
         for handler in self.handlers:
-            handler.callable(*handler.args, **handler.kwargs)
-            console.print()
+            try:
+                handler.callable(*handler.args, **handler.kwargs)
+                console.print()
+            except Exception as exc:
+                console.error(
+                    f"Error encountered during rebuild while running "
+                    "handler {handler.__name__}:\n\n{exc}"
+                )
