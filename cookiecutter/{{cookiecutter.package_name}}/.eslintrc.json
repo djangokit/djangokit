@@ -1,7 +1,8 @@
 {
   "root": true,
   "ignorePatterns": [
-    "build"
+    "build",
+    "dist"
   ],
   "parser": "@typescript-eslint/parser",
   "env": {

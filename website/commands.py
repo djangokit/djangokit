@@ -1,11 +1,9 @@
 import os
 
+from djangokit.core.env import load_dotenv
 from runcommands import command
 from runcommands import commands as c
 from runcommands import printer
-
-from djangokit.core.env import load_dotenv
-
 
 # Provisioning & Deployment --------------------------------------------
 

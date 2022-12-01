@@ -12,8 +12,6 @@ import Form from "../../components/Form";
 import ErrorMessage from "../../components/ErrorMessage";
 import Loader from "../../components/Loader";
 
-declare const useCurrentUserContext;
-
 export default function Page() {
   const currentUser = useCurrentUserContext();
   const { isLoading, isError, data, error } = useApiQuery<TodoItems>("todos");

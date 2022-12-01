@@ -11,8 +11,6 @@ import { FaBookReader, FaGithub } from "react-icons/fa";
 
 import Form from "../components/Form";
 
-declare const useCurrentUserContext;
-
 function Layout() {
   const currentUser = useCurrentUserContext();
   const location = useLocation();

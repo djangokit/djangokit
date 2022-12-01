@@ -37,7 +37,7 @@ def build_client(
     console = state.console
 
     build_kwargs = {
-        "env": state.env,
+        "env": state.env.value,
         "minify": minify,
         "source_map": minify,
         "quiet": state.quiet,
@@ -86,7 +86,7 @@ def render_markup(path: str = "/"):
     request = make_request(path)
     minify = state.env == "production"
     render_kwargs = {
-        "env": state.env,
+        "env": state.env.value,
         "minify": minify,
         "source_map": minify,
         "quiet": state.quiet,

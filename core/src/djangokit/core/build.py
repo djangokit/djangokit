@@ -2,7 +2,6 @@ import subprocess
 from pathlib import Path
 from typing import List, Optional
 
-from django.conf import settings as django_settings
 from django.http import HttpRequest
 from django.template.loader import get_template
 
@@ -97,8 +96,10 @@ def make_bundle(
     """
     from .routes import get_route_info  # noqa: avoid circular import
 
+    debug = settings.DEBUG
+
     if env is None:
-        env = "development" if django_settings.DEBUG else "production"
+        env = "development" if debug else "production"
 
     if quiet is None:
         quiet = env == "production"
@@ -137,6 +138,8 @@ def make_bundle(
         "esbuild",
         entrypoint_path,
         "--bundle",
+        f"--define:DEBUG={str(debug).lower()}",
+        f"--define:ENV='{env}'",
         f"--inject:{build_dir / 'context.jsx'}",
         f"--outfile={bundle_path}",
     ]

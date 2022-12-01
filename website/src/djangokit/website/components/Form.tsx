@@ -1,7 +1,5 @@
 import { default as BootstrapForm } from "react-bootstrap/Form";
 
-declare const useCsrfContext;
-
 /**
  * Form that includes a hidden form with the CSRF token. This should
  * generally always be used for forms.

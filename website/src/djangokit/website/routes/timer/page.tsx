@@ -8,12 +8,13 @@ import { FaPause, FaPlay, FaStop } from "react-icons/fa";
 import IconButton from "../../components/IconButton";
 
 const TICK_MS = 50;
+const DEFAULT_SECONDS = ENV === "development" ? 5 : 0;
 
 export default function Page() {
   // User input
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
-  const [seconds, setSeconds] = useState(0);
+  const [seconds, setSeconds] = useState(DEFAULT_SECONDS);
 
   const [startMs, setStartMs] = useState<number>();
   const [endMs, setEndMs] = useState<number>();
@@ -123,7 +124,7 @@ export default function Page() {
 
   return (
     <div className="d-flex flex-column align-items-center gap-4">
-      <h1>Timer</h1>
+      <h1>Timer {ENV}</h1>
 
       <Form className="d-flex align-items-end gap-2">
         {started ? (
