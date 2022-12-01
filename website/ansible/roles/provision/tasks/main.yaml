@@ -47,11 +47,13 @@
     state: latest
     force_apt_get: true
   with_items:
+    - acl
     - nginx
     - nodejs
     - openssl
     - python3
     - python3-venv
+    - rsync
     - uwsgi
     - uwsgi-plugin-python3
 

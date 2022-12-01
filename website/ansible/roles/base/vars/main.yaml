@@ -1,5 +1,7 @@
 ---
 root: "{{ playbook_dir }}/.."
+core_root: "{{ playbook_dir }}/../../core"
+cli_root: "{{ playbook_dir }}/../../cli"
 
 package: "djangokit.website"
 site_user: "djangokit"

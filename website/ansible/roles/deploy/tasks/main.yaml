@@ -2,6 +2,8 @@
 # Create directories for version
 
 - name: Remove existing directory for version
+  become: true
+  become_user: "{{ site_user }}"
   file:
     path: "{{ remote_build_dir }}"
     state: absent
@@ -10,6 +12,8 @@
   file:
     path: "{{ remote_build_dir }}"
     state: directory
+    owner: "{{ site_user }}"
+    group: "{{ site_user }}"
     mode: 0751
 
 - name: Create current link to directory for version
@@ -17,11 +21,15 @@
     src: "{{ remote_build_dir }}"
     dest: "{{ remote_site_root }}/current"
     state: link
+    owner: "{{ site_user }}"
+    group: "{{ site_user }}"
 
 - name: Create app and static directories for version
   file:
     path: "{{ item }}"
     state: directory
+    owner: "{{ site_user }}"
+    group: "{{ site_user }}"
     mode: 0751
   with_items:
     - "{{ remote_app_dir }}"
@@ -31,6 +39,8 @@
   file:
     path: "{{ item }}"
     state: directory
+    owner: "{{ site_user }}"
+    group: "{{ site_user }}"
     mode: 0750
   with_items:
     - "{{ remote_pip_root }}"
@@ -45,6 +55,8 @@
   unarchive:
     src: "{{ app_build_archive }}"
     dest: "{{ remote_build_dir }}"
+    owner: "{{ site_user }}"
+    group: "{{ site_user }}"
     mode: 0751
 
 - name: Set ownership of Django static directory
@@ -64,6 +76,8 @@
     - deploy-app
     - install-app
     - create-virtualenv
+  become: true
+  become_user: "{{ site_user }}"
   pip:
     name:
       - pip
@@ -77,6 +91,8 @@
   tags:
     - deploy-app
     - install-app
+  become: true
+  become_user: "{{ site_user }}"
   find:
     paths: "{{ remote_pip_wheel_dir }}"
     patterns:
@@ -87,6 +103,8 @@
   tags:
     - deploy-app
     - install-app
+  become: true
+  become_user: "{{ site_user }}"
   file:
     path: "{{ item.path }}"
     state: absent
@@ -96,6 +114,8 @@
   tags:
     - deploy-app
     - install-app
+  become: true
+  become_user: "{{ site_user }}"
   command: >
     {{ remote_venv }}/bin/pip wheel
     --find-links {{ remote_dist_dir }}
@@ -106,6 +126,8 @@
 - name: Install app
   tags:
     - install
+  become: true
+  become_user: "{{ site_user }}"
   pip:
     name:
       - "{{ package }}"
@@ -118,8 +140,10 @@
 - name: Copy static files
   tags:
     - deploy-static
+  become: true
+  become_user: "{{ site_user }}"
   synchronize:
-    src: "{{ root }}/build/"
+    src: "{{ app_build_dir }}/static/"
     dest: "{{ remote_static_dir }}"
     rsync_path: sudo -u {{ site_user }} rsync
     delete: true
@@ -140,7 +164,9 @@
 # Database migrations
 
 - name: Run Django migrations
-  command: ./run migrate
+  become: true
+  become_user: "{{ site_user }}"
+  command: ./venv/bin/dk migrate
   args:
     chdir: "{{ remote_app_dir }}"
 
@@ -149,8 +175,6 @@
 - name: Copy uWSGI app config
   tags:
     - deploy-uwsgi
-  become: true
-  become_user: root
   template:
     src: "djangokit.ini.j2"
     dest: "/etc/uwsgi/apps-enabled/{{ hostname }}.ini"
@@ -158,8 +182,6 @@
 - name: Restart uWSGI
   tags:
     - deploy-uwsgi
-  become: true
-  become_user: root
   service:
     name: uwsgi
     state: restarted
@@ -170,8 +192,6 @@
 - name: Check uWSGI restart
   tags:
     - deploy-uwsgi
-  become: true
-  become_user: root
   async_status:
     jid: "{{ uwsgi_restart.ansible_job_id }}"
   register: job_result
@@ -184,8 +204,6 @@
 - name: Copy app Nginx config
   tags:
     - deploy-nginx
-  become: true
-  become_user: root
   template:
     src: "djangokit.conf.j2"
     dest: "/etc/nginx/conf.d/{{ hostname }}.conf"
@@ -193,8 +211,6 @@
 - name: Restart Nginx
   tags:
     - deploy-nginx
-  become: true
-  become_user: root
   service:
     name: nginx
     state: restarted
@@ -205,8 +221,6 @@
 - name: Check Nginx restart
   tags:
     - deploy-nginx
-  become: true
-  become_user: root
   async_status:
     jid: "{{ nginx_restart.ansible_job_id }}"
   register: job_result
@@ -219,6 +233,8 @@
 - name: Add cron HOME environment variable
   tags:
     - cron
+  become: true
+  become_user: "{{ site_user }}"
   cron:
     name: HOME
     env: true
@@ -227,6 +243,8 @@
 - name: Add cron MAILTO environment variable
   tags:
     - cron
+  become: true
+  become_user: "{{ site_user }}"
   cron:
     name: MAILTO
     env: true
@@ -235,6 +253,8 @@
 - name: Add cron SHELL environment variable
   tags:
     - cron
+  become: true
+  become_user: "{{ site_user }}"
   cron:
     name: SHELL
     env: true

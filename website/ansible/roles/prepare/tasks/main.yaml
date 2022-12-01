@@ -45,23 +45,44 @@
     src: "wsgi.py.j2"
     dest: "{{ app_build_dir }}/wsgi.py"
 
-- name: Build source distribution
+- name: Remove existing source distributions
   tags:
     - prepare-app
     - deploy-app
-    - build-distribution
-  command: poetry build --format wheel
+    - build-distributions
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ root }}/dist"
+    - "{{ core_root }}/dist"
+    - "{{ cli_root }}/dist"
 
-- name: Copy source distribution to build directory
+- name: Build source distributions
   tags:
     - prepare-app
     - deploy-app
-    - build-distribution
+    - build-distributions
+  command: poetry build --format wheel
+  args:
+    chdir: "{{ item }}"
+  with_items:
+    - "{{ root }}"
+    - "{{ core_root }}"
+    - "{{ cli_root }}"
+
+- name: Copy source distributions to build directory
+  tags:
+    - prepare-app
+    - deploy-app
+    - build-distributions
   copy:
     src: "{{ item }}"
     dest: "{{ app_build_dir }}/dist/"
   with_fileglob:
-    - "{{ app_build_root }}/djangokit*.whl"
+    - "{{ root }}/dist/*"
+    - "{{ core_root }}/dist/*"
+    - "{{ cli_root }}/dist/*"
 
 - name: Create build archive
   tags:

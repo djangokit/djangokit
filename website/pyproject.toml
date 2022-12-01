@@ -15,9 +15,11 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.11"
-djangokit-core = { path = "../core", develop = true }
-djangokit-cli = { path = "../cli", develop = true }
+python = "^3.9"
+djangokit-core = "*"
+djangokit-cli = "*"
+#djangokit-core = { path = "../core", develop = true }
+#djangokit-cli = { path = "../cli", develop = true }
 markdown = "^3.4.1"
 marshmallow = "^3.19.0"
 
