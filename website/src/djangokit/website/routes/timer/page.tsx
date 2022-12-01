@@ -13,8 +13,9 @@ export default function Page() {
   // User input
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
-  const [seconds, setSeconds] = useState(5);
+  const [seconds, setSeconds] = useState(0);
 
+  const [startMs, setStartMs] = useState<number>();
   const [endMs, setEndMs] = useState<number>();
   const [countdown, setCountdown] = useState("");
   const [started, setStarted] = useState(false);
@@ -76,9 +77,11 @@ export default function Page() {
     if (!(hours || minutes || seconds)) {
       return;
     }
+    const nowMs = getNowMs();
     const totalMs = (hours * 60 * 60 + minutes * 60 + seconds) * 1000;
     setMessage(undefined);
-    setEndMs(getNowMs() + totalMs);
+    setStartMs(nowMs);
+    setEndMs(nowMs + totalMs);
     setTotalExpectedTicks(totalMs / TICK_MS - 1);
     setStarted(true);
     setRunning(true);
@@ -202,11 +205,12 @@ export default function Page() {
         )}
       </Form>
 
-      {started ? (
+      {started && startMs && endMs ? (
         <div className="bg-light w-100">
           <ProgressBar
-            max={totalExpectedTicks}
-            now={totalExpectedTicks - numTicks}
+            min={Math.round(startMs / 10)}
+            max={Math.round(endMs / 10)}
+            now={Math.round(getNowMs() / 10)}
             striped={true}
           />
         </div>
