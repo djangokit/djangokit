@@ -34,7 +34,7 @@ server {
     ssl_prefer_server_ciphers on;
 
     location /static {
-        alias {{ remote_current_app }}/static;
+        alias {{ remote_current_static }};
     }
 
     location / {

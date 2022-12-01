@@ -2,6 +2,8 @@ import shlex
 import subprocess
 from typing import List, Union
 
+import typer
+
 Arg = Union[str, List[str]]
 Args = Union[Arg, List[Arg]]
 
@@ -43,7 +45,10 @@ def subprocess_run(args: List[str]) -> subprocess.CompletedProcess:
     from ..app import state
 
     state.console.command(">", " ".join(args))
-    return subprocess.run(args, stdout=subprocess.DEVNULL if state.quiet else None)
+    result = subprocess.run(args, stdout=subprocess.DEVNULL if state.quiet else None)
+    if result.returncode:
+        raise typer.Exit(result.returncode)
+    return result
 
 
 def process_args(args: Args) -> List[str]:

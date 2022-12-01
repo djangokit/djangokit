@@ -329,5 +329,5 @@ def configure_settings_module(**env_vars):
 def run_django_command(args: Args) -> subprocess.CompletedProcess:
     """Run a Django management command."""
     configure_settings_module()
-    args = ["poetry", "run", "django-admin"] + process_args(args)
+    args = ["django-admin"] + process_args(args)
     return subprocess_run(args)

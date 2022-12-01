@@ -20,7 +20,7 @@ from .utils import Console
 app = typer.Typer()
 
 
-class Env(str, enum.Enum):
+class Env(enum.Enum):
 
     dev = "dev"
     development = "development"
@@ -52,14 +52,16 @@ state = State()
 def main(
     ctx: Context,
     env: Env = Option(
-        state.env,
+        state.env.value,
         "-e",
         "--env",
+        envvar="ENV",
     ),
     dotenv_path: Path = Option(
         state.dotenv_path,
         "-t",
         "--dotenv",
+        envvar="DOTENV_PATH",
     ),
     settings_module: str = Option(
         state.settings_module,
@@ -96,6 +98,8 @@ def main(
 
     dotenv_settings = get_dotenv_settings(dotenv_path)
 
+    os.environ["DOTENV_PATH"] = str(dotenv_path)
+
     # When the Django settings module isn't specified on the command
     # line and also isn't present as an env var, see if it's present in
     # the project's .env settings; otherwise, use the default.
@@ -119,7 +123,7 @@ def main(
     console.print(f"Quiet = {quiet}")
     console.print()
 
-    state.env = env
+    state.env = env.value
     state.dotenv_path = dotenv_path
     state.dotenv_settings = dotenv_settings
     state.settings_module = settings_module

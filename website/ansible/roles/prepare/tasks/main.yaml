@@ -1,13 +1,13 @@
 ---
 # App
 
-- name: Remove local app build root
+- name: Remove local app build directory
   tags:
     - prepare-app
     - prepare-app-clean
     - deploy-app
   file:
-    path: "{{ app_build_root }}"
+    path: "{{ app_build_dir }}"
     state: absent
 
 - name: Create local app build directory for version
@@ -32,7 +32,7 @@
     - prepare-app
     - prepare-copy-files
     - deploy-app
-  copy:
+  template:
     src: "{{ root }}/.env.{{ env }}"
     dest: "{{ app_build_dir }}/.env"
 
@@ -95,17 +95,17 @@
 
 # Static files
 
-- name: Remove local static build root
+- name: Remove local static build directories
   tags:
     - prepare-static
     - prepare-static-clean
     - deploy-static
   file:
-    path: "{{ root }}/src/djangokit/static/build"
+    path: "{{ item }}"
     state: absent
-
-- name: Build client bundle
-  command: echo $PWD
+  with_items:
+    - "{{ static_build_root }}"
+    - "{{ django_static_root }}"
 
 - name: Build client bundle
   tags:
@@ -117,14 +117,14 @@
     --env {{ env }}
     build-client
     --minify 
+  args:
+    creates: "bundle.client.js"
 
 - name: Collect Django static files
   tags:
     - prepare-app
     - deploy-app
     - collectstatic
-  command: dk manage collectstatic
-  args:
-    chdir: "{{ app_build_dir }}"
   environment:
-    DYLD_LIBRARY_PATH: "/opt/homebrew/lib"
+    - DJANGO_STATIC_ROOT: "{{ django_static_root }}"
+  command: djangokit manage collectstatic

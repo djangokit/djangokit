@@ -28,6 +28,7 @@ automatically be used if it's not set in the `DJANGOKIT` dict::
 
 """
 import dataclasses
+import socket
 from functools import cached_property
 from pathlib import Path
 from typing import Any, Callable, Dict, List
@@ -61,6 +62,14 @@ class Settings:
 
     # XXX: Keep in sync with `.settings.defaults.DJANGOKIT`.
     known_settings = {
+        "title": {
+            "type": str,
+            "default": "DjangoKit Site",
+        },
+        "description": {
+            "type": str,
+            "default": "A website made with DjangoKit",
+        },
         "package": {
             "type": str,
         },
@@ -80,7 +89,33 @@ class Settings:
             "type": bool,
             "default": True,
         },
+        "webmaster": {
+            "type": str,
+            "default": "",
+        },
+        "static_build_dir": {
+            "type": str,
+            "default": "",
+        },
     }
+
+    @cached_property
+    def title(self) -> str:
+        """Project title.
+
+        Used as the default HTML page title.
+
+        """
+        return self._get_required("title")
+
+    @cached_property
+    def description(self) -> str:
+        """Project description.
+
+        Used as the default meta description.
+
+        """
+        return self._get_required("description")
 
     @cached_property
     def package(self) -> str:
@@ -117,6 +152,21 @@ class Settings:
     def ssr(self) -> bool:
         return self._get_optional("ssr")
 
+    @cached_property
+    def webmaster(self) -> str:
+        webmaster = self._get_optional("webmaster")
+        if webmaster:
+            return webmaster
+        hostname = socket.gethostname()
+        return f"webmaster@{hostname}"
+
+    @cached_property
+    def static_build_dir(self) -> Path:
+        static_build_dir = self._get_optional("static_build_dir")
+        if static_build_dir:
+            return Path(static_build_dir)
+        return self.app_dir / "static" / "build"
+
     # Derived settings -------------------------------------------------
     #
     # These are not directly settable in a project.
@@ -137,10 +187,6 @@ class Settings:
     @cached_property
     def routes_package(self) -> Path:
         return f"{self.package}.routes"
-
-    @cached_property
-    def static_build_dir(self) -> Path:
-        return self.app_dir / "static" / "build"
 
     # Utilities --------------------------------------------------------
 

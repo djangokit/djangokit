@@ -8,28 +8,20 @@ site_user: "djangokit"
 
 # Local ----------------------------------------------------------------
 
-# Local app build directory
-app_build_root: "{{ root }}/build"
-app_build_dir: "{{ app_build_root }}/app"
+build_root: "{{ root }}/build"
 
+# App
+app_build_dir: "{{ build_root }}/app"
 app_build_archive_name: "app.tgz"
-app_build_archive: "{{ app_build_root }}/{{ app_build_archive_name }}"
+app_build_archive: "{{ build_root }}/{{ app_build_archive_name }}"
 
+# Static
 static_build_root: "{{ root }}/src/djangokit/website/static/build"
-django_static_root: "{{ root }}/static"
+django_static_root: "{{ build_root }}/static"
 
 # Remote ---------------------------------------------------------------
 
 remote_site_root: "/sites/{{ hostname }}"
-remote_current_root: "{{ remote_site_root }}/current"
-remote_current_app: "{{ remote_current_root }}/app"
-remote_current_static: "{{ remote_current_root }}/static"
-
-remote_pip_root: "{{ remote_site_root }}/pip"
-remote_pip_cache_dir: "{{ remote_pip_root }}/cache"
-remote_pip_wheel_dir: "{{ remote_pip_root }}/wheels"
-
-# Contains app and static subdirectories
 remote_build_dir: "{{ remote_site_root }}/{{ version }}"
 
 # App
@@ -37,5 +29,18 @@ remote_app_dir: "{{ remote_build_dir }}/app"
 remote_dist_dir: "{{ remote_app_dir }}/dist"
 remote_venv: "{{ remote_app_dir }}/venv"
 
+# SSR
+remote_ssr_dir: "{{ remote_build_dir }}/ssr"
+
 # Static
 remote_static_dir: "{{ remote_build_dir }}/static"
+
+# Current app & static deployment directories
+remote_current_root: "{{ remote_site_root }}/current"
+remote_current_app: "{{ remote_current_root }}/app"
+remote_current_static: "{{ remote_current_root }}/static"
+
+# pip directories
+remote_pip_root: "{{ remote_site_root }}/pip"
+remote_pip_cache_dir: "{{ remote_pip_root }}/cache"
+remote_pip_wheel_dir: "{{ remote_pip_root }}/wheels"

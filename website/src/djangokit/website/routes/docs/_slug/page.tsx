@@ -19,6 +19,9 @@ export default function Page() {
   return (
     <>
       <h2>{data.title}</h2>
+      {data.lead ? (
+        <div dangerouslySetInnerHTML={{ __html: data.lead }} className="mb-4" />
+      ) : null}
       <div dangerouslySetInnerHTML={{ __html: data.content }} />
     </>
   );

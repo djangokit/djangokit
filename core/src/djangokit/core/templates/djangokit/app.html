@@ -4,11 +4,7 @@
 
 <html lang="en">
   <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="DjangoKit App">
-
-    <title>DjangoKit App</title>
+    {% include "djangokit/_app_meta.html" with settings=settings %}
 
     <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
 

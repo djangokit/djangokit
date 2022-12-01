@@ -9,20 +9,39 @@ from django.core.exceptions import ImproperlyConfigured
 NOT_SET = object()
 
 
-def load_dotenv(path=".env") -> bool:
-    """Load settings from .env file into environ."""
-    path = Path(path)
-    public_path = path.parent / ".env.public"
-    dotenv.load_dotenv(public_path)
-    return dotenv.load_dotenv(path)
+def get_dotenv_path(path=None):
+    if path is None:
+        if "DOTENV_PATH" in os.environ:
+            path = os.environ["DOTENV_PATH"]
+        else:
+            path = ".env"
+    return Path(path)
 
 
-def dotenv_settings(path=".env") -> Dict[str, Optional[str]]:
+def load_dotenv(path=None) -> bool:
     """Load settings from .env file into environ."""
-    path = Path(path)
+    path = get_dotenv_path(path)
     public_path = path.parent / ".env.public"
-    values = dotenv.dotenv_values(public_path)
-    values.update(dotenv.dotenv_values(path))
+    if public_path.exists():
+        public_loaded = dotenv.load_dotenv(public_path)
+    else:
+        public_loaded = False
+    if path.exists():
+        loaded = dotenv.load_dotenv(path)
+    else:
+        loaded = False
+    return public_loaded or loaded
+
+
+def dotenv_settings(path=None) -> Dict[str, Optional[str]]:
+    """Load settings from .env file into environ."""
+    path = get_dotenv_path(path)
+    public_path = path.parent / ".env.public"
+    values = {}
+    if public_path.exists():
+        values.update(dotenv.dotenv_values(public_path))
+    if path.exists():
+        values.update(dotenv.dotenv_values(path))
     processed_values = {}
     for name, value in values.items():
         processed_values[name] = convert_env_val(value)

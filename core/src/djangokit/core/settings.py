@@ -1,4 +1,4 @@
-"""Default settings used by DjangoKit projects.
+"""Default Django settings module used by DjangoKit projects.
 
 Settings can be set via environment variables in a project's `.env`
 file(s) and/or using standard OS mechanisms.
@@ -107,11 +107,15 @@ defaults = Settings(
     # DjangoKit
     # XXX: Keep in sync with `.conf.Settings.known_settings`.
     DJANGOKIT={
+        "title": "A DjangoKit Site",
+        "description": "A website made with DjangoKit",
         "package": djangokit_package,
         "app_label": djangokit_package.replace(".", "_"),
         "global_css": ["global.css"],
         "current_user_serializer": "djangokit.core.user.current_user_serializer",
         "ssr": True,
+        "webmaster": "",
+        "static_build_dir": "",
     },
     # Basics
     ROOT_URLCONF="djangokit.core.urls",
@@ -163,6 +167,7 @@ defaults = Settings(
     # Static files
     STATIC_ROOT="static",
     STATIC_URL="static/",
+    STATICFILES_STORAGE="django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
     # Templates
     TEMPLATES=[
         {
@@ -178,6 +183,20 @@ defaults = Settings(
             },
         },
     ],
+    # Logging
+    LOGGING={
+        "version": 1,
+        "disable_existing_loggers": False,
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+            },
+        },
+        "root": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+    },
 )
 
 DJANGOKIT = defaults.DJANGOKIT.copy()
@@ -247,11 +266,10 @@ def add_django_settings():
 
 
 def process_nested_settings(name, env_prefix=None):
-    """This is used to process settings like CACHES & DATABASES.
+    """Process nested settings like CACHES, DATABASES, and LOGGING.
 
-    It expects the root setting to exist and to contain keys like
-    "default" that contain the settings for a given cache, database,
-    etc.
+    The root setting (e.g., `DATABASES`) is expected to already exist,
+    at least as an empty dict.
 
     After stripping the env prefix, the env var name is split on double
     underscores into segments corresponding to sub-dicts of the root
@@ -314,3 +332,4 @@ add_djangokit_settings()
 add_django_settings()
 process_nested_settings("CACHES")
 process_nested_settings("DATABASES")
+process_nested_settings("LOGGING")

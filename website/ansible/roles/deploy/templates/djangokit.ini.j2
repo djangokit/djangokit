@@ -1,4 +1,8 @@
 [uwsgi]
+env =
+    ENV={{ env }}
+    DOTENV_PATH={{ remote_app_dir }}/.env
+
 master = true
 plugins = python3
 

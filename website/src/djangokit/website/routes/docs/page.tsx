@@ -6,7 +6,7 @@ export default function Page() {
       <p className="lead">Welcome to the DjangoKit documentation!</p>
       <p>
         <Link to="get-started">Click here to get started</Link> or click another
-        link on the left to get started.
+        link on the left to jump into a specific topic.
       </p>
     </>
   );

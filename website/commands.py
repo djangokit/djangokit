@@ -1,7 +1,7 @@
 import os
 
 from djangokit.core.env import load_dotenv
-from runcommands import command
+from runcommands import arg, command
 from runcommands import commands as c
 from runcommands import printer
 
@@ -68,16 +68,34 @@ def prepare(env, hostname, version=None, provision_=False):
 
 @command
 def deploy(
-    env,
-    hostname,
-    version=None,
-    provision_=False,
-    prepare_=True,
-    app=True,
-    static=True,
+    env: arg(help="Build/deployment environment"),
+    hostname: arg(help="Host to deploy to"),
+    version: arg(help="Name of version being deployed [short git hash]") = None,
+    provision_: arg(help="Run provisioning steps? [no]") = False,
+    prepare_: arg(
+        short_option="-r",
+        inverse_short_option="-R",
+        help="Run local prep steps? [yes]",
+    ) = True,
+    app: arg(help="Deploy app? [yes]") = True,
+    static: arg(help="Deploy static files? [yes]") = True,
 ):
-    printer.header(f"Deploying to {hostname} ({env})")
+    """Deploy site."""
     version = version or c.git_version()
+
+    bool_as_str = lambda b: "yes" if b else "no"
+
+    printer.hr()
+    printer.header(f"Deploying to {hostname} ({env})\n")
+    printer.print(f"env = {env}")
+    printer.print(f"hostname = {hostname}")
+    printer.print(f"version = {version}")
+    printer.print(f"provision = {bool_as_str(provision_)}")
+    printer.print(f"local prep = {bool_as_str(prepare_)}")
+    printer.print(f"deploy app = {bool_as_str(app)}")
+    printer.print(f"deploy static = {bool_as_str(static)}")
+    printer.print("")
+
     tags = []
     skip_tags = []
     if provision_:
@@ -91,5 +109,6 @@ def deploy(
         skip_tags.append("prepare-static")
         skip_tags.append("deploy-static")
     tags.append("deploy")
+
     printer.hr(f"Deploying DjangoKit website version {version}")
     ansible(env, hostname, version, tags=tags, skip_tags=skip_tags)
