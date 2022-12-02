@@ -14,6 +14,9 @@ dotenv_file: ".env.{{ env }}"
 local_public_dotenv_file: "{{ root }}/.env.public"
 local_dotenv_file: "{{ root }}/{{ dotenv_file }}"
 
+package_dir: "{{ root }}/src/djangokit/website"
+static_dir: "{{ package_dir }}/static"
+
 # Build root
 build_root: "{{ root }}/build"
 
@@ -22,9 +25,16 @@ app_build_dir: "{{ build_root }}/app"
 app_build_archive_name: "app.tgz"
 app_build_archive: "{{ build_root }}/{{ app_build_archive_name }}"
 
+# SSR
+ssr_build_dir: "{{ build_root }}/ssr"
+ssr_build_archive_name: "ssr.tgz"
+ssr_build_archive: "{{ build_root }}/{{ ssr_build_archive_name }}"
+
 # Static
-client_build_dir: "{{ root }}/src/djangokit/website/static/build"
-django_static_root: "{{ build_root }}/static"
+client_build_dir: "{{ static_dir }}/build"
+static_build_dir: "{{ build_root }}/static"
+static_build_archive_name: "static.tgz"
+static_build_archive: "{{ build_root }}/{{ static_build_archive_name }}"
 
 # Remote ---------------------------------------------------------------
 

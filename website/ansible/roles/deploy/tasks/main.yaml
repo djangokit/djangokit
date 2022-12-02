@@ -1,12 +1,12 @@
 ---
 # Create directories for version
 
-#- name: Remove existing directory for version
-#  become: true
-#  become_user: root
-#  file:
-#    path: "{{ remote_build_dir }}"
-#    state: absent
+- name: Remove existing build directory for version
+  become: true
+  become_user: root
+  file:
+    path: "{{ remote_build_dir }}"
+    state: absent
 
 - name: Create directory for version
   file:
@@ -59,18 +59,6 @@
     owner: "{{ site_user }}"
     group: "{{ site_user }}"
     mode: 0751
-
-- name: Set ownership of Django static directory
-  tags:
-    - deploy-app
-  become: true
-  become_user: root
-  file:
-    path: "{{ remote_app_dir }}/static"
-    state: directory
-    group: www-data
-    mode: u=rwx,g=rX,o=
-    recurse: true
 
 - name: Create virtualenv for site
   tags:
@@ -138,20 +126,20 @@
 
 # SSR
 
-- name: Copy package.json for SSR
+- name: Copy and extract SSR build archive
   tags:
-    - deploy-app
-  become: true
-  become_user: "{{ site_user }}"
-  synchronize:
-    src: "package.json"
-    dest: "{{ remote_ssr_dir }}"
-    rsync_path: sudo -u {{ site_user }} rsync
-    delete: true
+    - deploy-ssr
+  unarchive:
+    src: "{{ ssr_build_archive }}"
+    dest: "{{ remote_build_dir }}"
+    owner: "{{ site_user }}"
+    group: "{{ site_user }}"
+    mode: 0751
 
 - name: Install SSR
   tags:
     - deploy-app
+    - deploy-ssr
   become: true
   become_user: "{{ site_user }}"
   command: npm install
@@ -160,18 +148,17 @@
 
 # Static files
 
-- name: Copy static files
+- name: Copy and extract static build archive
   tags:
     - deploy-static
-  become: true
-  become_user: "{{ site_user }}"
-  synchronize:
-    src: "{{ build_root }}/static/"
-    dest: "{{ remote_static_dir }}"
-    rsync_path: sudo -u {{ site_user }} rsync
-    delete: true
+  unarchive:
+    src: "{{ static_build_archive }}"
+    dest: "{{ remote_build_dir }}"
+    owner: "{{ site_user }}"
+    group: "{{ site_user }}"
+    mode: 0751
 
-- name: Set ownership & permissions of static end files
+- name: Set ownership & permissions of static files
   become: true
   become_user: root
   tags:

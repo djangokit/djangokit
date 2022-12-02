@@ -82,9 +82,17 @@ def upgrade_remote(env, hostname):
 
 
 @command
-def prepare(env, hostname, version=None, provision_=False):
+def prepare(
+    env,
+    hostname,
+    version=None,
+    provision_=False,
+    clean_: arg(help="Remove build directory? [no]") = False,
+):
     """Prepare build locally for deployment."""
     printer.header(f"Preparing deployment to {hostname} ({env})")
+    if clean_:
+        c.local("rm -rf build")
     version = version or c.git_version()
     tags = []
     if provision_:
@@ -105,12 +113,15 @@ def deploy(
         inverse_short_option="-R",
         help="Run local prep steps? [yes]",
     ) = True,
+    clean_: arg(help="Remove build directory? [no]") = False,
     app: arg(help="Deploy app? [yes]") = True,
     static: arg(help="Deploy static files? [yes]") = True,
 ):
     """Deploy site."""
-    version = version or c.git_version()
+    if clean_:
+        c.local("rm -rf build")
 
+    version = version or c.git_version()
     bool_as_str = lambda b: "yes" if b else "no"
 
     printer.hr()

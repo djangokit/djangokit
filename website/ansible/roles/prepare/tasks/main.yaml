@@ -1,7 +1,7 @@
 ---
 # App
 
-- name: Remove local app build directory & archive
+- name: <LOCAL> Remove app build directory & archive
   tags:
     - prepare-app
     - prepare-app-clean
@@ -13,7 +13,7 @@
     - "{{ app_build_dir }}"
     - "{{ app_build_archive }}"
 
-- name: Create local app build directory for version
+- name: <LOCAL> Create app build directory for version
   tags:
     - prepare-app
     - deploy-app
@@ -21,7 +21,7 @@
     path: "{{ app_build_dir }}"
     state: directory
 
-- name: Copy local public dotenv file to build directory
+- name: <LOCAL> Copy public dotenv file to build directory
   tags:
     - prepare-app
     - prepare-copy-files
@@ -30,7 +30,7 @@
     src: "{{ local_public_dotenv_file }}"
     dest: "{{ app_build_dir }}"
 
-- name: Copy local env-specific dotenv file to build directory
+- name: <LOCAL> Copy env-specific dotenv file to build directory
   tags:
     - prepare-app
     - prepare-copy-files
@@ -39,7 +39,7 @@
     src: "{{ local_dotenv_file }}"
     dest: "{{ app_build_dir }}"
 
-- name: Copy WSGI module to build directory
+- name: <LOCAL> Copy WSGI module to build directory
   tags:
     - prepare-app
     - prepare-copy-files
@@ -48,7 +48,7 @@
     src: "wsgi.py.j2"
     dest: "{{ app_build_dir }}/wsgi.py"
 
-- name: Remove existing source distributions
+- name: <LOCAL> Remove existing source distributions
   tags:
     - prepare-app
     - deploy-app
@@ -61,7 +61,7 @@
     - "{{ core_root }}/dist"
     - "{{ cli_root }}/dist"
 
-- name: Build source distributions
+- name: <LOCAL> Build source distributions
   tags:
     - prepare-app
     - deploy-app
@@ -74,7 +74,7 @@
     - "{{ core_root }}"
     - "{{ cli_root }}"
 
-- name: Copy source distributions to build directory
+- name: <LOCAL> Copy source distributions to build directory
   tags:
     - prepare-app
     - deploy-app
@@ -87,18 +87,80 @@
     - "{{ core_root }}/dist/*"
     - "{{ cli_root }}/dist/*"
 
-- name: Create build archive
+- name: <LOCAL> Create build archive
   tags:
     - prepare-app
     - deploy-app
-    - create-build-archive
+    - create-app-archive
   archive:
     path: "{{ app_build_dir }}"
     dest: "{{ app_build_archive }}"
 
+# SSR
+
+- name: <LOCAL> Remove SSR build directory & archive
+  tags:
+    - prepare-ssr
+    - prepare-ssr-clean
+    - deploy-ssr
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ ssr_build_dir }}"
+    - "{{ ssr_build_archive }}"
+
+- name: <LOCAL> Create SSR build directory for version
+  tags:
+    - prepare-ssr
+    - deploy-ssr
+  file:
+    path: "{{ ssr_build_dir }}"
+    state: directory
+
+- name: <LOCAL> Copy package.json to SSR build directory
+  tags:
+    - prepare-ssr
+    - deploy-ssr
+  copy:
+    src: "package.json"
+    dest: "{{ ssr_build_dir }}"
+
+- name: <LOCAL> Copy source files to SSR build directory
+  tags:
+    - prepare-ssr
+    - deploy-ssr
+  command: >
+    rsync -rltvzm
+    --exclude __pycache__/
+    --exclude static/build/
+    --include */
+    --include *.ts
+    --include *.tsx
+    --exclude *
+    "{{ package_dir }}/"
+    "{{ ssr_build_dir }}/"
+
+- name: <LOCAL> Create SSR build directory (used on server)
+  tags:
+    - prepare-ssr
+    - deploy-ssr
+  file:
+    path: "{{ ssr_build_dir }}/static/build"
+    state: directory
+
+- name: <LOCAL> Create SSR archive
+  tags:
+    - prepare-ssr
+    - deploy-ssr
+    - create-ssr-archive
+  archive:
+    path: "{{ ssr_build_dir }}"
+    dest: "{{ ssr_build_archive }}"
+
 # Static files
 
-- name: Remove local client & static build directories
+- name: <LOCAL> Remove client & static build directories
   tags:
     - prepare-static
     - prepare-static-clean
@@ -108,9 +170,10 @@
     state: absent
   with_items:
     - "{{ client_build_dir }}"
-    - "{{ django_static_root }}"
+    - "{{ static_build_dir }}"
+    - "{{ static_build_archive }}"
 
-- name: Build client bundle
+- name: <LOCAL> Build client bundle
   tags:
     - prepare-static
     - prepare-static-build
@@ -123,13 +186,22 @@
     build-client
     --minify 
   args:
-    creates: "bundle.client.js"
+    creates: "{{ client_build_dir }}/bundle.client.js"
 
-- name: Collect Django static files
+- name: <LOCAL> Collect Django static files
   tags:
-    - prepare-app
-    - deploy-app
-    - collectstatic
+    - prepare-static
+    - prepare-static-build
+    - deploy-static
   environment:
-    - DJANGO_STATIC_ROOT: "{{ django_static_root }}"
+    - DJANGO_STATIC_ROOT: "{{ static_build_dir }}"
   command: djangokit manage collectstatic
+
+- name: <LOCAL> Create static archive
+  tags:
+    - prepare-static
+    - deploy-static
+    - create-static-archive
+  archive:
+    path: "{{ static_build_dir }}"
+    dest: "{{ static_build_archive }}"
