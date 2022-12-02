@@ -26,9 +26,6 @@ class Migration(migrations.Migration):
                 ("published", models.BooleanField(default=False)),
                 ("order", models.PositiveIntegerField(default=0)),
             ],
-            options={
-                "db_table": "page",
-                "ordering": ["order", "title"]
-            },
+            options={"db_table": "page", "ordering": ["order", "title"]},
         ),
     ]

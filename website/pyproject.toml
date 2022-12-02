@@ -29,7 +29,7 @@ black = "^22.10.0"
 isort = "^5.10.1"
 mypy = "^0.990"
 pytest = "^7.2.0"
-runcommands = "^1.0a70"
+runcommands = "^1.0a71"
 
 [tool.runcommands.globals]
 env = "development"
