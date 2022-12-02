@@ -12,7 +12,7 @@ const queryClient = new QueryClient();
 const routerContext = { location: "{{ request.path }}" };
 const router = unstable_createStaticRouter(routes, routerContext);
 
-export default function ServerApp() {
+export default function App() {
   return (
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>

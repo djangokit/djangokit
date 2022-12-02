@@ -186,7 +186,7 @@
     build-client
     --minify 
   args:
-    creates: "{{ client_build_dir }}/bundle.client.js"
+    creates: "{{ client_build_dir }}/client.bundle.js"
 
 - name: <LOCAL> Collect Django static files
   tags:

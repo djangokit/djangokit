@@ -8,7 +8,7 @@ import routes from "./routes";
 const queryClient = new QueryClient();
 const router = createBrowserRouter(routes);
 
-export default function ClientApp() {
+export default function App() {
   const [csrfToken, setCsrfToken] = useState("");
   const [currentUser, setCurrentUser] = useState(ANONYMOUS_USER);
 

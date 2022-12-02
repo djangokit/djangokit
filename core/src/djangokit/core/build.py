@@ -25,13 +25,13 @@ def make_client_bundle(
 
     """
     return make_bundle(
-        "main.client.jsx",
-        "bundle.client.js",
+        "client.main.jsx",
+        "client.bundle.js",
         [
             "djangokit/context.jsx",
             "djangokit/routes.jsx",
-            "djangokit/client-app.jsx",
-            "djangokit/main.client.jsx",
+            "djangokit/client.app.jsx",
+            "djangokit/client.main.jsx",
         ],
         env=env,
         minify=minify,
@@ -51,13 +51,13 @@ def make_server_bundle(
 ) -> str:
     """Build React app bundle for server side rendering."""
     return make_bundle(
-        "main.server.jsx",
-        "bundle.server.js",
+        "server.main.jsx",
+        "server.bundle.js",
         [
             "djangokit/context.jsx",
             "djangokit/routes.jsx",
-            "djangokit/server-app.jsx",
-            "djangokit/main.server.jsx",
+            "djangokit/server.app.jsx",
+            "djangokit/server.main.jsx",
         ],
         env=env,
         minify=minify,
