@@ -1,5 +1,5 @@
 from pathlib import Path
-from subprocess import PIPE, run, CompletedProcess, Popen
+from subprocess import PIPE, CompletedProcess, Popen, run
 from typing import List, Optional, Union
 
 from django.http import HttpRequest

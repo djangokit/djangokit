@@ -14,7 +14,7 @@ from djangokit.core.conf import Settings, settings
 from djangokit.core.env import dotenv_settings as get_dotenv_settings
 from typer import Context, Option
 
-from .utils import params, Console
+from .utils import Console, params
 
 app = typer.Typer()
 

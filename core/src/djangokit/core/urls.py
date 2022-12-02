@@ -1,11 +1,8 @@
 from django.contrib import admin
 from django.http import HttpResponseServerError
-from django.urls import include, path
 from django.template import loader
-from django.views.defaults import (
-    ERROR_500_TEMPLATE_NAME,
-    server_error,
-)
+from django.urls import include, path
+from django.views.defaults import ERROR_500_TEMPLATE_NAME, server_error
 
 from .conf import settings
 from .routes import get_route_urls

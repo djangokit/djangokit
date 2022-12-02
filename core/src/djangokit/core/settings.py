@@ -23,26 +23,34 @@ name:
 
     DJANGOKIT_PACKAGE="myapp"
 
+Database Settings
+-----------------
+
+Settings for the *default* database can be specified using special-case
+env vars::
+
+    # .env.production
+    DJANGO_DATABASE_NAME="/production/path/to/db/sqlite.db"
+
+Settings for other databases can be specified using the nested settings
+syntax (see below).
+
 Nested Settings
 ---------------
 
-Cache and database settings are a special case due to nesting. They can
-be defined using the following convention (note the double underscores
-and case sensitivity):
+Cache, database, and logging settings are a special case due to nesting.
+They can be defined using the following convention (note the double
+underscores and case sensitivity):
 
     DJANGO_DATABASES_<name>__<key>__<subkey>
 
 For example, to override the default database settings:
 
-    # .env
+    # .env.production
     DJANGO_DATABASES_default__ENGINE="django.contrib.gis.db.backends.postgis"
     DJANGO_DATABASES_default__USER="some_user"
     DJANGO_DATABASES_default__PASSWORD="some_password"
     DJANGO_DATABASES_default__HOST="some.host"
-
-.. todo:
-    Support DATABASE_URL? It might be possible to use the
-    django-database-url package for this.
 
 Settings for Third Party Apps
 ----------------------------
@@ -65,6 +73,7 @@ any env settings will still take precedence.
 
 """
 import importlib
+from itertools import chain
 from os import environ
 from uuid import uuid4
 
@@ -199,11 +208,6 @@ defaults = Settings(
     },
 )
 
-DJANGOKIT = defaults.DJANGOKIT.copy()
-
-# XXX: This is a special case because ROOT_URLCONF isn't defined in
-#      Django's global settings.
-ROOT_URLCONF = getenv("DJANGO_ROOT_URLCONF", defaults.ROOT_URLCONF)
 
 settings = globals()
 
@@ -239,14 +243,16 @@ def import_additional_settings():
 
 def add_djangokit_settings():
     """Add DjangoKit settings defined in the environment."""
+    if "DJANGOKIT" not in settings:
+        settings["DJANGOKIT"] = defaults.DJANGOKIT.copy()
     for name in defaults.DJANGOKIT:
         env_name = f"DJANGOKIT_{name.upper()}"
         if env_name in environ:
             val = getenv(env_name)
-            DJANGOKIT[name] = val
+            settings["DJANGOKIT"][name] = val
 
 
-def add_django_settings():
+def add_known_django_settings():
     """Add Django settings defined in the environment.
 
     If a Django setting isn't defined in the environment and has a
@@ -255,17 +261,47 @@ def add_django_settings():
     by Django).
 
     """
-    for name in vars(global_settings):
+    # NOTE: ROOT_URLCONF is a special case because it isn't defined in
+    #       Django's global settings
+    for name in chain(vars(global_settings), ["ROOT_URLCONF"]):
         env_name = f"DJANGO_{name}"
         if env_name in environ:
             val = getenv(env_name)
             settings[name] = val
-        elif name in defaults:
+        elif name not in settings and name in defaults:
+            # TODO: Copy defaults so they aren't overwritten
             val = defaults[name]
             settings[name] = val
 
 
-def process_nested_settings(name, env_prefix=None):
+def add_other_django_settings():
+    """Add other Django settings defined in the environment.
+
+    These can include:
+
+    - Settings for third party Django apps
+    - Default database settings
+    - *Any* other settings -- any env var prefixed with `DJANGO_` will
+      be added
+
+    """
+    known_settings = vars(global_settings)
+    for env_name in environ:
+        if env_name.startswith("DJANGO_"):
+            name = env_name[7:]
+            if name in known_settings or name == "ROOT_URLCONF":
+                continue
+            if name.startswith("DATABASE_"):
+                # Default database settings
+                setting = settings["DATABASES"]["default"]
+                _set_nested(setting, "DJANGO_DATABASE_", env_name)
+            else:
+                # Third party or other setting
+                val = getenv(env_name)
+                settings[name] = val
+
+
+def add_nested_settings(name, env_prefix=None):
     """Process nested settings like CACHES, DATABASES, and LOGGING.
 
     The root setting (e.g., `DATABASES`) is expected to already exist,
@@ -293,43 +329,62 @@ def process_nested_settings(name, env_prefix=None):
     .. note::
 
     """
+    env_prefix = env_prefix or f"DJANGO_{name}_"
     if name in settings:
-        root_setting = settings[name]
+        top_level_setting = settings[name]
     else:
         default = getattr(global_settings, name, {})
-        root_setting = settings[name] = default
-
-    env_prefix = env_prefix or f"DJANGO_{name}_"
-    env_prefix_len = len(env_prefix)
-
+        top_level_setting = settings[name] = default
     for env_name in environ:
-        if not env_name.startswith(env_prefix):
-            continue
+        if env_name.startswith(env_prefix):
+            _set_nested(top_level_setting, env_prefix, env_name, 2)
 
-        path = env_name[env_prefix_len:]
-        segments = path.split("__")
-        num_segments = len(segments)
 
-        if num_segments < 2:
-            raise ImproperlyConfigured(
-                f"Database setting name is not valid: {env_name}. "
-                "Expected format is {env_prefix}<key>={...} or"
-                "{env_prefix}<key>__<subkey>=<value>."
-            )
+def _set_nested(setting, env_prefix, env_name, min_path_len=1):
+    """Set a sub-setting of the specified setting.
 
-        key = segments[0]
-        root_setting.setdefault(key)
+    The setting can be a top level setting such as `DATABASES` or a
+    nested setting such as `DATABASES["default"]`.
 
-        setting = root_setting[key]
+    Example::
+
+        setting = settings.DATABASES["default"]
+        env_prefix = "DJANGO_DATABASE_"
+        env_name = "DJANGO_DATABASE_NAME"
+        _set_nested(setting, env_prefix, env_name)
+        # -> sets DATABASES["default"]["NAME"]
+
+    Example::
+
+        setting = settings.DATABASES
+        env_prefix = "DJANGO_DATABASES_"
+        env_name = "DJANGO_DATABASE_default__NAME"
+        _set_nested(setting, env_prefix, env_name)
+        # -> sets DATABASES["default"]["NAME"]
+
+    """
+    path = env_name[len(env_prefix) :]
+    segments = path.split("__")
+    num_segments = len(segments)
+    if num_segments < min_path_len:
+        raise ImproperlyConfigured(
+            f"Env setting name is not valid: {env_name}. Expected "
+            f"{min_path_len} segments separated by __."
+        )
+    val = getenv(env_name)
+    if num_segments == 1:
+        setting[segments[0]] = val
+    else:
+        obj = setting[segments[0]]
         for segment in segments[1:-1]:
-            setting = setting.setdefault(segment, {})
-        val = getenv(env_name)
-        setting[segments[-1]] = val
+            obj = obj.setdefault(segment, {})
+        obj[segments[-1]] = val
 
 
 import_additional_settings()
 add_djangokit_settings()
-add_django_settings()
-process_nested_settings("CACHES")
-process_nested_settings("DATABASES")
-process_nested_settings("LOGGING")
+add_known_django_settings()
+add_other_django_settings()
+add_nested_settings("CACHES")
+add_nested_settings("DATABASES")
+add_nested_settings("LOGGING")

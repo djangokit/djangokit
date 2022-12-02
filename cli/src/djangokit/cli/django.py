@@ -3,8 +3,8 @@ import json
 import os
 import subprocess
 import sys
-from getpass import getuser
 from fnmatch import fnmatch
+from getpass import getuser
 from typing import List
 
 import click
