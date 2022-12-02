@@ -13,7 +13,7 @@ from rich.pretty import pretty_repr
 from typer import Argument
 
 from .app import app, state
-from .utils.run import Args, process_args, subprocess_run
+from .utils.run import Args, process_args
 
 
 @click.command(
@@ -329,5 +329,9 @@ def configure_settings_module(**env_vars):
 def run_django_command(args: Args) -> subprocess.CompletedProcess:
     """Run a Django management command."""
     configure_settings_module()
+
+    from django.core.management import execute_from_command_line
+
     args = ["django-admin"] + process_args(args)
-    return subprocess_run(args)
+    state.console.command(">", " ".join(args))
+    execute_from_command_line(args)

@@ -18,7 +18,7 @@ from .utils.console import Console
 @app.command()
 def build_client(
     ssr: bool = Option(True, envvar="DJANGOKIT_SSR"),
-    minify: bool = True,
+    minify: bool = False,
     watch: bool = Option(False, help="Watch files and rebuild automatically?"),
     join: bool = Option(False, help="Only relevant with --watch"),
 ):

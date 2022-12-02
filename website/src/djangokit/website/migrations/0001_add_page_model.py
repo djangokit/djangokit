@@ -28,6 +28,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "page",
+                "ordering": ["order", "title"]
             },
         ),
     ]

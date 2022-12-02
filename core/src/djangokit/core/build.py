@@ -11,7 +11,7 @@ from .exceptions import BuildError, RenderError
 
 def make_client_bundle(
     env=None,
-    minify=True,
+    minify=False,
     source_map=False,
     quiet=None,
 ) -> Path:

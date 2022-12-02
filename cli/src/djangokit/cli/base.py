@@ -20,7 +20,7 @@ def setup(python_version=None):
 @app.command()
 def start(
     ssr: bool = Option(True, envvar="DJANGOKIT_SSR"),
-    minify: bool = True,
+    minify: bool = False,
     watch: bool = True,
 ):
     """Run dev server & watch files
