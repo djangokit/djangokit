@@ -1,7 +1,8 @@
 import dataclasses
-import os.path
+import os
+from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import djangokit.core
 from djangokit.core.build import make_client_bundle, make_server_bundle, render_bundle
@@ -20,11 +21,11 @@ def build_client(
     ssr: bool = Option(True, envvar="DJANGOKIT_SSR"),
     minify: bool = False,
     watch: bool = Option(False, help="Watch files and rebuild automatically?"),
-    join: bool = Option(False, help="Only relevant with --watch"),
+    join: bool = Option(True, help="Only relevant with --watch"),
 ):
-    """Build front end bundle
+    """Build client bundle
 
-    The front end bundle is *not* request dependent.
+    The client bundle is *not* request dependent.
 
     .. note::
         By default, the front end bundle is configured to hydrate
@@ -43,40 +44,61 @@ def build_client(
         "quiet": state.quiet,
     }
 
-    console.header("Building front end (CSR)")
+    console.header("Building client bundle")
     if not ssr:
         console.warning("SSR disabled")
     make_client_bundle(**bundle_kwargs)
     console.print()
 
-    if watch:
-        core_dir = Path(djangokit.core.__path__[0])
-        app_dir = state.settings.app_dir
+    if watch and not os.getenv("RUN_MAIN"):
+        event_handler, observer = get_build_watch_event_handler()
+        event_handler.add_handler(
+            Handler(
+                callable=make_client_bundle,
+                kwargs=bundle_kwargs,
+            ),
+        )
+        join_observer(observer, join)
 
-        handlers = [
-            Handler(callable=make_client_bundle, kwargs=bundle_kwargs),
-        ]
 
-        event_handlers = [
-            WatchEventHandler(core_dir, handlers, state.console),
-            WatchEventHandler(app_dir, handlers, state.console),
-        ]
+@app.command()
+def build_server(
+    path="/",
+    minify: bool = False,
+    watch: bool = Option(False, help="Watch files and rebuild automatically?"),
+    join: bool = Option(False, help="Only relevant with --watch"),
+):
+    """Build server bundle
 
-        observer = Observer()
+    The serer bundle *is* request dependent.
 
-        for event_handler in event_handlers:
-            console.info(f"Watching {event_handler.root_dir}")
-            observer.schedule(event_handler, event_handler.root_dir, recursive=True)
+    """
+    configure_settings_module()
+    console = state.console
 
-        observer.start()
+    bundle_args = (make_request(path),)
 
-        if join:
-            try:
-                while observer.is_alive():
-                    observer.join(1)
-            finally:
-                observer.stop()
-                observer.join()
+    bundle_kwargs = {
+        "env": state.env,
+        "minify": minify,
+        "source_map": minify,
+        "quiet": state.quiet,
+    }
+
+    console.header("Building server bundle")
+    make_server_bundle(*bundle_args, **bundle_kwargs)
+    console.print()
+
+    if watch and not os.getenv("RUN_MAIN"):
+        event_handler, observer = get_build_watch_event_handler()
+        event_handler.add_handler(
+            Handler(
+                callable=make_server_bundle,
+                args=bundle_args,
+                kwargs=bundle_kwargs,
+            ),
+        )
+        join_observer(observer, join)
 
 
 @app.command()
@@ -108,16 +130,13 @@ class WatchEventHandler(PatternMatchingEventHandler):
 
     def __init__(
         self,
-        root_dir: Path,
-        handlers: List[Handler],
         console: Console,
         patterns: Optional[List[str]] = None,
         ignore_patterns: Optional[List[str]] = None,
         ignore_directories=True,
         case_sensitive=True,
     ):
-        self.root_dir = root_dir
-        self.handlers = handlers
+        self.handlers = []
         self.console = console
 
         patterns = patterns or [f"*.{ext}" for ext in self.default_extensions]
@@ -130,14 +149,14 @@ class WatchEventHandler(PatternMatchingEventHandler):
             case_sensitive=case_sensitive,
         )
 
+    def add_handler(self, handler: Handler):
+        self.handlers.append(handler)
+
     def on_any_event(self, event: FileSystemEvent):
-        root_dir = self.root_dir
-        rel_src_path = os.path.relpath(event.src_path, root_dir)
         console = self.console
         console.print()
         console.header(f"Rebuilding")
-        console.warning(f"Detected change in {root_dir}")
-        console.warning(f"File: {rel_src_path}")
+        console.warning(f"File: {event.src_path}")
         for handler in self.handlers:
             try:
                 handler.callable(*handler.args, **handler.kwargs)
@@ -145,5 +164,39 @@ class WatchEventHandler(PatternMatchingEventHandler):
             except Exception as exc:
                 console.error(
                     f"Error encountered during rebuild while running "
-                    "handler {handler.__name__}:\n\n{exc}"
+                    f"handler {handler}:\n\n{exc}"
                 )
+
+
+@lru_cache
+def get_build_watch_event_handler() -> Tuple[WatchEventHandler, Observer]:
+    """Get the singleton build watch event handler."""
+    handler = WatchEventHandler(state.console)
+
+    core_dir = Path(djangokit.core.__path__[0])
+    app_dir = state.settings.app_dir
+
+    observer = Observer()
+
+    for d in (core_dir, app_dir):
+        state.console.info(f"Watching {d}")
+        observer.schedule(handler, d, recursive=True)
+
+    observer.start()
+
+    return handler, observer
+
+
+def join_observer(observer: Observer, join: bool):
+    """Join the observer to the main thread if `join`.
+
+    This will cause the observer to block.
+
+    """
+    if join:
+        try:
+            while observer.is_alive():
+                observer.join(1)
+        finally:
+            observer.stop()
+            observer.join()

@@ -2,7 +2,7 @@
 from typer import Abort, Context, Exit, Option
 
 from .app import app, state
-from .build import build_client
+from .build import build_client, build_server
 from .django import run_django_command
 from .utils import params, run, run_node_command, run_poetry_command
 
@@ -42,6 +42,7 @@ def start(
 
     """
     console = state.console
+    build_server(minify=minify, watch=watch, join=False)
     build_client(ssr=ssr, minify=minify, watch=watch, join=False)
     console.header("Running Django dev server")
     run_django_command("runserver")
