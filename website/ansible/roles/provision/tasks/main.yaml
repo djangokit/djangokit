@@ -76,9 +76,12 @@
     - 'set -o vi'
     - 'bind -m vi-insert "\C-l":clear-screen'
     - 'export EDITOR=vim'
+    - 'alias 1="%1"'
+    - 'alias 2="%2"'
     - 'alias back="cd -"'
     - 'alias lsl="ls -l --color"'
     - 'alias lsal="ls -al --color"'
+    - 'alias up="cd .."'
     - 'alias x="exit"'
 
 # SSL (Let's Encrypt)

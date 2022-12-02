@@ -9,6 +9,7 @@ import Navbar from "react-bootstrap/Navbar";
 
 import { FaBookReader, FaGithub } from "react-icons/fa";
 
+import { useApiQuery } from "../api";
 import Form from "../components/Form";
 
 function Layout() {
@@ -17,6 +18,7 @@ function Layout() {
   const currentPath = location.pathname;
   const redirectPath = encodeURIComponent(currentPath);
   const isLogin = currentPath === "/login";
+  const meta = useApiQuery<{ env: string; version: string }>("/meta");
 
   return (
     <>
@@ -77,12 +79,32 @@ function Layout() {
         <Outlet />
       </main>
 
-      <footer className="d-flex align-items-center px-4 py-2 border-top bg-light small">
+      <footer className="d-flex align-items-center justify-content-between px-4 py-2 border-top bg-light small">
         <span>&copy; DjangoKit 2022</span>
 
-        <Nav className="ms-auto">
+        {meta.isLoading ? "..." : null}
+        {meta.isError ? "???" : null}
+        {meta.data ? (
+          <Nav>
+            <Nav.Item>
+              <Nav.Link disabled>{meta.data.env}</Nav.Link>
+            </Nav.Item>
+
+            {meta.data.version ? (
+              <Nav.Item>
+                <Nav.Link
+                  href={`https://github.com/djangokit/djangokit/commit/${meta.data.version}`}
+                >
+                  {meta.data.version}
+                </Nav.Link>
+              </Nav.Item>
+            ) : null}
+          </Nav>
+        ) : null}
+
+        <Nav>
           <Nav.Item>
-            <LinkContainer to="/todos">
+            <LinkContainer to="/todo">
               <Nav.Link>TODO</Nav.Link>
             </LinkContainer>
           </Nav.Item>

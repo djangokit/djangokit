@@ -7,9 +7,15 @@ env-specific Django settings:
     DJANGOKIT_PACKAGE="my_app"
     DJANGOKIT_GLOBAL_CSS=["styles.css"]
 
-    # .env - env-specific settings
+    # .env.development - dev-specific settings
     DJANGO_DEBUG=true
     DJANGO_SECRET_KEY="xxx"
+
+    # .env.production - prod-specific settings
+    DJANGO_DEBUG=false
+    DJANGO_ALLOWED_HOSTS=["example.com"]
+    DJANGO_SECRET_KEY="super secret key that shouldn't be stored in git"
+    DJANGO_DATABASES_default__NAME="/path/to/db.prod.sqlite3"
 
 > NOTE: You can use JSON values for the settings in your .env files.
 

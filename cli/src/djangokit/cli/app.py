@@ -10,12 +10,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import typer
-from click.core import ParameterSource
 from djangokit.core.conf import Settings, settings
 from djangokit.core.env import dotenv_settings as get_dotenv_settings
 from typer import Context, Option
 
-from .utils import Console
+from .utils import params, Console
 
 app = typer.Typer()
 
@@ -34,7 +33,7 @@ class State:
 
     env: Env = Env.development
     quiet: bool = False
-    dotenv_path: Path = Path(".env")
+    dotenv_path: Path = Path(".env.development")
     dotenv_settings: dict = field(default_factory=dict)
     settings: Settings = field(default_factory=lambda: settings)
     console: Console = Console(highlight=False)
@@ -87,45 +86,55 @@ def main(
     Commands must be run from the top level directory of your project.
 
     """
+    console = state.console
+
     if env == Env.dev:
         env = Env.development
     elif env == Env.prod:
         env = Env.production
 
-    if quiet:
-        # TODO: Is there a better way to do this?
-        state.console.file = open(os.devnull, "wb")
+    env = env.value
 
-    dotenv_settings = get_dotenv_settings(dotenv_path)
+    # Set .env path from env when .env path isn't passed in or set as an
+    # env var.
+    if params.is_default(ctx, "dotenv_path"):
+        dotenv_path = f".env.{env}"
 
     os.environ["DOTENV_PATH"] = str(dotenv_path)
 
-    # When the Django settings module isn't specified on the command
-    # line and also isn't present as an env var, see if it's present in
-    # the project's .env settings; otherwise, use the default.
-    source = ctx.get_parameter_source("settings_module")
-    if source == ParameterSource.DEFAULT:
-        if "DJANGO_SETTINGS_MODULE" in dotenv_settings:
-            settings_module = dotenv_settings["DJANGO_SETTINGS_MODULE"]
+    dotenv_settings = get_dotenv_settings(dotenv_path)
 
-    source = ctx.get_parameter_source("additional_settings_module")
-    if source == ParameterSource.DEFAULT:
-        if "DJANGO_ADDITIONAL_SETTINGS_MODULE" in dotenv_settings:
-            module = dotenv_settings["DJANGO_ADDITIONAL_SETTINGS_MODULE"]
-            additional_settings_module = module
+    if not dotenv_settings:
+        console.warning(f"No dotenv settings loaded from {dotenv_path}")
 
-    console = state.console
+    # Set Django settings module from .env when it's not passed in or
+    # set as an env var.
+    key = "DJANGO_SETTINGS_MODULE"
+    if params.is_default(ctx, "settings_module") and key in dotenv_settings:
+        settings_module = dotenv_settings[key]
+    key = "DJANGO_ADDITIONAL_SETTINGS_MODULE"
+    if params.is_default(ctx, "additional_settings_module") and key in dotenv_settings:
+        settings_module = dotenv_settings[key]
+
+    if quiet:
+        state.console.quiet = True
+
     console.header("DjangoKit CLI")
-    console.print(f"Environment = {env.value}")
+    console.print(f"Environment = {env}")
     console.print(f"Dotenv file = {dotenv_path}")
     console.print(f"Django settings module = {settings_module}")
     console.print(f"Django additional settings module = {additional_settings_module}")
     console.print(f"Quiet = {quiet}")
     console.print()
 
-    state.env = env.value
+    state.env = env
     state.dotenv_path = dotenv_path
     state.dotenv_settings = dotenv_settings
     state.settings_module = settings_module
     state.additional_settings_module = additional_settings_module
     state.quiet = quiet
+
+
+@app.command(hidden=True)
+def meta():
+    """Show the main CLI configuration."""

@@ -36,7 +36,7 @@ def build_client(
     configure_settings_module(DJANGOKIT_SSR=ssr)
     console = state.console
 
-    build_kwargs = {
+    bundle_kwargs = {
         "env": state.env,
         "minify": minify,
         "source_map": minify,
@@ -46,7 +46,7 @@ def build_client(
     console.header("Building front end (CSR)")
     if not ssr:
         console.warning("SSR disabled")
-    make_client_bundle(**build_kwargs)
+    make_client_bundle(**bundle_kwargs)
     console.print()
 
     if watch:
@@ -54,7 +54,7 @@ def build_client(
         app_dir = state.settings.app_dir
 
         handlers = [
-            Handler(callable=make_client_bundle, kwargs=build_kwargs),
+            Handler(callable=make_client_bundle, kwargs=bundle_kwargs),
         ]
 
         event_handlers = [
@@ -84,15 +84,15 @@ def render_markup(path: str = "/"):
     """Render markup for the specified request path"""
     configure_settings_module()
     request = make_request(path)
-    minify = state.env == "production"
-    render_kwargs = {
+    bundle_kwargs = {
         "env": state.env,
-        "minify": minify,
-        "source_map": minify,
+        "minify": False,
+        "source_map": False,
         "quiet": state.quiet,
+        "return_proc": True,
     }
-    bundle_path = make_server_bundle(request, **render_kwargs)
-    markup = render_bundle(bundle_path)
+    bundle = make_server_bundle(request, **bundle_kwargs)
+    markup = render_bundle(bundle)
     print(markup, flush=True)
 
 

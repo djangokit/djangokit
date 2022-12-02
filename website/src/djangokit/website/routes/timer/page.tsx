@@ -124,7 +124,7 @@ export default function Page() {
 
   return (
     <div className="d-flex flex-column align-items-center gap-4">
-      <h1>Timer {ENV}</h1>
+      <h1>Timer</h1>
 
       <Form className="d-flex align-items-end gap-2">
         {started ? (

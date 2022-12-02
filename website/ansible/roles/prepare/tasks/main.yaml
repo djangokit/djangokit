@@ -1,14 +1,17 @@
 ---
 # App
 
-- name: Remove local app build directory
+- name: Remove local app build directory & archive
   tags:
     - prepare-app
     - prepare-app-clean
     - deploy-app
   file:
-    path: "{{ app_build_dir }}"
+    path: "{{ item }}"
     state: absent
+  with_items:
+    - "{{ app_build_dir }}"
+    - "{{ app_build_archive }}"
 
 - name: Create local app build directory for version
   tags:
@@ -24,8 +27,8 @@
     - prepare-copy-files
     - deploy-app
   template:
-    src: "{{ root }}/.env.public"
-    dest: "{{ app_build_dir }}/.env.public"
+    src: "{{ local_public_dotenv_file }}"
+    dest: "{{ app_build_dir }}"
 
 - name: Copy local env-specific dotenv file to build directory
   tags:
@@ -33,8 +36,8 @@
     - prepare-copy-files
     - deploy-app
   template:
-    src: "{{ root }}/.env.{{ env }}"
-    dest: "{{ app_build_dir }}/.env"
+    src: "{{ local_dotenv_file }}"
+    dest: "{{ app_build_dir }}"
 
 - name: Copy WSGI module to build directory
   tags:
@@ -95,7 +98,7 @@
 
 # Static files
 
-- name: Remove local static build directories
+- name: Remove local client & static build directories
   tags:
     - prepare-static
     - prepare-static-clean
@@ -104,7 +107,7 @@
     path: "{{ item }}"
     state: absent
   with_items:
-    - "{{ static_build_root }}"
+    - "{{ client_build_dir }}"
     - "{{ django_static_root }}"
 
 - name: Build client bundle
@@ -112,6 +115,8 @@
     - prepare-static
     - prepare-static-build
     - deploy-static
+  environment:
+    - DJANGOKIT_STATIC_BUILD_DIR: "{{ client_build_dir }}"
   command: >
     djangokit
     --env {{ env }}

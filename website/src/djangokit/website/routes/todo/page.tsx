@@ -14,17 +14,17 @@ import Loader from "../../components/Loader";
 
 export default function Page() {
   const currentUser = useCurrentUserContext();
-  const { isLoading, isError, data, error } = useApiQuery<TodoItems>("todos");
+  const { isLoading, isError, data, error } = useApiQuery<TodoItems>("todo");
 
   const client = useQueryClient();
 
   const onmutationsuccess = () => {
-    client.invalidateQueries({ queryKey: ["todos"] });
+    client.invalidateQueries({ queryKey: ["todo"] });
   };
 
   const create = useMutation({
     mutationFn: ({ content }: { content: string }) =>
-      api.post("todos", { content }),
+      api.post("todo", { content }),
     onSuccess: onmutationsuccess,
   });
 
@@ -54,7 +54,7 @@ export default function Page() {
         <div className="mb-4">
           <Form
             method="post"
-            action="/$api/todos"
+            action="/$api/todo"
             className="d-flex flex-row gap-2 mb-1"
             onSubmit={(event) => {
               event.preventDefault();
@@ -112,29 +112,29 @@ function Item({ item, cardinal }: { item: TodoItem; cardinal: number }) {
   const client = useQueryClient();
 
   const onmutationsuccess = () => {
-    client.invalidateQueries({ queryKey: ["todos"] });
+    client.invalidateQueries({ queryKey: ["todo"] });
   };
 
   const updateContent = useMutation({
     mutationFn: ({ id, content }: { id: number; content: string }) =>
-      api.patch(`todos/${id}`, { content }),
+      api.patch(`todo/${id}`, { content }),
     onSuccess: onmutationsuccess,
   });
 
   const complete = useMutation({
     mutationFn: ({ id }: { id: number }) =>
-      api.patch(`todos/${id}`, { completed: true }),
+      api.patch(`todo/${id}`, { completed: true }),
     onSuccess: onmutationsuccess,
   });
 
   const uncomplete = useMutation({
     mutationFn: ({ id }: { id: number }) =>
-      api.patch(`todos/${id}`, { completed: false }),
+      api.patch(`todo/${id}`, { completed: false }),
     onSuccess: onmutationsuccess,
   });
 
   const remove = useMutation({
-    mutationFn: ({ id }: { id: number }) => api.delete(`todos/${id}`),
+    mutationFn: ({ id }: { id: number }) => api.delete(`todo/${id}`),
     onSuccess: onmutationsuccess,
   });
 

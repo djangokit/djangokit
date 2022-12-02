@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -6,15 +7,30 @@ from typing import Any, Dict, Optional
 import dotenv
 from django.core.exceptions import ImproperlyConfigured
 
+log = logging.getLogger(__name__)
+
 NOT_SET = object()
 
 
 def get_dotenv_path(path=None):
+    """Figure out which .env file to use.
+
+    If a path is provided, use that. Otherwise:
+
+    - If the `DOTENV_PATH` env var is set, use that
+    - If the `ENV` env var is set, use `./.env.${ENV}`
+    - Fall back to `./.env`
+
+    """
     if path is None:
         if "DOTENV_PATH" in os.environ:
             path = os.environ["DOTENV_PATH"]
+        elif "ENV" in os.environ:
+            path = f".env.{os.environ['ENV']}"
+            log.warning("Using .env file derived from ENV: %s", path)
         else:
             path = ".env"
+            log.warning("Using default .env file: %s", path)
     return Path(path)
 
 

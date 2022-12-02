@@ -1,6 +1,6 @@
-import subprocess
 from pathlib import Path
-from typing import List, Optional
+from subprocess import PIPE, run, CompletedProcess, Popen
+from typing import List, Optional, Union
 
 from django.http import HttpRequest
 from django.template.loader import get_template
@@ -46,6 +46,8 @@ def make_server_bundle(
     minify=False,
     source_map=False,
     quiet=None,
+    chdir: Optional[Path] = None,
+    return_proc=False,
 ) -> str:
     """Build React app bundle for server side rendering."""
     return make_bundle(
@@ -62,18 +64,27 @@ def make_server_bundle(
         source_map=source_map,
         quiet=quiet,
         request=request,
+        chdir=chdir,
+        return_proc=return_proc,
     )
 
 
-def render_bundle(bundle_path: Path) -> str:
+def render_bundle(
+    bundle: Union[Path, Popen],
+    *,
+    chdir: Optional[Path] = None,
+) -> str:
     """Run a bundle as a Node script and capture its output.
 
     Used mainly for server side rendering.
 
     """
-    result = subprocess.run(["node", bundle_path], stdout=subprocess.PIPE)
+    if isinstance(bundle, Popen):
+        result = run(["node"], stdin=bundle.stdout, stdout=PIPE, cwd=chdir)
+    else:
+        result = run(["node", bundle], stdout=PIPE, cwd=chdir)
     if result.returncode:
-        raise RenderError(f"Could not run server bundle {bundle_path}")
+        raise RenderError(f"Could not run server bundle {bundle}")
     markup = result.stdout.decode("utf-8").strip()
     return markup
 
@@ -88,7 +99,9 @@ def make_bundle(
     source_map=False,
     quiet=None,
     request: Optional[HttpRequest] = None,
-) -> Path:
+    chdir: Optional[Path] = None,
+    return_proc=False,
+) -> Union[Path, Popen]:
     """Run esbuild to create a bundle.
 
     Returns the build path of the bundle.
@@ -141,16 +154,21 @@ def make_bundle(
         f"--define:DEBUG={str(debug).lower()}",
         f"--define:ENV='{env}'",
         f"--inject:{build_dir / 'context.jsx'}",
-        f"--outfile={bundle_path}",
     ]
+
     if minify:
         args.append("--minify")
     if source_map:
         args.append("--sourcemap")
     if quiet:
         args.append("--log-level=error")
-    result = subprocess.run(args)
+
+    if return_proc:
+        return Popen(args, stdout=PIPE, cwd=chdir)
+    else:
+        args.append(f"--outfile={bundle_path}")
+
+    result = run(args, cwd=chdir)
     if result.returncode:
         raise BuildError(f"Could not build bundle from {entrypoint_path}")
-
     return bundle_path

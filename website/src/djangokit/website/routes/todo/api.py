@@ -32,4 +32,4 @@ def post(request: HttpRequest):
     if request.is_fetch:
         return TodoItem.objects.create(content=content)
 
-    return redirect("/todos")
+    return redirect("/todo")

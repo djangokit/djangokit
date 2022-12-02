@@ -26,6 +26,14 @@ class PageView(TemplateView):
     def render(self):
         if not settings.ssr:
             return "Loading..."
-        bundle_path = make_server_bundle(self.request)
-        markup = render_bundle(bundle_path)
+        chdir = None
+        bundle = make_server_bundle(
+            self.request,
+            minify=False,
+            source_map=False,
+            quiet=True,
+            chdir=settings.static_build_dir,
+            return_proc=True,
+        )
+        markup = render_bundle(bundle, chdir=chdir)
         return markup

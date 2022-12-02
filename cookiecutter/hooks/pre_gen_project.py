@@ -8,5 +8,5 @@ DOTENV_VALUES = {
 
 DOTENV_CONTENTS = "\n".join(f'{k}="{v}"' for k, v in DOTENV_VALUES.items())
 
-with Path(".env").open("w") as fp:
+with Path(".env.development").open("w") as fp:
     fp.write(DOTENV_CONTENTS)

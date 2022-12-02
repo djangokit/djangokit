@@ -1,12 +1,12 @@
 ---
 # Create directories for version
 
-- name: Remove existing directory for version
-  become: true
-  become_user: root
-  file:
-    path: "{{ remote_build_dir }}"
-    state: absent
+#- name: Remove existing directory for version
+#  become: true
+#  become_user: root
+#  file:
+#    path: "{{ remote_build_dir }}"
+#    state: absent
 
 - name: Create directory for version
   file:
@@ -138,16 +138,25 @@
 
 # SSR
 
-- name: Copy package.json
+- name: Copy package.json for SSR
   tags:
     - deploy-app
   become: true
   become_user: "{{ site_user }}"
   synchronize:
-    src: "{{ root }}/package.json"
+    src: "package.json"
     dest: "{{ remote_ssr_dir }}"
     rsync_path: sudo -u {{ site_user }} rsync
     delete: true
+
+- name: Install SSR
+  tags:
+    - deploy-app
+  become: true
+  become_user: "{{ site_user }}"
+  command: npm install
+  args:
+    chdir: "{{ remote_ssr_dir }}"
 
 # Static files
 
@@ -184,7 +193,7 @@
   become_user: "{{ site_user }}"
   environment:
     - ENV: "{{ env }}"
-    - DOTENV_PATH: "{{ remote_app_dir }}/.env"
+    - DOTENV_PATH: "{{ remote_dotenv_path }}"
     - PATH: "./venv/bin:$PATH"
   command: ./venv/bin/djangokit migrate
   args:

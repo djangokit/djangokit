@@ -1,6 +1,6 @@
 """Default Django settings module used by DjangoKit projects.
 
-Settings can be set via environment variables in a project's `.env`
+Settings can be set via environment variables in a project's .env
 file(s) and/or using standard OS mechanisms.
 
 .. note::
@@ -283,9 +283,9 @@ def process_nested_settings(name, env_prefix=None):
         env_prefix:
             The env prefix (e.g., "DJANGO_DATABASES_")
 
-    For example, onsider the following .env file::
+    For example, consider the following .env file::
 
-        # .env
+        # .env.production
         DJANGO_DATABASES_default__HOST="some.host"
 
     This will set `DATABASES["default"]["HOST"] = "some.host"`.

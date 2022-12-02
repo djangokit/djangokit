@@ -5,11 +5,36 @@ from runcommands import arg, command
 from runcommands import commands as c
 from runcommands import printer
 
-# Provisioning & Deployment --------------------------------------------
+
+@command
+def clean(deep=False):
+    """Clean up.
+
+    This removes build, dist, and cache directories by default.
+
+    Use the `--deep` flag to remove the virtualenv and node_modules
+    directories, which shouldn't be removed in a normal cleaning.
+
+    """
+    printer.header("Cleaning...")
+    c.local("rm -rf build")
+    c.local("rm -rf dist")
+    c.local("rm -rf src/djangokit/website/static/build")
+    c.local("rm -rf __pycache__")
+    c.local("find src tests -name __pycache__ -type d -exec rm -r {} \;")
+    c.local("rm -rf .mypy_cache")
+    if deep:
+        printer.warning("Deep cleaning...")
+        c.local("rm -rf .venv")
+        c.local("rm -rf node_modules")
+
+
+# Deployment -----------------------------------------------------------
 
 
 @command
 def ansible(env, hostname, version=None, tags=(), skip_tags=(), extra_vars=()):
+    """Run ansible playbook."""
     version = version or c.git_version()
 
     if isinstance(tags, str):
@@ -44,18 +69,21 @@ def ansible(env, hostname, version=None, tags=(), skip_tags=(), extra_vars=()):
 
 @command
 def provision(env, hostname):
+    """Provision the deployment host."""
     printer.header(f"Provisioning {hostname} ({env})")
     ansible(env, hostname, tags="provision")
 
 
 @command
 def upgrade_remote(env, hostname):
+    """Upgrade the deployment host."""
     printer.header(f"Upgrading {hostname} ({env})")
     ansible(env, hostname, tags="provision-update-packages")
 
 
 @command
 def prepare(env, hostname, version=None, provision_=False):
+    """Prepare build locally for deployment."""
     printer.header(f"Preparing deployment to {hostname} ({env})")
     version = version or c.git_version()
     tags = []
