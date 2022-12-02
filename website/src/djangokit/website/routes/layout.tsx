@@ -82,30 +82,35 @@ function Layout() {
       <footer className="d-flex align-items-center justify-content-between px-4 py-2 border-top bg-light small">
         <span>&copy; DjangoKit 2022</span>
 
-        {meta.isLoading ? "..." : null}
-        {meta.isError ? "???" : null}
-        {meta.data ? (
-          <Nav>
-            <Nav.Item>
-              <Nav.Link disabled>{meta.data.env}</Nav.Link>
-            </Nav.Item>
-
-            {meta.data.version ? (
+        <div className="d-none d-md-block">
+          {meta.isLoading ? "..." : null}
+          {meta.isError ? "???" : null}
+          {meta.data ? (
+            <Nav>
+              <Nav.Item>
+                <Nav.Link disabled>{meta.data.env}</Nav.Link>
+              </Nav.Item>
               <Nav.Item>
                 <Nav.Link
                   href={`https://github.com/djangokit/djangokit/commit/${meta.data.version}`}
                 >
-                  {meta.data.version}
+                  {meta.data.version || "vX.Y.Z"}
                 </Nav.Link>
               </Nav.Item>
-            ) : null}
-          </Nav>
-        ) : null}
+            </Nav>
+          ) : null}
+        </div>
 
-        <Nav>
+        <Nav className="flex-column flex-sm-row">
           <Nav.Item>
             <LinkContainer to="/todo">
               <Nav.Link>TODO</Nav.Link>
+            </LinkContainer>
+          </Nav.Item>
+
+          <Nav.Item>
+            <LinkContainer to="/timer">
+              <Nav.Link>Timer</Nav.Link>
             </LinkContainer>
           </Nav.Item>
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
+import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import ProgressBar from "react-bootstrap/ProgressBar";
 
@@ -23,8 +24,8 @@ export default function Page() {
   const [running, setRunning] = useState(false);
   const [pausedAt, setPausedAt] = useState<number>();
 
-  // Progress tracking
-  const [totalExpectedTicks, setTotalExpectedTicks] = useState<number>(0);
+  // NOTE: This is only needed in order to force a rerender of the
+  //       progress bar on every tick so that it advances smoothly.
   const [numTicks, setNumTicks] = useState<number>(0);
 
   const [message, setMessage] = useState<string>();
@@ -35,11 +36,10 @@ export default function Page() {
         throw new Error(`Expected endMs to be a number: ${endMs}`);
       }
       const nowMs = getNowMs();
+      setNumTicks(numTicks + 1);
       if (nowMs < endMs) {
-        setNumTicks(numTicks + 1);
         setCountdown(getCountdown(nowMs, endMs));
       } else {
-        setNumTicks(totalExpectedTicks + 1);
         setCountdown("0");
         done();
       }
@@ -83,9 +83,21 @@ export default function Page() {
     setMessage(undefined);
     setStartMs(nowMs);
     setEndMs(nowMs + totalMs);
-    setTotalExpectedTicks(totalMs / TICK_MS - 1);
     setStarted(true);
     setRunning(true);
+  };
+
+  const reset = () => {
+    setHours(0);
+    setMinutes(0);
+    setSeconds(0);
+    setStartMs(undefined);
+    setEndMs(undefined);
+    setCountdown("");
+    setStarted(false);
+    setRunning(false);
+    setPausedAt(undefined);
+    setMessage(undefined);
   };
 
   const pause = () => {
@@ -104,8 +116,6 @@ export default function Page() {
   const cancel = () => {
     setMessage(undefined);
     setEndMs(undefined);
-    setTotalExpectedTicks(0);
-    setNumTicks(0);
     setStarted(false);
     setRunning(false);
   };
@@ -113,8 +123,6 @@ export default function Page() {
   const done = () => {
     setMessage("Done!");
     setEndMs(undefined);
-    setTotalExpectedTicks(0);
-    setNumTicks(0);
     setStarted(false);
     setRunning(false);
     notifyDone();
@@ -168,16 +176,21 @@ export default function Page() {
         ) : (
           <>
             <Form.Group>
-              <Form.Label>Hours</Form.Label>
-              <Form.Select defaultValue={hours} onChange={handleHoursChange}>
+              <Form.Label htmlFor="hours">Hours</Form.Label>
+              <Form.Select
+                id="hours"
+                value={hours}
+                onChange={handleHoursChange}
+              >
                 {numberOptions(24)}
               </Form.Select>
             </Form.Group>
 
             <Form.Group>
-              <Form.Label>Minutes</Form.Label>
+              <Form.Label htmlFor="minutes">Minutes</Form.Label>
               <Form.Select
-                defaultValue={minutes}
+                id="minutes"
+                value={minutes}
                 onChange={handleMinutesChange}
               >
                 {numberOptions(60)}
@@ -185,23 +198,33 @@ export default function Page() {
             </Form.Group>
 
             <Form.Group>
-              <Form.Label>Seconds</Form.Label>
+              <Form.Label htmlFor="seconds">Seconds</Form.Label>
               <Form.Select
-                defaultValue={seconds}
+                id="seconds"
+                value={seconds}
                 onChange={handleSecondsChange}
               >
                 {numberOptions(60)}
               </Form.Select>
             </Form.Group>
 
-            <IconButton
-              icon={<FaPlay />}
+            <Button
+              title="Start timer"
               variant="outline-success"
               disabled={!(hours || minutes || seconds)}
               onClick={start}
             >
-              Start
-            </IconButton>
+              &gt;
+            </Button>
+
+            <Button
+              title="Reset hours, minutes, and seconds"
+              variant="outline-secondary"
+              disabled={!(hours || minutes || seconds)}
+              onClick={reset}
+            >
+              &times;
+            </Button>
           </>
         )}
       </Form>
