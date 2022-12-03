@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import djangokit.core
-from djangokit.core.build import make_client_bundle, make_server_bundle, render_bundle
+from djangokit.core.build import make_client_bundle, make_server_bundle, run_bundle
 from djangokit.core.http import make_request
 from typer import Option
 from watchdog.events import FileSystemEvent, PatternMatchingEventHandler
@@ -102,7 +102,7 @@ def build_server(
 
 
 @app.command()
-def render_markup(path: str = "/"):
+def render_markup(path: str = "/", csrf_token: str = "__csrf_token__"):
     """Render markup for the specified request path"""
     configure_settings_module()
     request = make_request(path)
@@ -111,10 +111,9 @@ def render_markup(path: str = "/"):
         "minify": False,
         "source_map": False,
         "quiet": state.quiet,
-        "return_proc": True,
     }
     bundle = make_server_bundle(request, **bundle_kwargs)
-    markup = render_bundle(bundle)
+    markup = run_bundle(bundle, argv=[path, csrf_token])
     print(markup, flush=True)
 
 

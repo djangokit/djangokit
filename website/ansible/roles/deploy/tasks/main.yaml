@@ -33,7 +33,6 @@
     mode: 0751
   with_items:
     - "{{ remote_app_dir }}"
-    - "{{ remote_ssr_dir }}"
     - "{{ remote_static_dir }}"
 
 - name: Create pip directories
@@ -110,7 +109,7 @@
     --find-links {{ remote_dist_dir }}
     --cache-dir {{ remote_pip_cache_dir }}
     --wheel-dir {{ remote_pip_wheel_dir }}
-    {{ package }}
+    {{ package_info.name }}
 
 - name: Install app
   tags:
@@ -119,32 +118,10 @@
   become_user: "{{ site_user }}"
   pip:
     name:
-      - "{{ package }}"
+      - "{{ package_info.name }}"
     state: present
     virtualenv: "{{ remote_venv }}"
     extra_args: --find-links {{ remote_pip_wheel_dir }} --no-compile --no-index
-
-# SSR
-
-- name: Copy and extract SSR build archive
-  tags:
-    - deploy-ssr
-  unarchive:
-    src: "{{ ssr_build_archive }}"
-    dest: "{{ remote_build_dir }}"
-    owner: "{{ site_user }}"
-    group: "{{ site_user }}"
-    mode: 0751
-
-- name: Install SSR
-  tags:
-    - deploy-app
-    - deploy-ssr
-  become: true
-  become_user: "{{ site_user }}"
-  command: npm install
-  args:
-    chdir: "{{ remote_ssr_dir }}"
 
 # Static files
 

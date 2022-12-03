@@ -3,19 +3,20 @@ root: "{{ playbook_dir }}/.."
 core_root: "{{ playbook_dir }}/../../core"
 cli_root: "{{ playbook_dir }}/../../cli"
 
-package: "djangokit.website"
-site_user: "djangokit"
-
 # Base name of env-specific .env file (used on local & remote)
 dotenv_file: ".env.{{ env }}"
 
 # Local ----------------------------------------------------------------
 
-local_public_dotenv_file: "{{ root }}/.env.public"
-local_dotenv_file: "{{ root }}/{{ dotenv_file }}"
+_package_dir: "{{ root }}/src/djangokit/website"
 
-package_dir: "{{ root }}/src/djangokit/website"
-static_dir: "{{ package_dir }}/static"
+package_info:
+  name: "djangokit.website"
+  dotenv_file: "{{ root }}/{{ dotenv_file }}"
+  public_dotenv_file: "{{ root }}/.env.public"
+  package_dir: "{{ _package_dir }}"
+  static_dir: "{{ _package_dir }}/static"
+  static_build_dir: "{{ _package_dir }}/static/build"
 
 # Build root
 build_root: "{{ root }}/build"
@@ -25,19 +26,14 @@ app_build_dir: "{{ build_root }}/app"
 app_build_archive_name: "app.tgz"
 app_build_archive: "{{ build_root }}/{{ app_build_archive_name }}"
 
-# SSR
-ssr_build_dir: "{{ build_root }}/ssr"
-ssr_build_archive_name: "ssr.tgz"
-ssr_build_archive: "{{ build_root }}/{{ ssr_build_archive_name }}"
-
 # Static
-client_build_dir: "{{ static_dir }}/build"
 static_build_dir: "{{ build_root }}/static"
 static_build_archive_name: "static.tgz"
 static_build_archive: "{{ build_root }}/{{ static_build_archive_name }}"
 
 # Remote ---------------------------------------------------------------
 
+site_user: "djangokit"
 remote_site_root: "/sites/{{ hostname }}"
 
 # Directory for build/version
@@ -48,9 +44,6 @@ remote_app_dir: "{{ remote_build_dir }}/app"
 remote_dist_dir: "{{ remote_app_dir }}/dist"
 remote_venv: "{{ remote_app_dir }}/venv"
 remote_dotenv_path: "{{ remote_app_dir }}/{{ dotenv_file }}"
-
-# SSR
-remote_ssr_dir: "{{ remote_build_dir }}/ssr"
 
 # Static
 remote_static_dir: "{{ remote_build_dir }}/static"

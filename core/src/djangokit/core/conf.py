@@ -99,10 +99,6 @@ class Settings:
             "type": str,
             "default": "",
         },
-        "static_build_dir": {
-            "type": str,
-            "default": "",
-        },
     }
 
     @cached_property
@@ -168,9 +164,6 @@ class Settings:
 
     @cached_property
     def static_build_dir(self) -> Path:
-        static_build_dir = self._get_optional("static_build_dir")
-        if static_build_dir:
-            return Path(static_build_dir)
         return self.app_dir / "static" / "build"
 
     # Derived settings -------------------------------------------------

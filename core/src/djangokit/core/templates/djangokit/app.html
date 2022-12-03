@@ -12,11 +12,13 @@
       <link rel="stylesheet" href="{% static path %}">
     {% endfor %}
 
-    <script defer src="{% static 'build/client.bundle.js' %}"></script>
+    {% block scripts %}
+      <script defer src="{% static 'build/client.bundle.js' %}"></script>
+    {% endblock %}
   </head>
 
   <body>
     <!-- Route: {{ request.path }} -->
-    <div id="root">{{ markup|safe }}</div>
+    <div id="root">{% block root %}{{ markup|safe }}{% endblock %}</div>
   </body>
 </html>

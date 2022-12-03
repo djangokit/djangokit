@@ -27,7 +27,7 @@
     - prepare-copy-files
     - deploy-app
   template:
-    src: "{{ local_public_dotenv_file }}"
+    src: "{{ package_info.public_dotenv_file }}"
     dest: "{{ app_build_dir }}"
 
 - name: <LOCAL> Copy env-specific dotenv file to build directory
@@ -36,7 +36,7 @@
     - prepare-copy-files
     - deploy-app
   template:
-    src: "{{ local_dotenv_file }}"
+    src: "{{ package_info.dotenv_file }}"
     dest: "{{ app_build_dir }}"
 
 - name: <LOCAL> Copy WSGI module to build directory
@@ -96,69 +96,7 @@
     path: "{{ app_build_dir }}"
     dest: "{{ app_build_archive }}"
 
-# SSR
-
-- name: <LOCAL> Remove SSR build directory & archive
-  tags:
-    - prepare-ssr
-    - prepare-ssr-clean
-    - deploy-ssr
-  file:
-    path: "{{ item }}"
-    state: absent
-  with_items:
-    - "{{ ssr_build_dir }}"
-    - "{{ ssr_build_archive }}"
-
-- name: <LOCAL> Create SSR build directory for version
-  tags:
-    - prepare-ssr
-    - deploy-ssr
-  file:
-    path: "{{ ssr_build_dir }}"
-    state: directory
-
-- name: <LOCAL> Copy package.json to SSR build directory
-  tags:
-    - prepare-ssr
-    - deploy-ssr
-  copy:
-    src: "package.json"
-    dest: "{{ ssr_build_dir }}"
-
-- name: <LOCAL> Copy source files to SSR build directory
-  tags:
-    - prepare-ssr
-    - deploy-ssr
-  command: >
-    rsync -rltvzm
-    --exclude __pycache__/
-    --exclude static/build/
-    --include */
-    --include *.ts
-    --include *.tsx
-    --exclude *
-    "{{ package_dir }}/"
-    "{{ ssr_build_dir }}/"
-
-- name: <LOCAL> Create SSR build directory (used on server)
-  tags:
-    - prepare-ssr
-    - deploy-ssr
-  file:
-    path: "{{ ssr_build_dir }}/static/build"
-    state: directory
-
-- name: <LOCAL> Create SSR archive
-  tags:
-    - prepare-ssr
-    - deploy-ssr
-    - create-ssr-archive
-  archive:
-    path: "{{ ssr_build_dir }}"
-    dest: "{{ ssr_build_archive }}"
-
-# Static files
+# Static files, including SSR
 
 - name: <LOCAL> Remove client & static build directories
   tags:
@@ -169,24 +107,38 @@
     path: "{{ item }}"
     state: absent
   with_items:
-    - "{{ client_build_dir }}"
+    - "{{ package_info.static_build_dir }}"
     - "{{ static_build_dir }}"
     - "{{ static_build_archive }}"
+
+- name: <LOCAL> Build server bundle
+  tags:
+    - prepare-static
+    - prepare-static-build
+    - deploy-static
+    - prepare-ssr
+    - prepare-ssr-build
+    - deploy-ssr
+  command: >
+    djangokit
+    --env {{ env }}
+    build-server
+    --minify
+  args:
+    creates: "{{ package_info.static_build_dir }}/server.bundle.js"
 
 - name: <LOCAL> Build client bundle
   tags:
     - prepare-static
     - prepare-static-build
     - deploy-static
-  environment:
-    - DJANGOKIT_STATIC_BUILD_DIR: "{{ client_build_dir }}"
   command: >
     djangokit
     --env {{ env }}
     build-client
     --minify 
   args:
-    creates: "{{ client_build_dir }}/client.bundle.js"
+    creates: "{{ package_info.static_build_dir }}/client.bundle.js"
 
 - name: <LOCAL> Collect Django static files
   tags:

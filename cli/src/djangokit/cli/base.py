@@ -42,7 +42,8 @@ def start(
 
     """
     console = state.console
-    build_server(minify=minify, watch=watch, join=False)
+    if ssr:
+        build_server(minify=minify, watch=watch, join=False)
     build_client(ssr=ssr, minify=minify, watch=watch, join=False)
     console.header("Running Django dev server")
     run_django_command("runserver")

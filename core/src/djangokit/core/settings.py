@@ -124,7 +124,6 @@ defaults = Settings(
         "current_user_serializer": "djangokit.core.user.current_user_serializer",
         "ssr": True,
         "webmaster": "",
-        "static_build_dir": "",
     },
     # Basics
     ROOT_URLCONF="djangokit.core.urls",
@@ -199,6 +198,12 @@ defaults = Settings(
         "handlers": {
             "console": {
                 "class": "logging.StreamHandler",
+                "formatter": "default",
+            },
+        },
+        "formatters": {
+            "default": {
+                "format": "[%(levelname)s] %(name)s %(message)s",
             },
         },
         "root": {
