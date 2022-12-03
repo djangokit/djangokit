@@ -36,9 +36,8 @@ def start(
        markup will not be generated--the page will be rendered only on
        the client.
 
-    Disabling SSR can be useful during development because CSR is *much*
-    faster. This is because the client bundle can be rebuilt
-    automatically when any source file is changed.
+    Disabling SSR can be useful during development because client-side
+    only rendering is faster.
 
     """
     console = state.console

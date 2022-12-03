@@ -6,8 +6,9 @@ import Container from "react-bootstrap/Container";
 import LinkContainer from "react-router-bootstrap/LinkContainer";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
+import NavDropdown from "react-bootstrap/NavDropdown";
 
-import { FaBookReader, FaGithub } from "react-icons/fa";
+import { FaBars, FaBookReader, FaGithub } from "react-icons/fa";
 
 import { useApiQuery } from "../api";
 import Form from "../components/Form";
@@ -82,44 +83,48 @@ function Layout() {
       <footer className="d-flex align-items-center justify-content-between px-4 py-2 border-top bg-light small">
         <span>&copy; DjangoKit 2022</span>
 
-        <div className="d-none d-md-block">
-          {meta.isLoading ? "..." : null}
-          {meta.isError ? "???" : null}
+        <NavDropdown title={<FaBars />}>
+          <LinkContainer to="/todo">
+            <NavDropdown.Item>TODO</NavDropdown.Item>
+          </LinkContainer>
+
+          <LinkContainer to="/timer">
+            <NavDropdown.Item>Timer</NavDropdown.Item>
+          </LinkContainer>
+
+          <NavDropdown.Item
+            title="Django Admin"
+            href="/$admin/"
+            target="djangokit_admin"
+          >
+            Admin
+          </NavDropdown.Item>
+
           {meta.data ? (
-            <Nav>
-              <Nav.Item>
-                <Nav.Link disabled>{meta.data.env}</Nav.Link>
-              </Nav.Item>
-              <Nav.Item>
-                <Nav.Link
-                  href={`https://github.com/djangokit/djangokit/commit/${meta.data.version}`}
-                >
-                  {meta.data.version || "vX.Y.Z"}
-                </Nav.Link>
-              </Nav.Item>
-            </Nav>
+            <>
+              <NavDropdown.Item title="env">
+                Env: {meta.data?.env || "development"}
+              </NavDropdown.Item>
+
+              <NavDropdown.Item
+                title="version"
+                href={
+                  meta.data.version
+                    ? `https://github.com/djangokit/djangokit/commit/${meta.data.version}`
+                    : ""
+                }
+              >
+                v{meta.data.version ?? "???"}
+              </NavDropdown.Item>
+
+              <LinkContainer to="/meta">
+                <NavDropdown.Item title="More metadata">
+                  Metadata
+                </NavDropdown.Item>
+              </LinkContainer>
+            </>
           ) : null}
-        </div>
-
-        <Nav className="flex-column flex-sm-row">
-          <Nav.Item>
-            <LinkContainer to="/todo">
-              <Nav.Link>TODO</Nav.Link>
-            </LinkContainer>
-          </Nav.Item>
-
-          <Nav.Item>
-            <LinkContainer to="/timer">
-              <Nav.Link>Timer</Nav.Link>
-            </LinkContainer>
-          </Nav.Item>
-
-          <Nav.Item>
-            <Nav.Link href="/$admin/" target="djangokit_admin">
-              Admin
-            </Nav.Link>
-          </Nav.Item>
-        </Nav>
+        </NavDropdown>
       </footer>
     </>
   );

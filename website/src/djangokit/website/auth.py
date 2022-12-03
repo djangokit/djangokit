@@ -18,3 +18,7 @@ require_authenticated = login_required
 #
 require_staff = user_passes_test(lambda u: u.is_staff or u.is_superuser)
 require_superuser = user_passes_test(lambda u: u.is_superuser)
+
+
+def is_superuser_request(request):
+    return request.user.is_authenticated and request.user.is_superuser

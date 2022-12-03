@@ -1,7 +1,8 @@
 # DjangoKit
 
-DjangoKit is an opinionated meta-framework for creating full stack
-Django apps in a manner similar to Next.js, Remix, and SvelteKit.
+DjangoKit is a meta-framework / convention-over-configuration framework
+for creating full stack Django apps in a manner similar to Next.js,
+Remix, and SvelteKit.
 
 As with these frameworks, DjangoKit has the goal of helping you get
 sites up and running quickly with minimal mucking about with setup and
@@ -11,7 +12,10 @@ configuration.
 
 - Easily set up a Django project with an integrated React front end
 - Filesystem-based routing
-- Server side rendering of React templates/components
+- Convention over configuration
+- Configuration via environment variables
+- Optional server side rendering of React templates/components
+- TypeScript support
 - Tooling to create models, routes, etc
 - Full power of Django available if needed
 - Supports Python 3.8+
@@ -20,5 +24,5 @@ configuration.
 
 ## Getting Started
 
-The easiest way to get started is to use the
-[DjangoKit Cookiecutter](cookiecutter).
+- Docs: https://djangokit.org/docs
+- Cookiecutter: https://github.com/djangokit/djangokit/cookiecutter
