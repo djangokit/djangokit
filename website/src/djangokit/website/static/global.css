@@ -26,6 +26,9 @@ p:last-child {
   margin-bottom: 0;
 }
 
+ul {
+  list-style: "▷ ";
+}
 li {
   line-height: 2;
 }
