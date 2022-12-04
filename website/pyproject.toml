@@ -37,25 +37,27 @@ env = "development"
 
 [tool.runcommands.envs]
 development = {}
-production = { hostname = "djangokit.org" }
+production = { host = "djangokit.org" }
 
 [tool.runcommands.args]
 # NOTE: These default args allow these commands to be run without
 #       needing to specify the env via `run -e production <command>`
 ansible.env = "production"
-ansible.hostname = "djangokit.org"
+ansible.host = "djangokit.org"
 
 provision.env = "production"
-provision.hostname = "djangokit.org"
+provision.host = "djangokit.org"
 
 prepare.env = "production"
-prepare.hostname = "djangokit.org"
+prepare.host = "djangokit.org"
 
 deploy.env = "production"
-deploy.hostname = "djangokit.org"
+deploy.host = "djangokit.org"
 
 upgrade_remote.env = "production"
-upgrade_remote.hostname = "djangokit.org"
+upgrade_remote.host = "djangokit.org"
+
+remote.host = "djangokit.org"
 
 [build-system]
 requires = ["poetry-core"]
