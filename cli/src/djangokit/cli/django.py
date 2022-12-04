@@ -4,14 +4,14 @@ import os
 import subprocess
 import sys
 from fnmatch import fnmatch
+from itertools import chain
 from getpass import getuser
 from typing import List
 
 import click
-import typer
-from djangokit.core.env import dotenv_settings
+from djangokit.core.env import getenv, dotenv_settings
 from rich.pretty import pretty_repr
-from typer import Argument
+from typer import Abort, Argument, Option
 
 from .app import app, state
 from .utils.run import Args, process_args
@@ -56,66 +56,110 @@ def migrate():
 
 
 @app.command()
+def shell():
+    """Run shell"""
+    run_django_command("shell")
+
+
+@app.command()
+def dbshell():
+    """Run database shell"""
+    run_django_command("dbshell")
+
+
+@app.command()
 def show_settings(
-    dotenv: bool = False,
-    only: str = typer.Option(
+    env: bool = Option(False, help="Show settings set via env vars"),
+    all_: bool = Option(False, "--all", help="Show all settings"),
+    only: str = Option(
         None,
         help=(
             "Show only the specified setting or settings matching a "
             "pattern. Patterns use fnmatch syntax. As a special case, "
-            "`PREFIX_` is equivalent to `PREFIX_*`."
+            "`PREFIX_` is equivalent to `PREFIX_*`. (`Implies --all`)."
         ),
     ),
 ):
-    """Show Django settings"""
+    """Show Django settings
+
+    By default, only DjangoKit settings are shown, including the default
+    Django settings used by Django apps.
+
+    """
     console = state.console
+
+    if env and all_:
+        console.error("--env and --all can't be used at the same time")
+        raise Abort()
+
     configure_settings_module()
 
-    if dotenv:
-        settings = dotenv_settings()
-    else:
-        from django.conf import settings
+    from django.conf import settings
 
-        settings._setup()
-        explicit = settings._explicit_settings
-        settings = vars(settings._wrapped)
-        settings = {k: v for k, v in settings.items() if k in explicit}
+    explicit_settings = settings._explicit_settings
+
+    if env:
+        settings_to_show = {}
+        for env_name in chain(dotenv_settings(), os.environ):
+            if env_name.startswith("DJANGO_"):
+                name = env_name[7:]
+                val = getattr(settings, name)
+                settings_to_show[name] = val
+            elif env_name.startswith("DJANGOKIT_"):
+                name = env_name[10:].lower()
+                val = settings.DJANGOKIT[name]
+                dk_settings_to_show = settings_to_show.setdefault("DJANGOKIT", {})
+                dk_settings_to_show[name] = val
+    else:
+        settings_to_show = vars(settings._wrapped)
+        if all_ or only:
+            settings_to_show = settings_to_show.copy()
+            del settings_to_show["_explicit_settings"]
+        else:
+            settings_to_show = {
+                k: v for k, v in settings_to_show.items() if k in explicit_settings
+            }
 
     max_width = min(120, console.width)
 
     if only:
-        console.header(f"Showing the specified setting only:")
-        if only in settings:
-            matching_settings = {only: settings[only]}
+        header = f"Showing the specified setting only:"
+        if only in settings_to_show:
+            matching_settings = {only: settings_to_show[only]}
         else:
             matching_settings = {}
-            for name, val in settings.items():
+            for name, val in settings_to_show.items():
                 if fnmatch(name, only):
                     matching_settings[name] = val
             if not matching_settings and only.endswith("_"):
                 pattern = f"{only}*"
-                for name, val in settings.items():
+                for name, val in settings_to_show.items():
                     if fnmatch(name, pattern):
                         matching_settings[name] = val
         if matching_settings:
-            settings = matching_settings
-            newline = "\n" if len(settings) > 1 else ""
+            settings_to_show = matching_settings
         else:
             console.error(f"Could not find matching setting(s): {only}")
-            raise typer.Abort()
-    elif dotenv:
-        console.header("Settings loaded from .env file(s):")
-        newline = "\n"
+            raise Abort()
+    elif env:
+        header = "Settings loaded from environment:"
+    elif all_:
+        header = f"ALL Django settings for project:"
     else:
-        console.header(f"All Django settings for project (excludes defaults):")
-        newline = "\n"
+        header = f"Django settings for project (excludes defaults):"
 
-    for name in sorted(settings):
-        value = settings[name]
+    console.header(header)
+    console.warning("Settings changed from defaults are prefixed with a bang!\n")
+    newline = "\n" if len(settings_to_show) > 1 else ""
+
+    for name in sorted(settings_to_show):
+        value = settings_to_show[name]
         pretty_value = pretty_repr(value, max_width=sys.maxsize)
         total_width = len(name) + 3 + len(pretty_value)
         if total_width > max_width:
             pretty_value = pretty_repr(value, max_width=max_width)
+        if name in explicit_settings:
+            name = f"![yellow]{name}[/yellow]"
         console.print(
             f"{name} = {pretty_value}{newline}", soft_wrap=True, highlight=True
         )
@@ -195,7 +239,7 @@ def add_model(
 
     if model_path.exists():
         console.error(f"Model {class_name} exists at {model_path}")
-        raise typer.Abort()
+        raise Abort()
 
     model_fields = {}
     for field in fields:
@@ -208,7 +252,7 @@ def add_model(
             type_ = "updated"
         else:
             console.error(f"Field `{name}` requires a type; e.g. {name}:str")
-            raise typer.Abort()
+            raise Abort()
         model_fields[name] = get_model_field(type_)
 
     template = Template(MODEL_TEMPLATE)
