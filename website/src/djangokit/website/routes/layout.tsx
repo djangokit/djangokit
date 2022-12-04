@@ -8,10 +8,12 @@ import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import NavDropdown from "react-bootstrap/NavDropdown";
 
-import { FaBars, FaBookReader, FaGithub } from "react-icons/fa";
+import { FaBars, FaBookReader, FaGithub, FaRocket } from "react-icons/fa";
 
 import { useApiQuery } from "../api";
+
 import Form from "../components/Form";
+import IconButton from "../components/IconButton";
 
 function Layout() {
   const currentUser = useCurrentUserContext();
@@ -23,17 +25,26 @@ function Layout() {
 
   return (
     <>
-      <header className="p-4 bg-light border-bottom shadow-sm">
-        <Navbar bg="light" expand="lg">
-          <Container fluid className="p-0">
+      <header className="p-4 bg-dark text-light border-bottom shadow-sm">
+        <Navbar variant="dark" bg="dark" expand="sm" className="light">
+          <Container fluid className="justify-content-between p-0">
             <Link to="/" className="navbar-brand">
               DjangoKit
             </Link>
 
+            {currentPath.startsWith("/docs") ? null : (
+              <LinkContainer to="/docs/get-started">
+                <IconButton variant="outline-info" icon={<FaRocket />}>
+                  <span className="d-inline d-sm-none">Start</span>
+                  <span className="d-none d-sm-inline">Get Started</span>
+                </IconButton>
+              </LinkContainer>
+            )}
+
             <Navbar.Toggle aria-controls="main-navbar" />
 
-            <Navbar.Collapse id="main-navbar">
-              <Nav className="ms-auto">
+            <Navbar.Collapse id="main-navbar" className="flex-grow-0">
+              <Nav>
                 <LinkContainer to="/docs">
                   <Nav.Link className="d-flex align-items-center">
                     <FaBookReader />
@@ -47,7 +58,7 @@ function Layout() {
                   className="d-flex align-items-center"
                 >
                   <FaGithub />
-                  <span className="d-lg-none ms-1">Code</span>
+                  <span className="d-none d-sm-inline ms-1">Code</span>
                 </Nav.Link>
 
                 {isLogin || currentUser.isAuthenticated ? null : (
