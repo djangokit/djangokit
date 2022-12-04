@@ -4,8 +4,8 @@ import re
 from djangokit.core.env import load_dotenv
 from runcommands import abort, arg, command
 from runcommands import commands as c
-from runcommands.commands import remote
 from runcommands import printer
+from runcommands.commands import remote
 
 
 @command

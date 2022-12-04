@@ -6,8 +6,8 @@ import typer
 from . import base  # noqa
 from . import build  # noqa
 from . import django  # noqa
-from . import routes  # noqa
 from .app import app
+from .scaffolding import routes  # noqa
 
 app = typer.main.get_command(app)
 app.add_command(django.manage, "manage")

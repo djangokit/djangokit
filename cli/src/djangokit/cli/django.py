@@ -9,6 +9,7 @@ from typing import List
 
 import click
 import typer
+from djangokit.core.env import dotenv_settings
 from rich.pretty import pretty_repr
 from typer import Argument
 
@@ -71,7 +72,7 @@ def show_settings(
     configure_settings_module()
 
     if dotenv:
-        settings = state.dotenv_settings
+        settings = dotenv_settings()
     else:
         from django.conf import settings
 

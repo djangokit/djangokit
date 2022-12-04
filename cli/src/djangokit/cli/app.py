@@ -34,11 +34,9 @@ class State:
     env: Env = Env.development
     quiet: bool = False
     dotenv_path: Path = Path(".env.development")
-    dotenv_settings: dict = field(default_factory=dict)
     settings: Settings = field(default_factory=lambda: settings)
     console: Console = Console(highlight=False)
     cwd: Path = Path.cwd()
-    has_node_modules: bool = (Path.cwd() / "node_modules").exists()
     settings_module: str = "djangokit.core.settings"
     additional_settings_module: str = None
     settings_module_configured: bool = False
@@ -94,6 +92,7 @@ def main(
         env = Env.production
 
     env = env.value
+    os.environ["ENV"] = env
 
     # Set .env path from env when .env path isn't passed in or set as an
     # env var.
@@ -106,6 +105,11 @@ def main(
 
     if not dotenv_settings:
         console.warning(f"No dotenv settings loaded from {dotenv_path}")
+
+    raw_dotenv_settings = get_dotenv_settings(dotenv_path, convert=False)
+    for env_name, env_val in raw_dotenv_settings.items():
+        if env_name.startswith("DJANGOKIT_CLI_"):
+            os.environ[env_name] = env_val
 
     # Set Django settings module from .env when it's not passed in or
     # set as an env var.

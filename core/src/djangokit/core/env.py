@@ -49,8 +49,12 @@ def load_dotenv(path=None) -> bool:
     return public_loaded or loaded
 
 
-def dotenv_settings(path=None) -> Dict[str, Optional[str]]:
-    """Load settings from .env file into environ."""
+def dotenv_settings(path=None, convert=True) -> Dict[str, Optional[str]]:
+    """Load settings from .env file into environ.
+
+    By default, the values will be parsed as JSON.
+
+    """
     path = get_dotenv_path(path)
     public_path = path.parent / ".env.public"
     values = {}
@@ -58,10 +62,12 @@ def dotenv_settings(path=None) -> Dict[str, Optional[str]]:
         values.update(dotenv.dotenv_values(public_path))
     if path.exists():
         values.update(dotenv.dotenv_values(path))
-    processed_values = {}
-    for name, value in values.items():
-        processed_values[name] = convert_env_val(value)
-    return processed_values
+    if convert:
+        processed_values = {}
+        for name, value in values.items():
+            processed_values[name] = convert_env_val(value)
+        return processed_values
+    return values
 
 
 def getenv(name: str, default: Any = NOT_SET, expected_type: type = NOT_SET) -> Any:
