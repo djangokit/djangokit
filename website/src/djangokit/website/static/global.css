@@ -25,3 +25,30 @@
 p:last-child {
   margin-bottom: 0;
 }
+
+li {
+  line-height: 2;
+}
+
+.admonition {
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: var(--bs-light);
+  border: var(--bs-border-width) var(--bs-border-style) var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+}
+.admonition-title {
+  font-weight: bold;
+}
+.admonition .admonition-title::before {
+  margin-right: 0.5em;
+}
+.admonition.note .admonition-title::before {
+  content: "🗒️";
+}
+.admonition.warning .admonition-title::before {
+  content: "⚠️";
+}
+.admonition.danger .admonition-title::before {
+  content: "⛔️";
+}

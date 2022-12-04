@@ -97,7 +97,7 @@ def find_apis(root: Path, root_package: str) -> List[ApiInfo]:
     return info
 
 
-@lru_cache
+@lru_cache(maxsize=None)
 def get_route_info(
     directory: Path,
     *,

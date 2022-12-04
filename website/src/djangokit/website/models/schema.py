@@ -1,5 +1,6 @@
-from markdown import markdown
 from marshmallow import fields
+
+from ..markdown import markdown
 
 
 class MarkdownField(fields.String):

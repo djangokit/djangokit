@@ -3,7 +3,6 @@ from os import getenv
 from django.conf import settings as django_settings
 from djangokit.core.conf import settings
 
-
 INCLUDE_SETTINGS = (
     "DEBUG",
     "ALLOWED_HOSTS",

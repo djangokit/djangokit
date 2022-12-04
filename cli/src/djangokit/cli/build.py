@@ -167,7 +167,7 @@ class WatchEventHandler(PatternMatchingEventHandler):
                 )
 
 
-@lru_cache
+@lru_cache(maxsize=None)
 def get_build_watch_event_handler() -> Tuple[WatchEventHandler, Observer]:
     """Get the singleton build watch event handler."""
     handler = WatchEventHandler(state.console)
