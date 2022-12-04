@@ -20,14 +20,27 @@ export default function Page() {
     );
   }
 
+  const settings = data.settings ?? {};
+  const djangokitSettings = settings.DJANGOKIT ?? {};
+
   return (
     <>
       <h2>Site Metadata</h2>
 
       <Table striped bordered hover>
         <tbody>
-          <Entry name="Env" val={data.env} />
-          <Entry name="Version" val={data.version} />
+          <Entry name="env" val={data.env} />
+          <Entry name="version" val={data.version} />
+
+          {Object.entries(settings).map(([name, val], i) =>
+            name === "DJANGOKIT" ? null : (
+              <Entry key={i} name={name} val={val} />
+            )
+          )}
+
+          {Object.entries(djangokitSettings).map(([name, val], i) => (
+            <Entry key={i} name={`DJANGOKIT.${name}`} val={val} />
+          ))}
         </tbody>
       </Table>
     </>
@@ -37,7 +50,7 @@ export default function Page() {
 function Entry({
   name,
   val,
-  defaultVal = "???",
+  defaultVal,
 }: {
   name: string;
   val: any;
@@ -46,7 +59,14 @@ function Entry({
   return (
     <tr>
       <th>{name}</th>
-      <td>{val ?? defaultVal}</td>
+      <td>{convertVal(val, defaultVal)}</td>
     </tr>
   );
+}
+
+function convertVal(val: any, defaultVal?: string): string {
+  if (val === undefined) {
+    return defaultVal ?? "undefined";
+  }
+  return JSON.stringify(val, undefined, 1);
 }

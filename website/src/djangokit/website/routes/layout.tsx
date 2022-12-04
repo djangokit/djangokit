@@ -102,20 +102,19 @@ function Layout() {
 
           {meta.data ? (
             <>
+              <NavDropdown.Divider />
               <NavDropdown.Item title="env">
-                Env: {meta.data?.env || "development"}
+                {meta.data?.env || "development"}
               </NavDropdown.Item>
 
-              <NavDropdown.Item
-                title="version"
-                href={
-                  meta.data.version
-                    ? `https://github.com/djangokit/djangokit/commit/${meta.data.version}`
-                    : ""
-                }
-              >
-                v{meta.data.version ?? "???"}
-              </NavDropdown.Item>
+              {meta.data.version ? (
+                <NavDropdown.Item
+                  title="version"
+                  href={githubUrlForVersion(meta.data.version)}
+                >
+                  v{meta.data.version ?? "???"}
+                </NavDropdown.Item>
+              ) : null}
 
               <LinkContainer to="/meta">
                 <NavDropdown.Item title="More metadata">
@@ -128,6 +127,12 @@ function Layout() {
       </footer>
     </>
   );
+}
+
+function githubUrlForVersion(version) {
+  return version
+    ? `https://github.com/djangokit/djangokit/commit/$version}`
+    : "";
 }
 
 export default Layout;
