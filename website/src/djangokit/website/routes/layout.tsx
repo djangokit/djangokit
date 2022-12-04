@@ -29,8 +29,10 @@ function Layout() {
             <Link to="/" className="navbar-brand">
               DjangoKit
             </Link>
-            <Navbar.Toggle aria-controls="basic-navbar-nav" />
-            <Navbar.Collapse id="basic-navbar-nav">
+
+            <Navbar.Toggle aria-controls="main-navbar" />
+
+            <Navbar.Collapse id="main-navbar">
               <Nav className="ms-auto">
                 <LinkContainer to="/docs">
                   <Nav.Link className="d-flex align-items-center">

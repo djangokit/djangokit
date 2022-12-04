@@ -28,7 +28,7 @@ export default function Page({
   }
 
   return (
-    <>
+    <div>
       <h2>{data.title}</h2>
 
       {data.lead ? (
@@ -39,6 +39,6 @@ export default function Page({
       ) : null}
 
       <div dangerouslySetInnerHTML={{ __html: data.content }} />
-    </>
+    </div>
   );
 }

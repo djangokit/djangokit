@@ -10,16 +10,20 @@ export default function Page() {
   const { isLoading, isError, data, error } = usePageQuery("home");
   return (
     <>
-      <PageComponent
-        isLoading={isLoading}
-        isError={isError}
-        data={data}
-        error={error}
-      />
-      <div className="mt-5 d-flex align-items-center justify-content-center">
-        <LinkContainer to="/docs/get-started">
-          <IconButton icon={<FaRocket />}>Get Started</IconButton>
-        </LinkContainer>
+      <div className="d-flex flex-column gap-4 flex-md-row gap-md-5 h-100">
+        <PageComponent
+          isLoading={isLoading}
+          isError={isError}
+          data={data}
+          error={error}
+        />
+        <div className="bg-dark p-4 rounded text-center">
+          <LinkContainer to="/docs/get-started">
+            <IconButton variant="outline-info" icon={<FaRocket />}>
+              Get Started
+            </IconButton>
+          </LinkContainer>
+        </div>
       </div>
     </>
   );

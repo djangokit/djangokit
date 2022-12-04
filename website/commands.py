@@ -198,7 +198,11 @@ def clean_remote(root="/sites/djangokit.org", run_as="djangokit"):
     for path in paths:
         version = os.path.basename(path)
 
-        du_result = remote(f"du -sh {path} | awk '{{ print $1 }}'", stdout="capture")
+        du_result = remote(
+            f"du -sh {path} | awk '{{ print $1 }}'",
+            run_as=run_as,
+            stdout="capture",
+        )
         size = du_result.stdout.strip()
 
         printer.warning(f"Removing version: {version} ({size})... ", end="")

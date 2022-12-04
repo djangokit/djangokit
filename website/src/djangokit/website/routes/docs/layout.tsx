@@ -42,7 +42,7 @@ export default function Layout() {
             {data.pages.map((page) => (
               <Nav.Item key={page.id}>
                 <LinkContainer to={`/docs/${page.slug.slice(4)}`}>
-                  <Nav.Link>{page.title}</Nav.Link>
+                  <Nav.Link className="text-nowrap">{page.title}</Nav.Link>
                 </LinkContainer>
               </Nav.Item>
             ))}

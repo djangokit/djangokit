@@ -13,7 +13,7 @@ export default function IconButton({
 }: any) {
   return (
     <Button {...props}>
-      <Stack direction="horizontal" gap={gap}>
+      <Stack direction="horizontal" gap={gap} className="text-nowrap">
         {iconPosition === "left" ? icon : null}
         {children?.length ? <div>{children}</div> : null}
         {iconPosition === "right" ? icon : null}
