@@ -6,6 +6,7 @@ interface Props {
   isError: boolean;
   data: any;
   error: any;
+  className?: string;
 }
 
 export default function Page({
@@ -13,6 +14,7 @@ export default function Page({
   isError = false,
   data = undefined,
   error = undefined,
+  className = undefined,
 }: Props) {
   if (isLoading) {
     return <Loader>Loading page...</Loader>;
@@ -28,7 +30,7 @@ export default function Page({
   }
 
   return (
-    <div>
+    <div className={className}>
       <h2>{data.title}</h2>
 
       {data.lead ? (

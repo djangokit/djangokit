@@ -16,6 +16,7 @@ export default function Page() {
           isError={isError}
           data={data}
           error={error}
+          className="flex-fill"
         />
         <div className="bg-dark p-4 rounded text-center">
           <LinkContainer to="/docs/get-started">
