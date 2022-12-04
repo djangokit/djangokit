@@ -80,7 +80,7 @@ function Layout() {
           <div className="d-flex align-items-center justify-content-end gap-2 small text-muted">
             <div>{currentUser.username}</div>
             <Form method="post" action="/$api/logout">
-              <input name="from" type="hidden" value={currentPath} />
+              <input name="next" type="hidden" value={currentPath} />
               <Button type="submit" size="sm" variant="outline-secondary">
                 Log Out
               </Button>

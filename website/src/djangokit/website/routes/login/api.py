@@ -1,18 +1,32 @@
+import logging
+
+from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.http import HttpRequest
-from django.shortcuts import redirect
+
+from djangokit.core.views.utils import is_site_path
+
+
+log = logging.getLogger(__name__)
 
 
 def post(request: HttpRequest):
+    """User login endpoint. *Always* redirects."""
     data = request.POST
     username = data["username"]
     password = data["password"]
-    return_path = data.get("from") or "/"
-    if not return_path.startswith("/"):
-        return 400, f"Bad redirect URL: {return_path}"
+    redirect_path = data.get("next") or "/"
+
+    if not is_site_path(redirect_path):
+        log.error("Login redirect URL should be a site path; got %s", redirect_path)
+        redirect_path = "/"
+
     user = authenticate(request, username=username, password=password)
     if user is None:
-        return 401
-    login(request, user)
-    return_url = request.build_absolute_uri(return_path)
-    return redirect(return_url)
+        # Authentication failed.
+        redirect_path = settings.LOGIN_URL
+    else:
+        # Authentication succeeded.
+        login(request, user)
+
+    return 302, redirect_path

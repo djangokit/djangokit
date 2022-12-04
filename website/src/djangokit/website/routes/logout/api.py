@@ -1,12 +1,20 @@
+import logging
+
 from django.contrib.auth import logout
-from django.shortcuts import redirect
+from djangokit.core.views.utils import is_site_path
+
+log = logging.getLogger(__name__)
 
 
 def post(request):
+    """User logout endpoint. *Always* redirects."""
     data = request.POST
-    return_path = data.get("from") or "/"
-    if not return_path.startswith("/"):
-        return 400, f"Bad redirect URL: {return_path}"
+    redirect_path = data.get("next") or "/"
+
     logout(request)
-    return_url = request.build_absolute_uri(return_path)
-    return redirect(return_url)
+
+    if not is_site_path(redirect_path):
+        log.error("Logout redirect URL should be a site path; got %s", redirect_path)
+        redirect_path = "/"
+
+    return 302, redirect_path

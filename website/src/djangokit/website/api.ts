@@ -47,29 +47,6 @@ const api = {
   },
 
   /**
-   * Get CSRF token from `csrftoken` cookie.
-   *
-   * If the token isn't present, `null` will be returned.
-   */
-  getCsrfTokenFromCookies(csrfTokenCookieName = "csrftoken"): string | null {
-    if (!document.cookie) {
-      return null;
-    }
-    const cookies = document.cookie.split(";");
-    for (const cookie of cookies) {
-      const parts = cookie.trim().split("=");
-      const name = (parts[0] ?? "").trim();
-      if (name === csrfTokenCookieName) {
-        const value = parts.slice(1).join("=").trim();
-        if (value) {
-          return decodeURIComponent(value);
-        }
-      }
-    }
-    return null;
-  },
-
-  /**
    * API fetch wrapper.
    *
    * @param path API path, relative to API root
@@ -79,14 +56,17 @@ const api = {
   async fetch<M>(path: string, options: Options = {}) {
     options.method = options.method ?? "GET";
     options.headers = options.headers ?? {};
+    options.headers["Accept"] = "application/json";
     options.headers["X-Requested-With"] = "fetch";
 
     if (!this.isSafeMethod(options.method)) {
-      const csrfToken = this.getCsrfTokenFromCookies();
-      if (csrfToken === null) {
+      const csrfToken = getCookie("csrftoken");
+      options.mode = options.mode ?? "same-origin";
+      if (csrfToken) {
+        options.headers["X-CSRFToken"] = csrfToken;
+      } else if (options.mode === "same-origin") {
         throw new ApiError("Could not read CSRF token from cookies");
       }
-      options.headers["X-CSRFToken"] = csrfToken ?? "";
     }
 
     if (options.data) {
@@ -145,6 +125,30 @@ const api = {
 };
 
 export default api;
+
+/**
+ * Get the named cookie.
+ *
+ * @param cookieName
+ * @returns Cookie value if cookie is present and set; `null` otherwise
+ */
+function getCookie(cookieName: string): string | null {
+  if (!document.cookie) {
+    return null;
+  }
+  const cookies = document.cookie.split(";");
+  for (const cookie of cookies) {
+    const parts = cookie.trim().split("=");
+    const name = (parts[0] ?? "").trim();
+    if (name === cookieName) {
+      const value = parts.slice(1).join("=").trim();
+      if (value) {
+        return decodeURIComponent(value);
+      }
+    }
+  }
+  return null;
+}
 
 /**
  * Hook to fetch data from API (wraps react-query's useQuery).
