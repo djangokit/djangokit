@@ -4,12 +4,12 @@ import os
 import subprocess
 import sys
 from fnmatch import fnmatch
-from itertools import chain
 from getpass import getuser
+from itertools import chain
 from typing import List
 
 import click
-from djangokit.core.env import getenv, dotenv_settings
+from djangokit.core.env import dotenv_settings, getenv
 from rich.pretty import pretty_repr
 from typer import Abort, Argument, Option
 

@@ -21,8 +21,3 @@ variables, which can be added to your project's `.env.public` file.
   routes generated using `dk add-page`. This is handy if you're not 
   using TypeScript and you don't want to have to change the extension
   every time you generate a page route.
-
-- `DJANGOKIT_CLI_HAS_NODE_MODULES`: This is only useful if you're not
-  using DjangoKit with any React page routes, which would be atypical.
-  Setting this to a falsey value will skip things like JS linting and
-  formatting by default.

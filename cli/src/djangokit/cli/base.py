@@ -1,8 +1,7 @@
 """Base commands."""
 from pathlib import Path
 
-from djangokit.core.env import getenv
-from typer import Abort, Context, Exit, Option
+from typer import Context, Exit, Option
 
 from .app import app, state
 from .build import build_client, build_server
@@ -59,7 +58,9 @@ def install(python_version=None):
     if python_version:
         run(f"poetry env use {python_version}")
     run("poetry install")
-    run("npm install")
+    if has_package_json():
+        console.print()
+        run("npm install")
 
 
 @app.command()
@@ -68,81 +69,89 @@ def update():
     console = state.console
     console.header(f"Updating project...")
     run("poetry update")
-    run("npm update")
+    if has_package_json():
+        console.print()
+        run("npm update")
 
 
 @app.command()
-def check(
-    ctx: Context,
-    python: bool = True,
-    js: bool = Option(True, envvar="DJANGOKIT_CLI_HAS_NODE_MODULES"),
-):
+def check(python: bool = True, js: bool = True):
     """Check code for issues"""
     console = state.console
 
     if python:
         console.header("Checking Python formatting \[black]...")
-        run_poetry_command("black --check .")
+        run_poetry_command("black --check .", exit_on_err=False)
 
+        console.print()
         console.header(f"Checking Python imports \[isort]...")
-        run_poetry_command("isort --check --profile black .")
+        run_poetry_command("isort --check --profile black .", exit_on_err=False)
 
+        console.print()
         console.header(f"Checking Python types \[mypy]...")
-        run_poetry_command("mypy")
+        run_poetry_command("mypy", exit_on_err=False)
 
-    if js and check_has_node_modules(ctx):
-        console.header(f"Checking JavaScript formatting \[eslint/prettier]...")
+    if js and check_js_flag():
+        console.print()
+        console.header(
+            f"Checking JavaScript formatting \[eslint/prettier]...",
+        )
 
         result = run_node_command("eslint .")
         if result.returncode == 0:
             console.success("No issues found")
 
+        console.print()
         console.header(f"Checking JavaScript types \[tsc]...")
-        result = run("tsc --project tsconfig.json")
+        result = run_node_command("tsc --project tsconfig.json", exit_on_err=False)
         if result.returncode == 0:
             console.success("No issues found")
 
 
 @app.command(name="format")
-def format_(
-    ctx: Context,
-    python: bool = True,
-    js: bool = Option(True, envvar="DJANGOKIT_CLI_HAS_NODE_MODULES"),
-):
+def format_(python: bool = True, js: bool = True):
     """Format code"""
     console = state.console
 
     if python:
         console.header(f"Formatting Python code \[black]...")
-        run_poetry_command("black .")
+        run_poetry_command("black .", exit_on_err=False)
 
+        console.print()
         console.header(f"Sorting Python imports \[isort]...")
-        run_poetry_command("isort --profile black .")
+        run_poetry_command("isort --profile black .", exit_on_err=False)
 
-    if js and check_has_node_modules(ctx):
+    if js and check_js_flag():
+        console.print()
         console.header(f"Formatting JavaScript code \[eslint/prettier]...")
-        result = run_node_command("eslint --fix .")
+        result = run_node_command("eslint --fix .", exit_on_err=False)
         if result.returncode == 0:
             console.success("No issues found")
 
 
-def check_has_node_modules(ctx: Context):
+def has_package_json():
+    return Path("./package.json").exists()
+
+
+def has_node_modules():
+    return Path("./node_modules").exists()
+
+
+def check_js_flag():
     console = state.console
-    node_modules_exists = Path("./node_modules").exists()
 
-    if node_modules_exists:
-        return True
-
-    if params.is_default(ctx, "js"):
-        console.warning(
-            "Skipping eslint formatting because CWD doesn't "
-            "contain a node_modules directory. Run `npm install` "
-            "or use the --no-js flag to avoid this warning. "
-            f"CWD = {state.cwd}"
-        )
+    # If the project doesn't have a package.json, the --js flag is
+    # irrelevant.
+    if not has_package_json():
         return False
 
-    # Explicit --js is an error
+    # If the project has a package.json and node_modules, the --js flag
+    # can be used.
+    if has_node_modules():
+        return True
+
+    # Otherwise, exit with an error because it's likely that `npm i`
+    # needs to be run first.
     console.error(
         "Can't format with eslint because CWD doesn't contain a "
         "node_modules directory. Do you need to run `npm install`? "

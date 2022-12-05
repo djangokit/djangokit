@@ -8,7 +8,7 @@ Arg = Union[str, List[str]]
 Args = Union[Arg, List[Arg]]
 
 
-def run(args: Args) -> subprocess.CompletedProcess:
+def run(args: Args, exit_on_err=True) -> subprocess.CompletedProcess:
     """Run a command in a subprocess.
 
     .. note::
@@ -18,35 +18,35 @@ def run(args: Args) -> subprocess.CompletedProcess:
 
     """
     args = process_args(args)
-    return subprocess_run(args)
+    return subprocess_run(args, exit_on_err)
 
 
-def run_node_command(args: Args) -> subprocess.CompletedProcess:
+def run_node_command(args: Args, exit_on_err=True) -> subprocess.CompletedProcess:
     """Run a command via npx in a subprocess.
 
     This is a convenience for `npx <args>`.
 
     """
     args = ["npx"] + process_args(args)
-    return subprocess_run(args)
+    return subprocess_run(args, exit_on_err)
 
 
-def run_poetry_command(args: Args) -> subprocess.CompletedProcess:
+def run_poetry_command(args: Args, exit_on_err=True) -> subprocess.CompletedProcess:
     """Run a command via poetry in a subprocess.
 
     This is a convenience for `poetry run <args>`.
 
     """
     args = ["poetry", "run"] + process_args(args)
-    return subprocess_run(args)
+    return subprocess_run(args, exit_on_err)
 
 
-def subprocess_run(args: List[str]) -> subprocess.CompletedProcess:
+def subprocess_run(args: List[str], exit_on_err=True) -> subprocess.CompletedProcess:
     from ..app import state
 
     state.console.command(">", " ".join(args))
     result = subprocess.run(args, stdout=subprocess.DEVNULL if state.quiet else None)
-    if result.returncode:
+    if result.returncode and exit_on_err:
         raise typer.Exit(result.returncode)
     return result
 
