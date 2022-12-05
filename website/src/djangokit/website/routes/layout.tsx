@@ -65,7 +65,7 @@ function Layout() {
                   <Nav.Link as="div">
                     <Link
                       className="btn btn-sm btn-outline-secondary"
-                      to={`/login?from=${redirectPath}`}
+                      to={`/login?next=${redirectPath}`}
                     >
                       Log In
                     </Link>

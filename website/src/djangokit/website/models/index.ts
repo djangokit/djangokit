@@ -7,7 +7,8 @@ export interface Page {
 }
 
 export interface TodoItems {
-  items: TodoItem[];
+  todo: TodoItem[];
+  completed: TodoItem[];
 }
 
 export interface TodoItem {

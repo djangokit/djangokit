@@ -7,11 +7,11 @@ import Form from "../../components/Form";
 
 export default function Page() {
   const [params] = useSearchParams();
-  const from = params.get("next") ?? "/";
+  const next = params.get("next") ?? "/";
 
   return (
     <Form method="post" action="/$api/login" className="container-lg">
-      <input name="next" type="hidden" value={from} />
+      <input name="next" type="hidden" value={next} />
       <Stack gap={4}>
         <h2>Log In</h2>
 

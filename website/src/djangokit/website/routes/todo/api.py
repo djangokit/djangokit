@@ -9,8 +9,11 @@ from djangokit.website.models import TodoItem
 
 def get(_request):
     """Get all todo items."""
-    items = TodoItem.objects.all().order_by("completed", "created")
-    return {"items": items}
+    items = TodoItem.objects.all().order_by("created")
+    return {
+        "todo": [item for item in items if not item.completed],
+        "completed": [item for item in items if item.completed],
+    }
 
 
 @auth.require_authenticated
@@ -29,7 +32,9 @@ def post(request: HttpRequest):
     if not content:
         return 400, "Todo item content cannot be empty"
 
+    item = TodoItem.objects.create(content=content)
+
     if request.is_fetch:
-        return TodoItem.objects.create(content=content)
+        return item
 
     return redirect("/todo")

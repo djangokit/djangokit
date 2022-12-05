@@ -3,20 +3,34 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import Button from "react-bootstrap/Button";
+import Collapse from "react-bootstrap/Collapse";
 
-import { FaCheck, FaEdit, FaPlus, FaSave } from "react-icons/all";
+import {
+  FaCheck,
+  FaChevronDown,
+  FaChevronUp,
+  FaEdit,
+  FaPlus,
+  FaRegCheckCircle,
+  FaRegCircle,
+  FaSave,
+} from "react-icons/all";
 
 import api, { useApiQuery } from "../../api";
 import { TodoItem, TodoItems } from "../../models";
 import Form from "../../components/Form";
 import ErrorMessage from "../../components/ErrorMessage";
 import Loader from "../../components/Loader";
+import IconButton from "../../components/IconButton";
 
 export default function Page() {
   const currentUser = useCurrentUserContext();
-  const { isLoading, isError, data, error } = useApiQuery<TodoItems>("todo");
+
+  const [createFormData, setCreateFormData] = useState({ content: "" });
+  const [showCompleted, setShowCompleted] = useState(false);
 
   const client = useQueryClient();
+  const { isLoading, isError, data, error } = useApiQuery<TodoItems>("todo");
 
   const onmutationsuccess = () => {
     client.invalidateQueries({ queryKey: ["todo"] });
@@ -27,8 +41,6 @@ export default function Page() {
       api.post("todo", { content }),
     onSuccess: onmutationsuccess,
   });
-
-  const [createFormData, setCreateFormData] = useState({ content: "" });
 
   if (isLoading) {
     return <Loader>Loading TODO items...</Loader>;
@@ -43,8 +55,10 @@ export default function Page() {
     );
   }
 
-  const items = data.items;
-  const numItems = items.length;
+  const todo = data.todo;
+  const todoCount = todo.length;
+  const completed = data.completed;
+  const completedCount = completed.length;
 
   return (
     <>
@@ -85,16 +99,55 @@ export default function Page() {
         </div>
       ) : null}
 
-      {numItems ? (
+      {todoCount ? (
         <>
-          <h3>
-            {numItems} thing{numItems === 1 ? "" : "s"} to do
+          <h3 className="mt-4 d-flex align-items-center gap-2">
+            <FaRegCircle />
+            <span>
+              {todoCount} thing{todoCount === 1 ? "" : "s"} to do
+            </span>
           </h3>
-          <div className="d-flex flex-column gap-4">
-            {items.map((item, i) => (
-              <Item key={item.id} item={item} cardinal={i + 1} />
+          <div className="d-flex flex-column gap-2">
+            {todo.map((item, i) => (
+              <Item key={item.id} item={item} itemNumber={i + 1} />
             ))}
           </div>
+        </>
+      ) : (
+        <div className="alert alert-success">Nothing to do!</div>
+      )}
+
+      {completedCount ? (
+        <>
+          <div>
+            <h3 className="mt-4 d-flex align-items-center gap-2">
+              <FaRegCheckCircle />
+              <span>
+                {completedCount} thing{completedCount === 1 ? "" : "s"}{" "}
+                completed
+              </span>
+              <IconButton
+                variant="outline-secondary"
+                icon={showCompleted ? <FaChevronUp /> : <FaChevronDown />}
+                iconPosition="right"
+                aria-controls="completed-items"
+                aria-expanded={showCompleted}
+                className="ms-auto"
+                onClick={() => setShowCompleted(!showCompleted)}
+              >
+                {showCompleted ? "Hide" : "Show"} completed items
+              </IconButton>
+            </h3>
+          </div>
+          <Collapse in={showCompleted}>
+            <div id="completed-items">
+              <div className="d-flex flex-column gap-2">
+                {completed.map((item, i) => (
+                  <Item key={item.id} item={item} itemNumber={i + 1} />
+                ))}
+              </div>
+            </div>
+          </Collapse>
         </>
       ) : (
         <div className="alert alert-success">Nothing to do!</div>
@@ -103,7 +156,7 @@ export default function Page() {
   );
 }
 
-function Item({ item, cardinal }: { item: TodoItem; cardinal: number }) {
+function Item({ item, itemNumber }: { item: TodoItem; itemNumber: number }) {
   const currentUser = useCurrentUserContext();
 
   const [rawContent, setRawContent] = useState(item.rawContent);
@@ -141,10 +194,10 @@ function Item({ item, cardinal }: { item: TodoItem; cardinal: number }) {
   return (
     <div className="d-flex border rounded">
       <div className="d-flex flex-column align-items-center justify-content-center p-2 text-bg-light border-end">
-        {cardinal}.
+        {itemNumber}.
       </div>
 
-      <div className="flex-fill p-2 border-end">
+      <div className="flex-fill align-self-center p-2 border-end">
         <ItemContent
           item={item}
           rawContent={rawContent}
@@ -154,7 +207,7 @@ function Item({ item, cardinal }: { item: TodoItem; cardinal: number }) {
       </div>
 
       {currentUser.isSuperuser ? (
-        <div className="p-2 d-flex flex-column justify-content-center gap-2 text-bg-light">
+        <div className="p-2 d-flex flex-column flex-sm-row align-items-center justify-content-center gap-2 text-bg-light">
           <ItemControls
             item={item}
             rawContent={rawContent}
