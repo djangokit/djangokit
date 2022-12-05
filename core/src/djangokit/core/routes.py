@@ -11,7 +11,6 @@ from .conf import settings
 from .dataclasses import ApiInfo, LayoutInfo, PageInfo
 from .exceptions import BuildError
 from .views import ApiView, PageView
-from .views import csrf as csrf_views
 from .views import user as user_views
 
 
@@ -35,7 +34,6 @@ def discover_routes(page_view_class=PageView, api_view_class=ApiView) -> list:
 
     """
     urls = [
-        path("$api/csrf-token", csrf_views.get_token),
         path("$api/current-user", user_views.get_current_user),
     ]
 

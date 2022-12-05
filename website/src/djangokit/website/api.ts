@@ -1,3 +1,4 @@
+import * as cookie from "cookie";
 import { useQuery } from "@tanstack/react-query";
 
 import { Page } from "./models";
@@ -60,7 +61,8 @@ const api = {
     options.headers["X-Requested-With"] = "fetch";
 
     if (!this.isSafeMethod(options.method)) {
-      const csrfToken = getCookie("csrftoken");
+      const cookies = cookie.parse(document.cookie);
+      const csrfToken = cookies["csrftoken"];
       options.mode = options.mode ?? "same-origin";
       if (csrfToken) {
         options.headers["X-CSRFToken"] = csrfToken;
@@ -125,30 +127,6 @@ const api = {
 };
 
 export default api;
-
-/**
- * Get the named cookie.
- *
- * @param cookieName
- * @returns Cookie value if cookie is present and set; `null` otherwise
- */
-function getCookie(cookieName: string): string | null {
-  if (!document.cookie) {
-    return null;
-  }
-  const cookies = document.cookie.split(";");
-  for (const cookie of cookies) {
-    const parts = cookie.trim().split("=");
-    const name = (parts[0] ?? "").trim();
-    if (name === cookieName) {
-      const value = parts.slice(1).join("=").trim();
-      if (value) {
-        return decodeURIComponent(value);
-      }
-    }
-  }
-  return null;
-}
 
 /**
  * Hook to fetch data from API (wraps react-query's useQuery).

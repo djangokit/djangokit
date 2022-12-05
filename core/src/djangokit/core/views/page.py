@@ -1,9 +1,11 @@
 import json
 import logging
 import os
+from datetime import timedelta
 
 from django.contrib.staticfiles.finders import find
 from django.contrib.staticfiles.storage import staticfiles_storage
+from django.http import HttpRequest
 from django.middleware import csrf
 from django.template.loader import render_to_string
 from django.views.generic import TemplateView
@@ -35,8 +37,14 @@ class PageView(TemplateView):
         }
 
     def render(self):
-        request = self.request
+        request: HttpRequest = self.request
 
+        # Do CSR only for logged-in users.
+        #
+        # XXX: This is mainly to avoid issues with React SSR hydration.
+        #      The issue is that server rendered markup includes the
+        #      current user data but on the client the page is hydrated
+        #      *without* the user data present.
         if request.user.is_authenticated:
             return ""
 
