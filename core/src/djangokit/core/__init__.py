@@ -1,1 +1,1 @@
-from .routes import get_route_urls
+from .routes import discover_routes

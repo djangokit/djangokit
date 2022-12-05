@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+
+<html lang="{{ settings.LANGUAGE_CODE }}">
+  <head>
+    {% block head %}
+      {% include "djangokit/_meta.html" with settings=settings %}
+
+      {% block favicon %}
+        {% include "djangokit/_favicon.html" with settings=settings %}
+      {% endblock %}
+
+      {% block stylesheets %}
+        {% include "djangokit/_stylesheets.html" with settings=settings %}
+      {% endblock %}
+
+      {% block scripts %}
+        {% include "djangokit/_scripts.html" with settings=settings %}
+      {% endblock %}
+    {% endblock %}
+  </head>
+
+  <body>
+    {% block body %}
+      {% include "djangokit/_body.html" with settings=settings %}
+    {% endblock %}
+  </body>
+</html>

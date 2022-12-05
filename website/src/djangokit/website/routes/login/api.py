@@ -3,9 +3,7 @@ import logging
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.http import HttpRequest
-
 from djangokit.core.views.utils import is_site_path
-
 
 log = logging.getLogger(__name__)
 

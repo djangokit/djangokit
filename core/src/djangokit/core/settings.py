@@ -120,7 +120,7 @@ defaults = Settings(
         "description": "A website made with DjangoKit",
         "package": djangokit_package,
         "app_label": djangokit_package.replace(".", "_"),
-        "global_css": ["global.css"],
+        "global_stylesheets": ["global.css"],
         "current_user_serializer": "djangokit.core.user.current_user_serializer",
         "ssr": True,
         "webmaster": "",

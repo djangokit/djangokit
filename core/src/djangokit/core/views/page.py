@@ -29,7 +29,7 @@ class PageView(TemplateView):
     def extra_context(self):
         markup = self.render()
         return {
-            "settings": settings.as_dict(),
+            "settings": settings,
             "markup": markup,
             "page_path": self.page_path,
         }

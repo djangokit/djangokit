@@ -5,10 +5,10 @@ from django.urls import include, path
 from django.views.defaults import ERROR_500_TEMPLATE_NAME, server_error
 
 from .conf import settings
-from .routes import get_route_urls
+from .routes import discover_routes
 
 urlpatterns = [
-    path("", include(get_route_urls())),
+    path("", include(discover_routes())),
     path("$admin/", admin.site.urls),
 ]
 

@@ -30,7 +30,7 @@ accessing the `DJANGOKIT` dict directly::
 When accessing an optional DjangoKit setting, the default value will
 automatically be used if it's not set in the `DJANGOKIT` dict::
 
-    settings.global_css  # -> ["global.css"]
+    settings.global_stylesheets  # -> ["global.css"]
 
 """
 import dataclasses
@@ -83,7 +83,7 @@ class Settings:
             "type": str,
             "default_factory": lambda s: s.package.replace(".", "_"),
         },
-        "global_css": {
+        "global_stylesheets": {
             "type": list,
             "default": ["global.css"],
         },
@@ -139,9 +139,9 @@ class Settings:
         return self._get_optional("app_label")
 
     @cached_property
-    def global_css(self) -> List[str]:
+    def global_stylesheets(self) -> List[str]:
         """CSS files to link in app.html template."""
-        return self._get_optional("global_css")
+        return self._get_optional("global_stylesheets")
 
     @cached_property
     def current_user_serializer(self) -> Callable[[Any], Dict[str, Any]]:

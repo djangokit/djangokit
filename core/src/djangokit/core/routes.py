@@ -4,6 +4,7 @@ from os import path
 from pathlib import Path, PosixPath
 from typing import List
 
+from django.core.exceptions import ImproperlyConfigured
 from django.urls import path
 
 from .conf import settings
@@ -14,21 +15,21 @@ from .views import csrf as csrf_views
 from .views import user as user_views
 
 
-def get_route_urls(page_view_class=PageView, api_view_class=ApiView) -> list:
+def discover_routes(page_view_class=PageView, api_view_class=ApiView) -> list:
     """Find file-based page & API routes and return URLs for them.
 
-    Finds page & API routes in the specified package and creates a
-    Django URL path for each.
+    Finds page & API routes in the specified package and creates a view
+    and URLconf for each.
 
     Usage in a typical DjangoKit project::
 
         # src/<package>/urls.py
         from django.contrib import admin
         from django.urls import include, path
-        from djangokit.core import get_route_urls
+        from djangokit.core import discover_routes
 
         urlpatterns = [
-            path("", include(get_route_urls())),
+            path("", include(discover_routes())),
             path("$admin/", admin.site.urls),
         ]
 
@@ -42,7 +43,26 @@ def get_route_urls(page_view_class=PageView, api_view_class=ApiView) -> list:
     api_info = find_apis(settings.routes_dir, settings.routes_package)
 
     for info in api_info:
-        view = api_view_class.as_view(api_module=info.module)
+        api_module = info.module
+
+        allowed_methods = {}
+        for name in dir(api_module):
+            if name in ApiView.http_method_names:
+                allowed_methods[name] = getattr(api_module, name)
+        if "head" not in allowed_methods and "get" in allowed_methods:
+            allowed_methods["head"] = allowed_methods["get"]
+        if not allowed_methods:
+            raise ImproperlyConfigured(
+                f"The API module {api_module.__name__} doesn't contain "
+                "any handlers. Expected at least one of get, post, or "
+                "some other handler."
+            )
+
+        view = api_view_class.as_view(
+            api_module=api_module,
+            allowed_methods=allowed_methods,
+        )
+
         urls.append(path(info.url_pattern, view))
 
     for info in page_info:
