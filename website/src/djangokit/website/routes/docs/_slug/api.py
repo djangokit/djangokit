@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 
-from djangokit.website.models import Page
+from ....models import Page
 
 
 def get(_request, slug):

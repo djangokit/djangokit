@@ -1,24 +1,30 @@
+from datetime import datetime
+from typing import Optional
+
 from django.db import models
 from django.utils.text import Truncator
-from marshmallow import Schema, fields
+from pydantic import BaseModel, Field
 
 from . import schema
 
 
-class TodoItemSchema(Schema):
-    id = fields.Integer(required=True)
-    rawContent = fields.String(attribute="content", required=True)
-    content = schema.MarkdownField(required=True)
-    created = fields.DateTime(required=True)
-    updated = fields.DateTime(required=True)
-    completed = fields.DateTime(required=False)
+class TodoItemSchema(BaseModel):
+    class Config:
+        orm_mode = True
+
+    id: int
+    rawContent: str = Field(..., alias="content")
+    content: schema.Markdown
+    created: datetime
+    updated: datetime
+    completed: Optional[datetime] = None
 
 
 class TodoItem(models.Model):
     class Meta:
         db_table = "todo_item"
 
-    serializer_factory = TodoItemSchema
+    serialize = lambda self: TodoItemSchema.from_orm(self).dict()
 
     content = models.TextField()
     created = models.DateTimeField(auto_now_add=True)

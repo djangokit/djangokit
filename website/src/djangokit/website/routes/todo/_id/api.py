@@ -1,10 +1,12 @@
 """API for individual todo items."""
+from typing import Optional
+
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import now
-from marshmallow import Schema, ValidationError, fields, validates_schema
+from pydantic import BaseModel, root_validator, ValidationError
 
-from djangokit.website import auth
-from djangokit.website.models import TodoItem
+from .... import auth
+from ....models import TodoItem
 
 
 def get(_request, id):
@@ -18,14 +20,17 @@ def delete(_request, id):
     item.delete()
 
 
-class PatchSchema(Schema):
-    content = fields.String(required=False)
-    completed = fields.Boolean(required=False)
+class PatchSchema(BaseModel):
+    content: Optional[str] = None
+    completed: Optional[bool] = None
 
-    @validates_schema()
-    def validate_schema(self, data, **kwargs):
-        if not data:
-            raise ValidationError("PATCH of TodoItem requires at least one field")
+    @root_validator
+    def ensure_at_least_one_value(cls, values):
+        content = values.get("content")
+        completed = values.get("completed")
+        if content is None and completed is None:
+            raise ValueError("PATCH of TodoItem requires at least one field")
+        return values
 
 
 @auth.require_authenticated
@@ -34,16 +39,16 @@ def patch(request, id):
     item = get_object_or_404(TodoItem, id=id)
 
     try:
-        data = PatchSchema().loads(request.body)
-    except ValidationError as err:
-        return 400, {"messages": err.messages}
+        data = PatchSchema(**request.data)
+    except ValidationError as exc:
+        messages = [err["msg"] for err in exc.errors()]
+        return 400, {"messages": messages}
 
-    if "content" in data:
-        item.content = data["content"]
+    if data.content is not None:
+        item.content = data.content
 
-    if "completed" in data:
-        completed = data["completed"]
-        item.completed = now() if completed else None
+    if data.completed is not None:
+        item.completed = now() if data.completed else None
 
     item.save()
     item.refresh_from_db()

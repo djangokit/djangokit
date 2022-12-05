@@ -3,8 +3,8 @@
 from django.http import HttpRequest
 from django.shortcuts import redirect
 
-from djangokit.website import auth
-from djangokit.website.models import TodoItem
+from ... import auth
+from ...models import TodoItem
 
 
 def get(_request):

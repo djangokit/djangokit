@@ -21,8 +21,8 @@ djangokit-cli = "*"
 #djangokit-core = { path = "../core", develop = true }
 #djangokit-cli = { path = "../cli", develop = true }
 markdown = "^3.4.1"
-marshmallow = "^3.19.0"
 pygments = "^2.13.0"
+pydantic = "^1.10.2"
 
 [tool.poetry.group.dev.dependencies]
 ansible = "^7.0.0"

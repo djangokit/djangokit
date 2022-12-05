@@ -1,26 +1,30 @@
+from datetime import datetime
+from typing import Optional
+
 from django.db import models
-from marshmallow import Schema, fields
+from pydantic import BaseModel
 
 from . import schema
 
 
-class PageSchema(Schema):
-    id = fields.Integer(required=True)
-    title = fields.String(required=True)
-    slug = fields.String(required=True)
-    lead = schema.MarkdownField()
-    content = schema.MarkdownField(required=True)
-    created = fields.DateTime(required=True)
-    updated = fields.DateTime(required=True)
-    published = fields.Boolean(required=True)
+class PageSchema(BaseModel):
+    class Config:
+        orm_mode = True
+
+    id: int
+    title: str
+    slug: str
+    lead: Optional[schema.Markdown] = None
+    content: schema.Markdown
+    created: datetime
+    updated: datetime
+    published: bool
 
 
 class Page(models.Model):
     class Meta:
         db_table = "page"
         ordering = ["order", "title"]
-
-    serializer_factory = PageSchema
 
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255)
@@ -30,6 +34,8 @@ class Page(models.Model):
     updated = models.DateTimeField(auto_now=True)
     published = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
+
+    serialize = lambda self: PageSchema.from_orm(self).dict()
 
     @property
     def is_doc(self):
