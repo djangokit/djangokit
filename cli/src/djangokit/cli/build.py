@@ -1,5 +1,6 @@
 import dataclasses
 import os
+from fnmatch import fnmatch
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -56,6 +57,7 @@ def build_client(
             Handler(
                 callable=make_client_bundle,
                 kwargs=bundle_kwargs,
+                exclude_patterns=["*/server.app.*", "*/server.main.*"],
             ),
         )
         join_observer(observer, join)
@@ -96,6 +98,7 @@ def build_server(
                 callable=make_server_bundle,
                 args=bundle_args,
                 kwargs=bundle_kwargs,
+                exclude_patterns=["*/client.app.*", "*/client.main.*"],
             ),
         )
         join_observer(observer, join)
@@ -122,6 +125,11 @@ class Handler:
     callable: Callable
     args: List[Any] = dataclasses.field(default_factory=list)
     kwargs: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    exclude_patterns: List[str] = dataclasses.field(default_factory=[])
+
+    @property
+    def name(self):
+        return self.callable.__name__
 
 
 class WatchEventHandler(PatternMatchingEventHandler):
@@ -152,19 +160,26 @@ class WatchEventHandler(PatternMatchingEventHandler):
         self.handlers.append(handler)
 
     def on_any_event(self, event: FileSystemEvent):
+        path = event.src_path
         console = self.console
         console.print()
-        console.header(f"Rebuilding")
-        console.warning(f"File: {event.src_path}")
+        console.header(f"File change detected")
+        console.warning(f"Changed file:\n  {path}")
         for handler in self.handlers:
-            try:
-                handler.callable(*handler.args, **handler.kwargs)
-                console.print()
-            except Exception as exc:
-                console.error(
-                    f"Error encountered during rebuild while running "
-                    f"handler {handler}:\n\n{exc}"
+            if any(fnmatch(path, pattern) for pattern in handler.exclude_patterns):
+                console.warning(
+                    f"\nSkipping handler {handler.name} because file is excluded"
                 )
+            else:
+                console.info(f"\nRunning handler {handler.name}")
+                try:
+                    handler.callable(*handler.args, **handler.kwargs)
+                    console.print()
+                except Exception as exc:
+                    console.error(
+                        f"\nError encountered during rebuild while running "
+                        f"handler {handler}:\n\n{exc}"
+                    )
 
 
 @lru_cache(maxsize=None)
