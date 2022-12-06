@@ -1,7 +1,8 @@
 """Base commands."""
+import os
 from pathlib import Path
 
-from typer import Context, Exit, Option
+from typer import Exit, Option
 
 from .app import app, state
 from .build import build_client, build_server
@@ -24,6 +25,13 @@ def start(
     ssr: bool = Option(True, envvar="DJANGOKIT_SSR"),
     minify: bool = False,
     watch: bool = True,
+    debug: bool = Option(
+        True,
+        help=(
+            "Allows DEBUG mode to be easily disabled. Useful for "
+            "testing Django error templates, etc."
+        ),
+    ),
 ):
     """Run dev server & watch files
 
@@ -43,6 +51,9 @@ def start(
 
     """
     console = state.console
+    if not debug:
+        os.environ["DJANGO_DEBUG"] = "false"
+        os.environ["DJANGO_ALLOWED_HOSTS"] = '["localhost"]'
     if ssr:
         build_server(minify=minify, watch=watch, join=False)
     build_client(ssr=ssr, minify=minify, watch=watch, join=False)
