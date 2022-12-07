@@ -34,15 +34,7 @@ class PageInfo:
     """
 
     route_pattern: str
-    """React Router URL pattern for page.
-    
-    `routes/page` (root) -> "/"
-    `routes/_id/page` -> ":id".
-    
-    """
-
-    layout_route_pattern: Optional[str] = None
-    """React Router URL pattern for page relative to layout."""
+    """React Router URL pattern for page."""
 
     def __hash__(self):
         return id(self)
@@ -91,12 +83,10 @@ class PageInfo:
         """
         assert directory.is_dir()
         assert directory.is_relative_to(root)
-        path = directory / "page.tsx"
-        if path.exists():
-            return cls.from_path(path, root)
-        path = directory / "page.jsx"
-        if path.exists():
-            return cls.from_path(path, root)
+        for name in ("page.tsx", "page.jsx"):
+            path = directory / name
+            if path.exists():
+                return cls.from_path(path, root)
         return None
 
     @cached_property
@@ -107,9 +97,7 @@ class PageInfo:
 
     @cached_property
     def routes(self):
-        return (
-            f'{{ path: "{self.layout_route_pattern}", element: <Page_{self.id} /> }},'
-        )
+        return f'{{ path: "{self.route_pattern}", element: <Page_{self.id} /> }},'
 
 
 @dataclass
@@ -119,6 +107,9 @@ class LayoutInfo:
     path: Path
     """Absolute path to Layout component module."""
 
+    error_path: Optional[Path]
+    """Relative path to Error component module."""
+
     import_path: str
     """JS import path of Layout component module relative to routes/.
 
@@ -126,13 +117,10 @@ class LayoutInfo:
 
     """
 
+    error_import_path: Optional[str]
+
     route_pattern: str
-    """React Router URL pattern for layout.
-    
-    `routes/layout` (root) -> "/"
-    `routes/_id/layout` -> ":id".
-    
-    """
+    """React Router URL pattern for layout."""
 
     children: List[Union["LayoutInfo", PageInfo]] = field(default_factory=list)
     """Nested layouts and pages using this layout."""
@@ -150,19 +138,29 @@ class LayoutInfo:
         rel_path = path.relative_to(root)
         route_path = rel_path.parent.as_posix()
 
+        error_path = None
+        for name in ("error.tsx", "error.jsx"):
+            if (path.parent / name).exists():
+                error_path = name
+                break
+
         if route_path == ".":
             layout_id = "root"
             import_path = "layout"
+            error_import_path = "error" if error_path else None
             route_pattern = "/"
         else:
             layout_id = route_path.replace("/", "_")
             import_path = f"{route_path}/layout"
+            error_import_path = f"{route_path}/error" if error_path else None
             route_pattern = get_route_pattern(route_path)
 
         return cls(
             id=layout_id,
             path=path,
+            error_path=error_path,
             import_path=import_path,
+            error_import_path=error_import_path,
             route_pattern=route_pattern,
         )
 
@@ -175,35 +173,54 @@ class LayoutInfo:
         """
         assert directory.is_dir()
         assert directory.is_relative_to(root)
-        path = directory / "layout.tsx"
-        if path.exists():
-            return LayoutInfo.from_path(path, root)
-        path = directory / "layout.jsx"
-        if path.exists():
-            return LayoutInfo.from_path(path, root)
+        for name in ("layout.tsx", "layout.jsx"):
+            path = directory / name
+            if path.exists():
+                return cls.from_path(path, root)
         return None
 
     @cached_property
     def sorted_children(self):
-        return sorted(self.children, key=lambda c: (isinstance(c, LayoutInfo), c.id))
+
+        return sorted(
+            self.children,
+            key=lambda c: (
+                # Root route first
+                0 if c.route_pattern == "" else 1,
+                # Catchall route last
+                1 if c.route_pattern == "*" else 0,
+                # Dynamic parts after fixed parts
+                1 if c.route_pattern.startswith(":") else 0,
+                # Longest first
+                -len(c.route_pattern),
+                # Alphabetical
+                c.route_pattern,
+            ),
+        )
 
     @cached_property
     def imports(self):
         imports = [
             f'import {{ default as Layout_{self.id} }} from "../../routes/{self.import_path}";',
         ]
+        if self.error_path:
+            imports.append(
+                f'import {{ default as Error_{self.id} }} from "../../routes/{self.error_import_path}";',
+            )
         for child in self.sorted_children:
             imports.extend(child.imports)
         return imports
 
     @cached_property
     def routes(self):
+        error_element = f"<Error_{self.id} />" if self.error_path else "undefined"
         child_routes = [child.routes for child in self.sorted_children]
         child_routes = "\n    ".join(child_routes)
         return f"""\
 {{
   path: "{self.route_pattern}",
   element: <Layout_{self.id} />,
+  errorElement: {error_element},
   children: [
     {child_routes}
   ],

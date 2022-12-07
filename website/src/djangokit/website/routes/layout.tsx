@@ -15,7 +15,7 @@ import { useApiQuery } from "../api";
 import Form from "../components/Form";
 import IconButton from "../components/IconButton";
 
-function Layout() {
+export default function Layout() {
   const currentUser = useCurrentUserContext();
   const location = useLocation();
   const currentPath = location.pathname;
@@ -147,5 +147,3 @@ function githubUrlForVersion(version) {
     ? `https://github.com/djangokit/djangokit/commit/$version}`
     : "";
 }
-
-export default Layout;

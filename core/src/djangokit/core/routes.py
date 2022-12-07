@@ -129,6 +129,7 @@ def get_route_info(
     *,
     root=None,
     parent_layout=None,
+    prefix=None,
 ) -> LayoutInfo:
     """Get route info for routes in directory, recursively.
 
@@ -143,29 +144,40 @@ def get_route_info(
 
     layout = LayoutInfo.from_dir(directory, root)
 
-    if not layout:
-        if is_root:
-            raise BuildError(
-                f"A root layout is required but no layout component was "
-                f"found in {root} (searched for layout.jsx and layout.tsx)"
-            )
+    if layout:
+        pattern = layout.route_pattern
+        if not is_root:
+            layout.route_pattern = posixpath.relpath(pattern, prefix)
+        if prefix is None:
+            prefix = pattern
         else:
-            layout = parent_layout
+            prefix = posixpath.join("/", prefix.rstrip("/"), pattern.lstrip("/"))
+    elif is_root:
+        raise BuildError(
+            "A root layout is required but no layout component "
+            f"was found in {root} (searched for layout.jsx and "
+            f"layout.tsx)."
+        )
+    else:
+        layout = parent_layout
 
     page = PageInfo.from_dir(directory, root)
+
     if page:
-        layout_route_pattern = posixpath.relpath(
-            page.route_pattern,
-            layout.route_pattern,
-        )
-        if layout_route_pattern == ".":
-            layout_route_pattern = ""
-        page.layout_route_pattern = layout_route_pattern
+        rel_pattern = posixpath.relpath(page.route_pattern, prefix)
+        if rel_pattern == ".":
+            rel_pattern = ""
+        page.route_pattern = rel_pattern.lstrip("/")
         layout.children.append(page)
 
     for entry in directory.iterdir():
         if entry.is_dir() and not entry.name.startswith("__"):
-            nested_layout = get_route_info(entry, root=root, parent_layout=layout)
+            nested_layout = get_route_info(
+                entry,
+                root=root,
+                parent_layout=layout,
+                prefix=prefix,
+            )
             if nested_layout is not layout:
                 layout.children.append(nested_layout)
 

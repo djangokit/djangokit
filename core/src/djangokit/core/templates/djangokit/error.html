@@ -14,6 +14,12 @@
       integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65"
       crossorigin="anonymous"
     >
+
+    <style>
+      p:last-child {
+        margin-bottom: 0;
+      }
+    </style>
   </head>
 
   <body class="p-4">
@@ -36,7 +42,7 @@
           {{ settings.webmaster }}.
         </p>
 
-        <p class="mb-0">
+        <p>
           Error code: {{ status_code }}
         </p>
       {% endif %}

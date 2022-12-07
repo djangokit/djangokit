@@ -2,7 +2,7 @@
 
 import { Link, Outlet } from "react-router-dom";
 
-function Layout() {
+export default function Layout() {
   return (
     <>
       <header>
@@ -21,5 +21,3 @@ function Layout() {
     </>
   );
 }
-
-export default Layout;
