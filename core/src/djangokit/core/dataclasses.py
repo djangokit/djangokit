@@ -62,6 +62,11 @@ class PageInfo:
             import_path = "page"
             url_pattern = ""
             route_pattern = "/"
+        elif route_path == "catchall":
+            page_id = "catchall"
+            import_path = f"{route_path}/page"
+            url_pattern = r"^.*"
+            route_pattern = "/*"
         else:
             page_id = route_path.replace("/", "_")
             import_path = f"{route_path}/page"
@@ -208,6 +213,8 @@ class LayoutInfo:
 
 @dataclass
 class ApiInfo:
+    id: str
+
     module: ModuleType
     """API module."""
 
@@ -256,16 +263,21 @@ class ApiInfo:
         package_path = rel_path.parent.as_posix()
 
         if package_path == ".":
+            api_id = "root"
             module_name = f"{root_package}.api"
             url_pattern = "$api"
         else:
+            api_id = package_path.replace("/", "_")
             package_name = package_path.replace("/", ".")
             module_name = f"{root_package}.{package_name}.api"
-            url_pattern = get_url_pattern(package_path)
-            url_pattern = f"$api/{url_pattern}"
+            if api_id == "catchall":
+                url_pattern = rf"^\$api/.*"
+            else:
+                url_pattern = get_url_pattern(package_path)
+                url_pattern = f"$api/{url_pattern}"
 
         module = import_module(module_name)
-        return cls(module=module, url_pattern=url_pattern)
+        return cls(id=api_id, module=module, url_pattern=url_pattern)
 
 
 def get_url_pattern(route_path: str) -> str:

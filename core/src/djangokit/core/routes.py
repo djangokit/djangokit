@@ -1,11 +1,10 @@
 import posixpath
 from functools import lru_cache
-from os import path
 from pathlib import Path, PosixPath
 from typing import List
 
 from django.core.exceptions import ImproperlyConfigured
-from django.urls import path
+from django.urls import path, re_path
 
 from .conf import settings
 from .dataclasses import ApiInfo, LayoutInfo, PageInfo
@@ -60,12 +59,15 @@ def discover_routes(page_view_class=PageView, api_view_class=ApiView) -> list:
             api_module=api_module,
             allowed_methods=allowed_methods,
         )
-
-        urls.append(path(info.url_pattern, view))
+        pattern = info.url_pattern
+        path_func = re_path if pattern.startswith("^") else path
+        urls.append(path_func(pattern, view))
 
     for info in page_info:
         view = page_view_class.as_view(page_path=info.path)
-        urls.append(path(info.url_pattern, view))
+        pattern = info.url_pattern
+        path_func = re_path if pattern.startswith("^") else path
+        urls.append(path_func(pattern, view))
 
     return urls
 
@@ -82,6 +84,7 @@ def info_sorter(info):
         1. Literal segments sort before pattern segments
         2. Longer segments sort before shorter segments
         3. Equal length segments are sorted lexicographically
+    3. The catchall route sorts last
 
     The general idea is to force longer URLs to match before shorter
     URLs and to prefer literal segments over pattern matching.
@@ -89,14 +92,19 @@ def info_sorter(info):
     """
     url_pattern = PosixPath(info.url_pattern)
     parts = url_pattern.parts
-    return (-len(parts),) + tuple(
-        (
-            part.startswith("<"),
-            -len(part),
-            part,
+    key = [
+        1 if info.id == "catchall" else 0,
+        -len(parts),
+    ]
+    for part in parts:
+        key.append(
+            (
+                part.startswith("<"),
+                -len(part),
+                part,
+            )
         )
-        for part in parts
-    )
+    return key
 
 
 def find_pages(root: Path) -> List[PageInfo]:
