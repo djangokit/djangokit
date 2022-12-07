@@ -40,17 +40,34 @@ li {
   border: var(--bs-border-width) var(--bs-border-style) var(--bs-border-color);
   border-radius: var(--bs-border-radius);
 }
+
 .admonition-title {
   font-weight: bold;
 }
 .admonition .admonition-title::before {
   margin-right: 0.5em;
 }
+
 .admonition.note .admonition-title::before {
-  content: "🗒️";
+  content: "📝";
+}
+
+.admonition.info {
+  border-color: rgba(var(--bs-info-rgb), var(--bs-border-opacity));
+}
+.admonition.info .admonition-title::before {
+  content: "🗄️";
+}
+
+.admonition.warning {
+  border-color: rgba(var(--bs-warning-rgb), var(--bs-border-opacity));
 }
 .admonition.warning .admonition-title::before {
   content: "⚠️";
+}
+
+.admonition.danger {
+  border-color: rgba(var(--bs-danger-rgb), var(--bs-border-opacity));
 }
 .admonition.danger .admonition-title::before {
   content: "⛔️";

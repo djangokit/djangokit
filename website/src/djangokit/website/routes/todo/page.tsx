@@ -149,9 +149,7 @@ export default function Page() {
             </div>
           </Collapse>
         </>
-      ) : (
-        <div className="alert alert-success">Nothing to do!</div>
-      )}
+      ) : null}
     </>
   );
 }
@@ -164,31 +162,42 @@ function Item({ item, itemNumber }: { item: TodoItem; itemNumber: number }) {
 
   const client = useQueryClient();
 
-  const onmutationsuccess = () => {
+  const onMutationSuccess = () => {
+    // TODO: Show success indicator
+    client.invalidateQueries({ queryKey: ["todo"] });
+  };
+
+  const onMutationError = (...args) => {
+    // TODO: Show error indicator
+    console.error(args);
     client.invalidateQueries({ queryKey: ["todo"] });
   };
 
   const updateContent = useMutation({
     mutationFn: ({ id, content }: { id: number; content: string }) =>
       api.patch(`todo/${id}`, { content }),
-    onSuccess: onmutationsuccess,
+    onSuccess: onMutationSuccess,
+    onError: onMutationError,
   });
 
   const complete = useMutation({
     mutationFn: ({ id }: { id: number }) =>
       api.patch(`todo/${id}`, { completed: true }),
-    onSuccess: onmutationsuccess,
+    onSuccess: onMutationSuccess,
+    onError: onMutationError,
   });
 
   const uncomplete = useMutation({
     mutationFn: ({ id }: { id: number }) =>
       api.patch(`todo/${id}`, { completed: false }),
-    onSuccess: onmutationsuccess,
+    onSuccess: onMutationSuccess,
+    onError: onMutationError,
   });
 
   const remove = useMutation({
     mutationFn: ({ id }: { id: number }) => api.delete(`todo/${id}`),
-    onSuccess: onmutationsuccess,
+    onSuccess: onMutationSuccess,
+    onError: onMutationError,
   });
 
   return (
