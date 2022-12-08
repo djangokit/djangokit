@@ -86,7 +86,7 @@ def make_bundle(
     Returns the build path of the bundle.
 
     """
-    from .routes import get_route_info  # noqa: avoid circular import
+    from .routes import make_route_dir_tree  # noqa: avoid circular import
 
     debug = settings.DEBUG
 
@@ -112,9 +112,14 @@ def make_bundle(
         for name in module_names
     )
 
+    tree = make_route_dir_tree()
+
     context = {
         "env": env,
-        "route_info": get_route_info(settings.routes_dir),
+        "routes": {
+            "imports": tree.js_imports("../../routes"),
+            "routes": tree.js_routes(),
+        },
         "settings": settings,
     }
 

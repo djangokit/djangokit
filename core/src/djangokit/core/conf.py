@@ -36,10 +36,10 @@ automatically be used if it's not set in the `DJANGOKIT` dict::
 import dataclasses
 import socket
 from functools import cached_property
+from importlib import import_module
 from pathlib import Path
 from typing import Any, Callable, Dict, List
 
-from django.apps import apps
 from django.conf import settings as django_settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.module_loading import import_string
@@ -172,8 +172,16 @@ class Settings:
 
     @cached_property
     def app_dir(self) -> Path:
-        app = apps.get_app_config(self.app_label)
-        return Path(app.path)
+        module = import_module(self.package)
+        paths = module.__path__
+        if len(paths) > 1:
+            raise ImproperlyConfigured(
+                f"DjangoKit app package {self.package} appears to be a "
+                "namespace package because it resolves to multiple "
+                "file system paths. You might need to add an "
+                "__init__.py to the package."
+            )
+        return Path(paths[0])
 
     @cached_property
     def models_dir(self) -> Path:
@@ -184,7 +192,7 @@ class Settings:
         return self.app_dir / "routes"
 
     @cached_property
-    def routes_package(self) -> Path:
+    def routes_package(self) -> str:
         return f"{self.package}.routes"
 
     # Utilities --------------------------------------------------------

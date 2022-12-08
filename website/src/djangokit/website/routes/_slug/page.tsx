@@ -1,7 +1,7 @@
 /* Page */
 import { useParams } from "react-router-dom";
 import { usePageQuery } from "../../api";
-import PageComponent from "../../components/page";
+import PageComponent from "../../components/Page";
 
 export default function Page() {
   const { slug } = useParams();

@@ -9,7 +9,7 @@ import { Page } from "../../models";
 import ErrorMessage from "../../components/ErrorMessage";
 import Loader from "../../components/Loader";
 
-export default function Layout() {
+export default function NestedLayout() {
   const location = useLocation();
   const result = useApiQuery<{ pages: Page[] }>("docs");
   const { isLoading, isError, data, error } = result;

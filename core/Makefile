@@ -5,6 +5,13 @@ test:
 	  DJANGOKIT_PACKAGE=djangokit.core.test \
 	  poetry run pytest -rA --doctest-modules --disable-warnings
 
+.PHONY = test-cov
+test-cov:
+	DJANGO_SETTINGS_MODULE=djangokit.core.settings \
+	  DJANGO_TEST=true \
+	  DJANGOKIT_PACKAGE=djangokit.core.test \
+	  poetry run pytest -rA --doctest-modules --disable-warnings --cov=djangokit.core
+
 .PHONY = tox
 tox:
 	poetry run tox

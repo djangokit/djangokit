@@ -8,3 +8,7 @@ class BuildError(DjangoKitError):
 
 class RenderError(DjangoKitError):
     pass
+
+
+class RouteError(DjangoKitError):
+    pass
