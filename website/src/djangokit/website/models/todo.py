@@ -3,16 +3,12 @@ from typing import Optional
 
 from django.db import models
 from django.utils.text import Truncator
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from . import schema
 
 
-class TodoItemSchema(BaseModel):
-    class Config:
-        orm_mode = True
-
-    id: int
+class TodoItemSchema(schema.BaseModel):
     rawContent: str = Field(..., alias="content")
     content: schema.Markdown
     created: datetime

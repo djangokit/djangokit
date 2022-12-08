@@ -2,16 +2,11 @@ from datetime import datetime
 from typing import Optional
 
 from django.db import models
-from pydantic import BaseModel
 
 from . import schema
 
 
-class PageSchema(BaseModel):
-    class Config:
-        orm_mode = True
-
-    id: int
+class PageSchema(schema.BaseModel):
     title: str
     slug: str
     lead: Optional[schema.Markdown] = None

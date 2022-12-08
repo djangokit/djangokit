@@ -1,3 +1,18 @@
+export interface BlogPosts {
+  posts: BlogPost[];
+}
+
+export interface BlogPost {
+  id: number;
+  title: string;
+  slug: string;
+  lead?: string;
+  content: string;
+  created: string;
+  updated: string;
+  published?: string;
+}
+
 export interface Page {
   id: number;
   title: string;

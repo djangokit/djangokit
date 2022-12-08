@@ -1,9 +1,7 @@
 from django.contrib import admin
 
-from .models import Page
+from .models import BlogPost, Page, TodoItem
 
+admin.site.register(BlogPost)
 admin.site.register(Page)
-
-from .models import TodoItem
-
 admin.site.register(TodoItem)

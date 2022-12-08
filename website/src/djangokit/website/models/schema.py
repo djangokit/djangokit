@@ -1,4 +1,13 @@
+import pydantic
+
 from ..markdown import markdown
+
+
+class BaseModel(pydantic.BaseModel):
+    class Config:
+        orm_mode = True
+
+    id: int
 
 
 class Markdown(str):
