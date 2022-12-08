@@ -5,9 +5,9 @@ from .routes import discover_routes
 from .views import error, user
 
 urlpatterns = [
+    path("$admin/", admin.site.urls),
     path("$api/current-user", user.get_current_user),
     path("", include(discover_routes())),
-    path("$admin/", admin.site.urls),
 ]
 
 

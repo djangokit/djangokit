@@ -10,7 +10,7 @@ from runcommands.commands import remote
 
 @command
 def clean(deep=False):
-    """Clean up.
+    """Clean up locally.
 
     This removes build, dist, and cache directories by default.
 
@@ -156,7 +156,12 @@ def deploy(
 
 
 @command
-def clean_remote(root="/sites/djangokit.org", run_as="djangokit"):
+def clean_remote(root="/sites/djangokit.org", run_as="djangokit", dry_run=False):
+    """Clean up remote.
+
+    Removes old deployments under the site root.
+
+    """
     printer.header(f"Removing old versions from {root}")
 
     readlink_result = remote(
@@ -205,6 +210,10 @@ def clean_remote(root="/sites/djangokit.org", run_as="djangokit"):
         )
         size = du_result.stdout.strip()
 
-        printer.warning(f"Removing version: {version} ({size})... ", end="")
-        remote(f"rm -r {path}", run_as=run_as)
+        prefix = "[DRY RUN] " if dry_run else ""
+        printer.warning(f"{prefix}Removing version: {version} ({size})... ", end="")
+
+        if not dry_run:
+            remote(f"rm -r {path}", run_as=run_as)
+
         printer.success("Done")
