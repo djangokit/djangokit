@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "djangokit-website"
-version = "0.1.0"
+version = "0.1.0.dev0"
 description = "DjangoKit Website"
 authors = ["Wyatt Baldwin <Wyatt Baldwin>"]
 license = "MIT"
@@ -18,15 +18,17 @@ include = [
 python = "^3.9"
 djangokit-core = "*"
 djangokit-cli = "*"
-#djangokit-core = { path = "../core", develop = true }
-#djangokit-cli = { path = "../cli", develop = true }
 markdown = "^3.4.1"
 pygments = "^2.13.0"
 pydantic = "^1.10.2"
 
 [tool.poetry.group.dev.dependencies]
-ansible = "^7.0.0"
+djangokit-core = { path = "../core", develop = true }
+djangokit-cli = { path = "../cli", develop = true }
+
+ansible = "^7.1.0"
 black = "^22.10.0"
+bpython = "^0.23"
 isort = "^5.10.1"
 mypy = "^0.990"
 pytest = "^7.2.0"

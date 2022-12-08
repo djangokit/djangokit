@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "djangokit-core"
-version = "0.1.0"
+version = "0.1.0.dev0"
 description = "DjangoKit core"
 authors = ["Wyatt Baldwin <self@wyattbaldwin.com>"]
 license = "MIT"
@@ -17,7 +17,7 @@ include = [
 [tool.poetry.dependencies]
 python = "^3.8"
 Django = ">=3.0"
-python-dotenv = "^0.21.0"
+python-dotenv = ">=0.21.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.10.0"

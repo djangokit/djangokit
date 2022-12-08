@@ -1,5 +1,7 @@
 import os
 import re
+import shutil
+from pathlib import Path
 
 from djangokit.core.env import load_dotenv
 from runcommands import abort, arg, command
@@ -19,16 +21,36 @@ def clean(deep=False):
 
     """
     printer.header("Cleaning...")
-    c.local("rm -rf build")
-    c.local("rm -rf dist")
-    c.local("rm -rf src/djangokit/website/static/build")
-    c.local("rm -rf __pycache__")
-    c.local("find src tests -name __pycache__ -type d -exec rm -r {} \;")
-    c.local("rm -rf .mypy_cache")
+
+    rm_dir("build")
+    rm_dir("dist")
+    rm_dir("src/djangokit/website/static/build")
+    rm_dir(".mypy_cache")
+
+    pycache_dirs = tuple(Path.cwd().glob("__pycache__"))
+    if pycache_dirs:
+        count = len(pycache_dirs)
+        noun = "directory" if count == 1 else "directories"
+        printer.info(f"removing {count} __pycache__ {noun}")
+        for d in pycache_dirs:
+            rm_dir(d, True)
+
     if deep:
         printer.warning("Deep cleaning...")
-        c.local("rm -rf .venv")
-        c.local("rm -rf node_modules")
+        rm_dir(".venv")
+        rm_dir("node_modules")
+
+
+def rm_dir(name, quiet=False):
+    path = Path(name).absolute()
+    rel_path = path.relative_to(path.cwd())
+    if path.is_dir():
+        if not quiet:
+            printer.warning(f"removing directory tree: {rel_path}")
+        shutil.rmtree(path)
+    else:
+        if not quiet:
+            printer.info(f"directory not present: {rel_path}")
 
 
 # Deployment -----------------------------------------------------------

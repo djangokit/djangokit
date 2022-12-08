@@ -16,8 +16,8 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^{{ cookiecutter.python_version }}"
-djangokit-core = { path = "../../core", develop = true }
-djangokit-cli = { path = "../../cli", develop = true }
+djangokit-core = "*"
+djangokit-cli = "*"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.10.0"
