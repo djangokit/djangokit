@@ -19,6 +19,10 @@ export interface Page {
   slug: string;
   lead?: string;
   content: string;
+  created: string;
+  updated: string;
+  published: boolean;
+  order: number;
 }
 
 export interface TodoItems {

@@ -14,6 +14,7 @@ class PageSchema(schema.BaseModel):
     created: datetime
     updated: datetime
     published: bool
+    order: int
 
 
 class Page(models.Model):
@@ -28,7 +29,7 @@ class Page(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     published = models.BooleanField(default=False)
-    order = models.PositiveIntegerField(default=0)
+    order = models.PositiveIntegerField(default=0, null=False)
 
     serialize = lambda self: PageSchema.from_orm(self).dict()
 

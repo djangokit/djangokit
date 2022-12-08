@@ -26,11 +26,9 @@ class PatchSchema(BaseModel):
 
     @root_validator
     def ensure_at_least_one_value(cls, values):
-        content = values.get("content")
-        completed = values.get("completed")
-        if content is None and completed is None:
-            raise ValueError("PATCH of TodoItem requires at least one field")
-        return values
+        if any(name in values for name in cls.__fields__):
+            return values
+        raise ValueError("PATCH of Page requires at least one field")
 
 
 @auth.require_authenticated
@@ -44,11 +42,10 @@ def patch(request, id):
         messages = [err["msg"] for err in exc.errors()]
         return 400, {"messages": messages}
 
-    if data.content is not None:
-        item.content = data.content
-
-    if data.completed is not None:
-        item.completed = now() if data.completed else None
+    for name in data.__fields__:
+        val = getattr(data, name)
+        if val is not None:
+            setattr(item, name, val)
 
     item.save()
     item.refresh_from_db()

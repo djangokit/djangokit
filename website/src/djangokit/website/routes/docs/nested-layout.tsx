@@ -42,7 +42,18 @@ export default function NestedLayout() {
             {data.pages.map((page) => (
               <Nav.Item key={page.id}>
                 <LinkContainer to={`/docs/${page.slug.slice(4)}`}>
-                  <Nav.Link className="text-nowrap">{page.title}</Nav.Link>
+                  <Nav.Link
+                    className={`text-nowrap ${
+                      page.published
+                        ? ""
+                        : "text-danger text-decoration-line-through"
+                    }`}
+                    title={`Doc - ${page.title}${
+                      page.published ? "" : " (unpublished)"
+                    }`}
+                  >
+                    {page.title}
+                  </Nav.Link>
                 </LinkContainer>
               </Nav.Item>
             ))}
