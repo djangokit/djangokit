@@ -9,7 +9,7 @@ from itertools import chain
 from typing import List
 
 import click
-from djangokit.core.env import dotenv_settings, getenv
+from djangokit.core.env import dotenv_settings
 from rich.pretty import pretty_repr
 from typer import Abort, Argument, Option
 
@@ -123,7 +123,7 @@ def show_settings(
     max_width = min(120, console.width)
 
     if only:
-        header = f"Showing the specified setting only:"
+        header = "Showing the specified setting only:"
         if only in settings_to_show:
             matching_settings = {only: settings_to_show[only]}
         else:
@@ -144,9 +144,9 @@ def show_settings(
     elif env:
         header = "Settings loaded from environment:"
     elif all_:
-        header = f"ALL Django settings for project:"
+        header = "ALL Django settings for project:"
     else:
-        header = f"Django settings for project (excludes defaults):"
+        header = "Django settings for project (excludes defaults):"
 
     console.header(header)
     console.warning("Settings changed from defaults are prefixed with a bang!\n")

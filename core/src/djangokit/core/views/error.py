@@ -136,7 +136,7 @@ def generic_error(
     except Exception:
         # XXX: Bail out to Django default handler if rendering fails.
         log.exception(
-            f"Failed to render error template for %s response: %s.",
+            "Failed to render error template for %s response: %s.",
             status_code,
             template_name,
         )

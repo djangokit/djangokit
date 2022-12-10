@@ -25,6 +25,7 @@ clean-tox:
 check:
 	poetry run black --check .
 	poetry run isort --check --profile black .
+	poetry run ruff .
 	poetry run mypy
 
 .PHONY = format

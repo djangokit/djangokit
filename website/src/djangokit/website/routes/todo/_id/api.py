@@ -2,7 +2,6 @@
 from typing import Optional
 
 from django.shortcuts import get_object_or_404
-from django.utils.timezone import now
 from pydantic import BaseModel, ValidationError, root_validator
 
 from .... import auth

@@ -163,7 +163,7 @@ class WatchEventHandler(PatternMatchingEventHandler):
         path = event.src_path
         console = self.console
         console.print()
-        console.header(f"File change detected")
+        console.header("File change detected")
         console.warning(f"Changed file:\n  {path}")
         for handler in self.handlers:
             if any(fnmatch(path, pattern) for pattern in handler.exclude_patterns):

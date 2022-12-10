@@ -26,6 +26,8 @@ def clean(deep=False):
     rm_dir("dist")
     rm_dir("src/djangokit/website/static/build")
     rm_dir(".mypy_cache")
+    rm_dir(".pytest_cache")
+    rm_dir(".ruff_cache")
 
     pycache_dirs = tuple(Path.cwd().glob("__pycache__"))
     if pycache_dirs:
@@ -71,7 +73,7 @@ def ansible(env, host, version=None, tags=(), skip_tags=(), extra_vars=()):
     if extra_vars:
         extra_vars = tuple(("--extra-var", f"{n}={v}") for (n, v) in extra_vars.items())
 
-    load_dotenv(f".env.public")
+    load_dotenv(".env.public")
     load_dotenv(f".env.{env}")
 
     c.local(
@@ -187,7 +189,7 @@ def clean_remote(root="/sites/djangokit.org", run_as="djangokit", dry_run=False)
     printer.header(f"Removing old versions from {root}")
 
     readlink_result = remote(
-        f"readlink current",
+        "readlink current",
         run_as=run_as,
         cd=root,
         stdout="capture",
@@ -220,7 +222,7 @@ def clean_remote(root="/sites/djangokit.org", run_as="djangokit", dry_run=False)
         abort(404, f"Current version not found in paths:\n{paths}")
 
     if not paths:
-        abort(0, f"No versions other than current found", color="warning")
+        abort(0, "No versions other than current found", color="warning")
 
     for path in paths:
         version = os.path.basename(path)

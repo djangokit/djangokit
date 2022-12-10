@@ -1,11 +1,9 @@
-import os
 
 import typer
-from typer import Argument, Context, Option
+from typer import Argument, Option
 
 from ..app import app, state
 from ..django import configure_settings_module
-from ..utils import params
 
 LAYOUT_TEMPLATE = """\
 import { Outlet } from "react-router-dom";

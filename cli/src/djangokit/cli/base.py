@@ -1,5 +1,6 @@
 """Base commands."""
 import os
+from functools import partial
 from pathlib import Path
 
 from typer import Exit, Option
@@ -7,14 +8,14 @@ from typer import Exit, Option
 from .app import app, state
 from .build import build_client, build_server
 from .django import run_django_command
-from .utils import params, run, run_node_command, run_poetry_command
+from .utils import run, run_node_command, run_poetry_command
 
 
 @app.command()
 def setup(python_version=None):
     """Set up project"""
     console = state.console
-    console.header(f"Setting up project...")
+    console.header("Setting up project...")
     install(python_version)
     update()
     run_django_command("migrate")
@@ -65,7 +66,7 @@ def start(
 def install(python_version=None):
     """Run `poetry install`"""
     console = state.console
-    console.header(f"Installing project...")
+    console.header("Installing project...")
     if python_version:
         run(f"poetry env use {python_version}")
     run("poetry install")
@@ -78,7 +79,7 @@ def install(python_version=None):
 def update():
     """Run `poetry update`"""
     console = state.console
-    console.header(f"Updating project...")
+    console.header("Updating project...")
     run("poetry update")
     if has_package_json():
         console.print()
@@ -91,30 +92,36 @@ def check(python: bool = True, js: bool = True):
     console = state.console
 
     if python:
+        run = partial(run_poetry_command, exit_on_err=False)
+
         console.header("Checking Python formatting \[black]...")
-        run_poetry_command("black --check .", exit_on_err=False)
+        run("black --check .")
 
         console.print()
-        console.header(f"Checking Python imports \[isort]...")
-        run_poetry_command("isort --check --profile black .", exit_on_err=False)
+        console.header("Checking Python imports \[isort]...")
+        run("isort --check --profile black .")
 
         console.print()
-        console.header(f"Checking Python types \[mypy]...")
-        run_poetry_command("mypy", exit_on_err=False)
+        console.header("Checking for Python lint \[ruff]...")
+        run("ruff .")
+
+        console.print()
+        console.header("Checking Python types \[mypy]...")
+        run("mypy")
 
     if js and check_js_flag():
-        console.print()
-        console.header(
-            f"Checking JavaScript formatting \[eslint/prettier]...",
-        )
+        run = partial(run_node_command, exit_on_err=False)
 
-        result = run_node_command("eslint .")
+        console.print()
+        console.header("Checking JavaScript formatting \[eslint/prettier]...")
+
+        result = run("eslint .")
         if result.returncode == 0:
             console.success("No issues found")
 
         console.print()
-        console.header(f"Checking JavaScript types \[tsc]...")
-        result = run_node_command("tsc --project tsconfig.json", exit_on_err=False)
+        console.header("Checking JavaScript types \[tsc]...")
+        result = run("tsc --project tsconfig.json")
         if result.returncode == 0:
             console.success("No issues found")
 
@@ -125,17 +132,21 @@ def format_(python: bool = True, js: bool = True):
     console = state.console
 
     if python:
-        console.header(f"Formatting Python code \[black]...")
-        run_poetry_command("black .", exit_on_err=False)
+        run = partial(run_poetry_command, exit_on_err=False)
+
+        console.header("Formatting Python code \[black]...")
+        run("black .")
 
         console.print()
-        console.header(f"Sorting Python imports \[isort]...")
-        run_poetry_command("isort --profile black .", exit_on_err=False)
+        console.header("Sorting Python imports \[isort]...")
+        run("isort --profile black .")
 
     if js and check_js_flag():
+        run = partial(run_node_command, exit_on_err=False)
+
         console.print()
-        console.header(f"Formatting JavaScript code \[eslint/prettier]...")
-        result = run_node_command("eslint --fix .", exit_on_err=False)
+        console.header("Formatting JavaScript code \[eslint/prettier]...")
+        result = run("eslint --fix .")
         if result.returncode == 0:
             console.success("No issues found")
 

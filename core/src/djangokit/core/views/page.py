@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-from datetime import timedelta
 
 from django.contrib.staticfiles.finders import find
 from django.contrib.staticfiles.storage import staticfiles_storage
