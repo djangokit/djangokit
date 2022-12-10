@@ -6,6 +6,6 @@
     classes.
 
 """
-from .blog_post import BlogPost
+from .blog import BlogComment, BlogPost
 from .page import Page, PageSchema
 from .todo import TodoItem, TodoItemSchema

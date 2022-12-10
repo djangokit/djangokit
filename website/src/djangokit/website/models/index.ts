@@ -6,8 +6,15 @@ export interface BlogPost {
   id: number;
   title: string;
   slug: string;
+  author: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    username: string;
+  };
   lead?: string;
   content: string;
+  blurb: string;
   created: string;
   updated: string;
   published?: string;

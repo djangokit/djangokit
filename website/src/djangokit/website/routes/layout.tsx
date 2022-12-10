@@ -97,6 +97,10 @@ export default function Layout() {
         <span>&copy; DjangoKit 2022</span>
 
         <NavDropdown title={<FaBars />}>
+          <LinkContainer to="/blog">
+            <NavDropdown.Item>Blog</NavDropdown.Item>
+          </LinkContainer>
+
           <LinkContainer to="/todo">
             <NavDropdown.Item>TODO</NavDropdown.Item>
           </LinkContainer>

@@ -1,33 +1,50 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+import FormCheck from "react-bootstrap/FormCheck";
 import ListGroup from "react-bootstrap/ListGroup";
+
 import { FaBars } from "react-icons/fa";
 
 import api, { useApiQuery } from "../../api";
 import { Page } from "../../models";
+
+import Admonition from "../../components/Admonition";
 import Loader from "../../components/Loader";
 import ErrorMessage from "../../components/ErrorMessage";
-import FormCheck from "react-bootstrap/FormCheck";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function Page() {
   const currentUser = useCurrentUserContext();
   const client = useQueryClient();
   const result = useApiQuery<{ pages: Page[] }>("docs");
+  const [dragInfo, setDragInfo] = useState({
+    dragging: -1,
+    target: -1,
+  });
   const { isLoading, isError, data, error } = result;
 
   const togglePublished = useMutation({
     mutationFn: (page: Page) =>
-      api.patch(`${page.slug}`, { published: !page.published }),
+      api.patch(page.slug, { published: !page.published }),
+    onSuccess: () => client.invalidateQueries(["docs"]),
+  });
+
+  const reorder = useMutation({
+    mutationFn: ({ page, before }: { page: Page; before: Page }) => {
+      return api.patch(page.slug, { before: before.id });
+    },
     onSuccess: () => client.invalidateQueries(["docs"]),
   });
 
   return (
     <>
       <p className="lead">Welcome to the DjangoKit documentation!</p>
-      <div className="admonition note">
-        <p className="admonition-title">Note</p>
+
+      <Admonition>
         <p>Documentation is a work in progress.</p>
-      </div>
+      </Admonition>
+
       <p>
         <Link to="get-started">Click here to get started</Link> or click another
         link on the left to jump into a specific topic.
@@ -35,6 +52,8 @@ export default function Page() {
 
       {currentUser.isSuperuser ? (
         <>
+          <h3>Admin</h3>
+
           {isLoading ? <Loader>Loading docs...</Loader> : null}
 
           {isError ? (
@@ -45,24 +64,76 @@ export default function Page() {
           ) : null}
 
           {!(isLoading || isError) ? (
-            <ListGroup>
-              {data?.pages.map((page) => (
-                <ListGroup.Item key={page.id}>
-                  <div className="d-flex align-items-center gap-2">
-                    <span>{page.order}.</span>
-                    <span>{page.title}</span>
-                    <span className="flex-fill" />
-                    <FormCheck
-                      defaultChecked={page.published}
-                      onChange={(event) => togglePublished.mutate(page)}
-                    />
-                    <span>
-                      <FaBars />
-                    </span>
-                  </div>
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
+            <div>
+              <ListGroup>
+                {data?.pages.map((page, i) => (
+                  <ListGroup.Item
+                    key={page.id}
+                    className={
+                      dragInfo.target === i ? "bg-dark text-danger" : ""
+                    }
+                    draggable
+                    // These events apply to the item being dragged
+                    onDragStart={() => {
+                      setDragInfo({ ...dragInfo, dragging: i });
+                    }}
+                    onDragEnd={() => {
+                      setDragInfo({ dragging: -1, target: -1 });
+                    }}
+                    // These events apply to items being dragged onto
+                    onDragEnter={(event) => {
+                      event.preventDefault();
+                      setDragInfo({ ...dragInfo, target: i });
+                    }}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      setDragInfo({ ...dragInfo, target: i });
+                    }}
+                    onDragLeave={() => {
+                      setDragInfo({ dragging: -1, target: -1 });
+                    }}
+                    onDrop={() => {
+                      if (dragInfo.dragging !== dragInfo.target) {
+                        reorder.mutate({
+                          page: data.pages[dragInfo.dragging],
+                          before: data.pages[dragInfo.target],
+                        });
+                      }
+                      setDragInfo({ dragging: -1, target: -1 });
+                    }}
+                  >
+                    <div className="d-flex align-items-center gap-2">
+                      <Link
+                        to={`/docs/${page.slug.slice(4)}`}
+                        className="text-decoration-none"
+                      >
+                        {page.title}
+                      </Link>
+                      <span className="flex-fill" />
+                      <span title={page.published ? "Unpublish" : "Publish"}>
+                        <FormCheck
+                          defaultChecked={page.published}
+                          onChange={() => togglePublished.mutate(page)}
+                        />
+                      </span>
+                      <span
+                        title="Drag to reorder"
+                        style={{ cursor: "pointer" }}
+                      >
+                        <FaBars />
+                      </span>
+                    </div>
+                  </ListGroup.Item>
+                ))}
+              </ListGroup>
+              <Admonition>
+                <p>
+                  The drag and drop reordering is somewhat simplistic. When
+                  dropping a page on top of another page, the dropped page will
+                  always be inserted <em>before</em> the drop target page.
+                </p>
+              </Admonition>
+            </div>
           ) : null}
         </>
       ) : null}

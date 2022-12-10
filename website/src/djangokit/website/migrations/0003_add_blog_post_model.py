@@ -1,3 +1,5 @@
+import django.db.models.deletion
+from django.conf import settings
 from django.db import migrations, models
 
 
@@ -22,6 +24,13 @@ class Migration(migrations.Migration):
                 ),
                 ("title", models.CharField(max_length=255)),
                 ("slug", models.SlugField(max_length=255)),
+                (
+                    "author",
+                    models.ForeignKey(
+                        to=settings.AUTH_USER_MODEL,
+                        on_delete=django.db.models.deletion.PROTECT,
+                    ),
+                ),
                 ("lead", models.TextField(blank=True, null=True)),
                 ("content", models.TextField()),
                 ("created", models.DateTimeField(auto_now_add=True)),

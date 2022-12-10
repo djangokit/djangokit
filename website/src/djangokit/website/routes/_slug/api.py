@@ -13,7 +13,7 @@ def get(_request, slug):
 
 class PatchSchema(BaseModel):
     published: Optional[bool] = None
-    order: Optional[int] = None
+    before: Optional[int] = None
 
     @root_validator
     def ensure_at_least_one_value(cls, values):
@@ -25,7 +25,7 @@ class PatchSchema(BaseModel):
 @auth.require_authenticated
 @auth.require_superuser
 def patch(request, slug):
-    item = get_object_or_404(Page, slug=slug)
+    page = get_object_or_404(Page, slug=slug)
 
     try:
         data = PatchSchema(**request.data)
@@ -34,10 +34,27 @@ def patch(request, slug):
         return 400, {"messages": messages}
 
     for name in data.__fields__:
+        if name == "before":
+            continue
         val = getattr(data, name)
         if val is not None:
-            setattr(item, name, val)
+            setattr(page, name, val)
 
-    item.save()
-    item.refresh_from_db()
-    return item
+    if data.before is not None:
+        all_pages = list(Page.objects.all())
+        for p in all_pages:
+            if p.id == data.before:
+                before_page = p
+                all_pages.remove(page)
+                before_index = all_pages.index(before_page)
+                all_pages.insert(before_index, page)
+                for order, q in enumerate(all_pages):
+                    q.order = order
+                    q.save()
+                break
+        else:
+            return 404, f"Before page with ID not found: {data.before}"
+
+    page.save()
+    page.refresh_from_db()
+    return page
