@@ -9,10 +9,11 @@ from django.core.exceptions import ImproperlyConfigured
 
 log = logging.getLogger(__name__)
 
-NOT_SET = object()
+NotSet = type("NotSet", (), {})
+NOT_SET = NotSet()
 
 
-def get_dotenv_path(path=None):
+def get_dotenv_path(path=None) -> Path:
     """Figure out which .env file to use.
 
     If a path is provided, use that. Otherwise:
@@ -49,7 +50,7 @@ def load_dotenv(path=None) -> bool:
     return public_loaded or loaded
 
 
-def dotenv_settings(path=None, convert=True) -> Dict[str, Optional[str]]:
+def dotenv_settings(path=None, convert=True) -> Dict[str, Any]:
     """Load settings from .env file into environ.
 
     By default, the values will be parsed as JSON.
@@ -63,14 +64,11 @@ def dotenv_settings(path=None, convert=True) -> Dict[str, Optional[str]]:
     if path.exists():
         values.update(dotenv.dotenv_values(path))
     if convert:
-        processed_values = {}
-        for name, value in values.items():
-            processed_values[name] = convert_env_val(value)
-        return processed_values
+        return {n: convert_env_val(v) for n, v in values.items()}
     return values
 
 
-def getenv(name: str, default: Any = NOT_SET, expected_type: type = NOT_SET) -> Any:
+def getenv(name: str, default=NOT_SET, expected_type: type = NotSet) -> Any:
     """Get setting from environment.
 
     If no default is specified, the setting *must* be present in the
@@ -91,7 +89,7 @@ def getenv(name: str, default: Any = NOT_SET, expected_type: type = NOT_SET) -> 
 
     value = convert_env_val(value)
 
-    if expected_type is not NOT_SET:
+    if expected_type is not NotSet:
         if not isinstance(value, expected_type):
             expected_type_name = expected_type.__name__
             type_name = value.__class__.__name__
@@ -103,9 +101,11 @@ def getenv(name: str, default: Any = NOT_SET, expected_type: type = NOT_SET) -> 
     return value
 
 
-def convert_env_val(value: str) -> Any:
+def convert_env_val(val: Optional[str]) -> Any:
+    if val is None:
+        return None
     try:
-        value = json.loads(value)
+        val = json.loads(val)
     except ValueError:
         pass
-    return value
+    return val

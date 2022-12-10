@@ -1,12 +1,11 @@
 """Django commands and utilities."""
 import json
 import os
-import subprocess
 import sys
 from fnmatch import fnmatch
 from getpass import getuser
 from itertools import chain
-from typing import List
+from typing import List, Optional
 
 import click
 from djangokit.core.env import dotenv_settings
@@ -35,7 +34,7 @@ def manage(args):
 
 
 @app.command()
-def createsuperuser(username: str = getuser(), email: str = None):
+def createsuperuser(username: str = getuser(), email: Optional[str] = None):
     """Create Django Admin user"""
     if not email:
         email = f"{username}@example.com"
@@ -243,9 +242,9 @@ def add_model(
 
     model_fields = {}
     for field in fields:
-        name, *type_ = field.split(":", 1)
-        if type_:
-            type_ = type_[0]
+        name, *rest = field.split(":", 1)
+        if rest:
+            type_ = rest[0]
         elif name in ("created", "created_at"):
             type_ = "created"
         elif name in ("updated", "updated_at"):
@@ -371,7 +370,7 @@ def configure_settings_module(**env_vars):
     state.settings_module_configured = True
 
 
-def run_django_command(args: Args) -> subprocess.CompletedProcess:
+def run_django_command(args: Args):
     """Run a Django management command."""
     configure_settings_module()
 

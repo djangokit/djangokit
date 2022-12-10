@@ -8,6 +8,7 @@ import enum
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Optional
 
 import typer
 from djangokit.core.conf import Settings, settings
@@ -31,15 +32,19 @@ class Env(enum.Enum):
 class State:
     """DjangoKit CLI global app state"""
 
-    env: Env = Env.development
-    quiet: bool = False
-    dotenv_path: Path = Path(".env.development")
-    settings: Settings = field(default_factory=lambda: settings)
     console: Console = Console(highlight=False)
     cwd: Path = Path.cwd()
+
+    env: str = "development"
+    dotenv_path: Path = Path(".env.development")
+
     settings_module: str = "djangokit.core.settings"
-    additional_settings_module: str = None
+    additional_settings_module: Optional[str] = None
+    settings: Settings = field(default_factory=lambda: settings)
     settings_module_configured: bool = False
+
+    use_typescript: bool = True
+    quiet: bool = False
 
 
 state = State()
@@ -48,8 +53,8 @@ state = State()
 @app.callback(no_args_is_help=True)
 def main(
     ctx: Context,
-    env: Env = Option(
-        state.env.value,
+    env_opt: Env = Option(
+        state.env,
         "-e",
         "--env",
         envvar="ENV",
@@ -72,11 +77,20 @@ def main(
         "--additional-settings-module",
         envvar="DJANGO_ADDITIONAL_SETTINGS_MODULE",
     ),
+    use_typescript: bool = Option(
+        True,
+        "-t",
+        "--ts",
+        "--typescript",
+        help="Use TypeScript (e.g., when generating files)",
+        envvar="DJANGOKIT_CLI_USE_TYPESCRIPT",
+    ),
     quiet: bool = Option(
         state.quiet,
         "-q",
         "--quiet",
         help="Squelch stdout",
+        envvar="DJANGOKIT_CLI_QUIET",
     ),
 ):
     """DjangoKit CLI
@@ -86,18 +100,18 @@ def main(
     """
     console = state.console
 
-    if env == Env.dev:
-        env = Env.development
-    elif env == Env.prod:
-        env = Env.production
+    if env_opt == Env.dev:
+        env_opt = Env.development
+    elif env_opt == Env.prod:
+        env_opt = Env.production
 
-    env = env.value
+    env = env_opt.value
     os.environ["ENV"] = env
 
     # Set .env path from env when .env path isn't passed in or set as an
     # env var.
     if params.is_default(ctx, "dotenv_path"):
-        dotenv_path = f".env.{env}"
+        dotenv_path = Path(f".env.{env}")
 
     os.environ["DOTENV_PATH"] = str(dotenv_path)
 
@@ -118,7 +132,7 @@ def main(
         settings_module = dotenv_settings[key]
     key = "DJANGO_ADDITIONAL_SETTINGS_MODULE"
     if params.is_default(ctx, "additional_settings_module") and key in dotenv_settings:
-        settings_module = dotenv_settings[key]
+        additional_settings_module = dotenv_settings[key]
 
     if quiet:
         state.console.quiet = True
@@ -133,9 +147,9 @@ def main(
 
     state.env = env
     state.dotenv_path = dotenv_path
-    state.dotenv_settings = dotenv_settings
     state.settings_module = settings_module
     state.additional_settings_module = additional_settings_module
+    state.use_typescript = use_typescript
     state.quiet = quiet
 
 

@@ -33,12 +33,11 @@ automatically be used if it's not set in the `DJANGOKIT` dict::
     settings.global_stylesheets  # -> ["global.css"]
 
 """
-import dataclasses
 import socket
 from functools import cached_property
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Union
 
 from django.conf import settings as django_settings
 from django.core.exceptions import ImproperlyConfigured
@@ -47,7 +46,6 @@ from django.utils.module_loading import import_string
 from .checks import make_error
 
 
-@dataclasses.dataclass
 class Settings:
     """DjangoKit settings.
 
@@ -67,7 +65,7 @@ class Settings:
     """
 
     # XXX: Keep in sync with `.settings.defaults.DJANGOKIT`.
-    known_settings = {
+    known_settings: Dict[str, Dict[str, Union[type, Any]]] = {
         "title": {
             "type": str,
             "default": "DjangoKit Site",
@@ -197,7 +195,7 @@ class Settings:
 
     # Utilities --------------------------------------------------------
 
-    def as_dict(self):
+    def as_dict(self) -> Dict[str, Any]:
         """Return a dict with *all* DjangoKit settings.
 
         This will include defaults plus any values set in the project's
@@ -207,7 +205,7 @@ class Settings:
         return {name: getattr(self, name) for name in self.known_settings}
 
     @property
-    def _settings(self):
+    def _settings(self) -> Dict[str, Any]:
         """Retrieve `DJANGOKIT` dict from Django settings module."""
         try:
             return django_settings.DJANGOKIT
@@ -215,15 +213,15 @@ class Settings:
             err = make_error("E000")
             raise ImproperlyConfigured(err.msg)
 
-    def _get_required(self, name):
+    def _get_required(self, name) -> Any:
         if name in self._settings:
             value = self._settings[name]
             self._check_type(name, value)
             return value
-        err = make_error("E001", name)
+        err = make_error("E001", name=name)
         raise ImproperlyConfigured(err.msg)
 
-    def _get_optional(self, name):
+    def _get_optional(self, name) -> Any:
         if name in self._settings:
             value = self._settings[name]
             self._check_type(name, value)
@@ -246,7 +244,7 @@ class Settings:
             err = make_error("E002", name=name, type=type_, value=value)
             raise ImproperlyConfigured(err.msg)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name) -> Any:
         """Proxy Django settings.
 
         XXX: Is this useful and/or a good idea?

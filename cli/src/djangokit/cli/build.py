@@ -78,7 +78,7 @@ def build_server(
     configure_settings_module()
     console = state.console
 
-    bundle_args = (make_request(path),)
+    bundle_args = [make_request(path)]
 
     bundle_kwargs = {
         "env": state.env,
@@ -116,7 +116,7 @@ def render_markup(path: str = "/", csrf_token: str = "__csrf_token__"):
         "quiet": state.quiet,
     }
     bundle = make_server_bundle(request, **bundle_kwargs)
-    markup = run_bundle(bundle, argv=[path, csrf_token])
+    markup = run_bundle(bundle, [path, csrf_token])
     print(markup, flush=True)
 
 
@@ -125,7 +125,7 @@ class Handler:
     callable: Callable
     args: List[Any] = dataclasses.field(default_factory=list)
     kwargs: Dict[str, Any] = dataclasses.field(default_factory=dict)
-    exclude_patterns: List[str] = dataclasses.field(default_factory=[])
+    exclude_patterns: List[str] = dataclasses.field(default_factory=list)
 
     @property
     def name(self):
@@ -143,7 +143,7 @@ class WatchEventHandler(PatternMatchingEventHandler):
         ignore_directories=True,
         case_sensitive=True,
     ):
-        self.handlers = []
+        self.handlers: List[Handler] = []
         self.console = console
 
         patterns = patterns or [f"*.{ext}" for ext in self.default_extensions]

@@ -35,7 +35,7 @@ class PageView(TemplateView):
             "page_path": self.page_path,
         }
 
-    def render(self):
+    def render(self) -> str:
         request: HttpRequest = self.request
 
         # Do CSR only for logged-in users.
@@ -65,11 +65,11 @@ class PageView(TemplateView):
 
         csrf_token = csrf.get_token(request)
         current_user_data = settings.current_user_serializer(request.user)
-        current_user_data = json.dumps(current_user_data)
-        argv = [request.path, csrf_token, current_user_data]
+        current_user_json = json.dumps(current_user_data)
+        argv = [request.path, csrf_token, current_user_json]
 
         log.info("Running SSR bundle from static file: %s", bundle_name)
-        return run_bundle(bundle_path, argv=argv)
+        return run_bundle(bundle_path, argv)
 
     def render_loading(self):
         return render_to_string(

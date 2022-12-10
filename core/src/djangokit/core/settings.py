@@ -75,6 +75,7 @@ any env settings will still take precedence.
 import importlib
 from itertools import chain
 from os import environ
+from typing import List, Tuple, Union
 from uuid import uuid4
 
 from django.conf import global_settings
@@ -106,7 +107,9 @@ test = getenv("DJANGO_TEST", False, bool)
 secret_key = f"INSECURE:{uuid4()}" if test else getenv("DJANGO_SECRET_KEY")
 app_dirs_loader = "django.template.loaders.app_directories.Loader"
 cached_loader = "django.template.loaders.cached.Loader"
-template_loaders = [app_dirs_loader] if debug else [(cached_loader, [app_dirs_loader])]
+template_loaders: List[Union[str, Tuple[str, List[str]]]] = (
+    [app_dirs_loader] if debug else [(cached_loader, [app_dirs_loader])]
+)
 
 
 # NOTE: This only includes defaults that differ from Django's global

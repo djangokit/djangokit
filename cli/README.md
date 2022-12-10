@@ -14,10 +14,26 @@ To run a Django management command:
 
 ## Configuring the CLI
 
-The DjangoKit CLI can be configured via `DJANGOKIT_CLI_*` environment
-variables, which can be added to your project's `.env.public` file.
+The DjangoKit CLI can be configured via global options passed to the
+`djangokit` base command or via environment variables, which can be
+added to your project's `.env` file(s). Using env vars is useful when
+you want to change a default permanently.
 
-- `DJANGOKIT_CLI_PAGE_EXT`: Set the default page extension for page
-  routes generated using `dk add-page`. This is handy if you're not 
-  using TypeScript and you don't want to have to change the extension
-  every time you generate a page route.
+- `--env` / `ENV`: Specify the environment to run commands in.
+
+- `--dotenv-path` / `DOTENV_PATH`: Path to `.env` file. This will be
+  derived from `ENV` if not specified.
+
+- `--settings-module` / `DJANGO_SETTINGS_MODULE`: Specify the Django
+  settings module.
+
+- `--additional_settings_module` / `DJANGO_ADDITIONAL_SETTINGS_MODULE`:
+  Specify an *additional* Django settings module that will be loaded
+  after (and override) the base settings module.
+
+- `--typescript` / `DJANGOKIT_CLI_USE_TYPESCRIPT`: Since using
+  TypeScript is the default, you can use this to disable TypeScript.
+  This will affect how files are generated, for example (e.g. when using
+  `dk add-page`).
+
+- `--quiet` / `DJANGOKIT_CLI_QUIET`: Squelch stdout.

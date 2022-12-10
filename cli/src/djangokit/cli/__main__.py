@@ -1,4 +1,6 @@
 """DjangoKit console script entry point."""
+from typing import Any
+
 import typer
 
 # NOTE: These imports are needed to register the commands in each
@@ -9,7 +11,8 @@ from . import django  # noqa
 from .app import app
 from .scaffolding import routes  # noqa
 
-app = typer.main.get_command(app)
+# XXX: Any
+app: Any = typer.main.get_command(app)
 app.add_command(django.manage, "manage")
 
 if __name__ == "__main__":

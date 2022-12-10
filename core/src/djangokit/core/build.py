@@ -49,7 +49,7 @@ def make_server_bundle(
     source_map=False,
     quiet=None,
     chdir: Optional[Path] = None,
-) -> str:
+) -> Path:
     """Build React app bundle for server side rendering."""
     return make_bundle(
         "server.main.jsx",
@@ -133,7 +133,7 @@ def make_bundle(
     args = [
         "npx",
         "esbuild",
-        entrypoint_path,
+        str(entrypoint_path),
         "--bundle",
         f"--define:DEBUG={str(debug).lower()}",
         f"--define:ENV='{env}'",
@@ -156,18 +156,13 @@ def make_bundle(
     return bundle_path
 
 
-def run_bundle(
-    bundle: Path,
-    argv: List[str] = (),
-    *,
-    chdir: Optional[Path] = None,
-) -> str:
+def run_bundle(bundle: Path, argv: List[str], *, chdir: Optional[Path] = None) -> str:
     """Run a bundle as a Node script and capture its output.
 
     Used mainly for server side rendering.
 
     """
-    args = ["node", bundle]
+    args = ["node", str(bundle)]
     if argv:
         args.extend(argv)
     result = subprocess.run(args, stdout=subprocess.PIPE, cwd=chdir)

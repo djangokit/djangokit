@@ -4,7 +4,7 @@ from functools import cached_property, lru_cache
 from importlib import import_module
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, List, Literal, Optional
+from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
 from django import urls as urlconf
 from django.core.exceptions import ImproperlyConfigured
@@ -41,6 +41,8 @@ def discover_routes(page_view_class=PageView, api_view_class=ApiView) -> list:
 
     for node in api_nodes:
         api_module = node.api_module
+        assert isinstance(api_module, ModuleType)
+
         allowed_methods = {}
 
         for name in dir(api_module):
@@ -229,22 +231,22 @@ class RouteDirNode:
         """Convert route path to Django URL pattern."""
         if self.is_root:
             return ""
-        pattern = []
+        segments = []
         is_catchall = self.is_catchall
-        for segment in self.rel_path.parts:
-            if segment.startswith("_"):
-                name = segment[1:]
+        for part in self.rel_path.parts:
+            if part.startswith("_"):
+                name = part[1:]
                 if is_catchall:
-                    segment = rf"(?P<{name}>[^/]+)"
+                    part = rf"(?P<{name}>[^/]+)"
                 else:
-                    segment = f"<{name}>"
-                pattern.append(segment)
+                    part = f"<{name}>"
+                segments.append(part)
             else:
-                segment = segment.replace("_", "-")
-                pattern.append(segment)
+                part = part.replace("_", "-")
+                segments.append(part)
         if is_catchall:
-            pattern[-1] = ".*"
-        pattern = "/".join(pattern)
+            segments[-1] = ".*"
+        pattern = "/".join(segments)
         if is_catchall:
             pattern = f"^{pattern}"
         return pattern
@@ -254,21 +256,20 @@ class RouteDirNode:
         """Convert route path to React Router URL pattern."""
         if self is self.root:
             return "/"
-        pattern = []
-        for segment in self.rel_path.parts:
-            if segment.startswith("_"):
-                name = segment[1:]
+        segments = []
+        for part in self.rel_path.parts:
+            if part.startswith("_"):
+                name = part[1:]
                 name_parts = name.split("_")
-                for i in enumerate(name_parts[1:], 1):
-                    name_parts[i] = name_parts[i].capitalize()
-                route_segment = f"{''.join(name_parts)}"
-                pattern.append(f":{route_segment}")
+                name_parts = [name_parts[0]] + [p.capitalize() for p in name_parts[1:]]
+                segment = f"{''.join(name_parts)}"
+                segments.append(f":{segment}")
             else:
-                segment = segment.replace("_", "-")
-                pattern.append(segment)
+                part = part.replace("_", "-")
+                segments.append(part)
         if self.is_catchall:
-            pattern[-1] = "*"
-        pattern = "/".join(pattern)
+            segments[-1] = "*"
+        pattern = "/".join(segments)
         pattern = f"/{pattern}"
         return pattern
 
@@ -291,40 +292,39 @@ class RouteDirNode:
         """Find layout for page node."""
         if not self.has_page:
             return None
-        current = self
+        current: Optional[RouteDirNode] = self
         while current is not None:
             if current.has_layout or current.has_nested_layout:
                 return current
             current = current.parent
         raise RouteError(f"Could not find layout for page {self.rel_path}.")
 
-    def _layout_pattern(self, kind: Literal["nested-layout", "page"]):
-        pattern = self.route_pattern
+    def _layout_pattern(self, kind: Literal["nested-layout", "page"]) -> str:
         if self.is_root:
-            return pattern
+            return self.route_pattern
         if kind == "nested-layout":
             layout = self.layout_for_nested_layout
         elif kind == "page":
             layout = self.layout_for_page
         else:
             raise ValueError(kind)
-        pattern = self.rel_path.relative_to(layout.rel_path)
-        pattern = str(pattern)
+        assert layout
+        pattern = posixpath.relpath(self.route_pattern, layout.route_pattern)
         if pattern == ".":
             pattern = ""
         return pattern
 
     @cached_property
     def route_pattern_for_nested_layout(self) -> str:
-        """Convert route path to URL layout-relative URL pattern."""
+        """Convert route path to layout-relative URL pattern."""
         return self._layout_pattern("nested-layout")
 
     @cached_property
     def route_pattern_for_page(self) -> str:
-        """Convert route path to URL layout-relative URL pattern."""
+        """Convert route path to layout-relative URL pattern."""
         return self._layout_pattern("page")
 
-    def js_imports(self, routes_path: str, join=True) -> str:
+    def js_imports(self, routes_path: str, join=True) -> Union[List[str], str]:
         """Get JS imports for node including imports for child nodes."""
         imports = []
 
@@ -343,16 +343,12 @@ class RouteDirNode:
                 imports.append(imp(node, "Page", "page"))
 
         self.traverse(visitor)
+        return "\n".join(imports) if join else imports
 
-        if join:
-            imports = "\n".join(imports)
-
-        return imports
-
-    def js_routes(self, serialize=True) -> str:
+    def js_routes(self, serialize=True) -> Union[str, List]:
         """Get JS route array."""
         top = []
-        layouts = {}
+        layouts: Dict[Path, Dict[str, Any]] = {}
 
         @dataclasses.dataclass
         class Element:
@@ -379,37 +375,40 @@ class RouteDirNode:
                     children.append({"path": "", "element": Element("Page", node.id)})
 
                 if node.has_nested_layout:
-                    parent_layout = layouts[node.layout_for_nested_layout.rel_path]
-                    parent_layout["children"].append(layout)
+                    parent_layout = node.layout_for_nested_layout
+                    assert parent_layout
+                    layout_info = layouts[parent_layout.rel_path]
+                    layout_info["children"].append(layout)
                 else:
                     top.append(layout)
 
                 layouts[node.rel_path] = layout
 
             elif node.has_page:
-                layout = layouts[node.layout_for_page.rel_path]
-                page = {"path": None, "element": Element("Page", node.id)}
+                page_layout = node.layout_for_page
+                page = {"path": "", "element": Element("Page", node.id)}
                 if node.has_error:
                     page["errorElement"] = Element("Error", node.id)
-                if layout is None:
+                if page_layout is None:
                     page["path"] = node.route_pattern
                     top.append(page)
                 else:
-                    page["path"] = node.route_pattern
-                    layout["children"].append(page)
+                    page["path"] = node.route_pattern_for_page
+                    layout_info = layouts[page_layout.rel_path]
+                    layout_info["children"].append(page)
 
         self.traverse(visitor)
 
         if not serialize:
             return top
 
-        def serialize(obj):
+        def serializer(obj):
             if isinstance(obj, dict):
-                entries = [f"{k}: {serialize(v)}" for k, v in obj.items()]
+                entries = [f"{k}: {serializer(v)}" for k, v in obj.items()]
                 entries = ",".join(entries)
                 return "".join(("{", entries, "}"))
             elif isinstance(obj, list):
-                items = [serialize(item) for item in obj]
+                items = [serializer(item) for item in obj]
                 items = ",".join(items)
                 return f"[{items}]"
             elif isinstance(obj, str):
@@ -419,7 +418,7 @@ class RouteDirNode:
             type_ = obj.__class__.__name__
             raise TypeError(f"Unexpected object type: {type_}")
 
-        return serialize(top)
+        return serializer(top)
 
     def __str__(self):
         indent = " " * (self.depth * 4)

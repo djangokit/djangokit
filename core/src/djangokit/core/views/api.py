@@ -29,7 +29,7 @@ class ApiView(View):
     
     """
 
-    allowed_methods: Dict[str, Callable] = None
+    allowed_methods: Dict[str, Callable] = {}
     """Allowed HTTP methods for API view.
     
     The allowed methods for an API view are determined by the

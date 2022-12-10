@@ -1,3 +1,4 @@
+from pathlib import Path
 
 import typer
 from typer import Argument, Option
@@ -40,15 +41,10 @@ def get(request):
 
 @app.command()
 def add_page(
-    path: str = Argument(..., help="Route path relative to routes directory"),
+    path: Path = Argument(..., help="Route path relative to routes directory"),
     name: str = Option(None, help="Route name"),
     layout: bool = Option(False, help="Create layout too?"),
     api: bool = Option(False, help="Create API module too?"),
-    extension: str = Option(
-        "tsx",
-        envvar="DJANGOKIT_CLI_PAGE_EXT",
-        help="Page & layout file name extension (e.g., tsx or jsx)",
-    ),
     overwrite: bool = Option(False),
 ):
     """Add a page route
@@ -63,10 +59,11 @@ def add_page(
     console = state.console
     settings = state.settings
     routes_dir = settings.routes_dir
+    ext = ".tsx" if state.use_typescript else ".jsx"
 
     route_dir = routes_dir / path
-    page_path = route_dir / f"page.{extension}"
-    layout_path = route_dir / f"layout.{extension}"
+    page_path = route_dir / f"page.{ext}"
+    layout_path = route_dir / f"layout.{ext}"
     name = name or route_dir.name.title()
 
     rel_route_dir = route_dir.relative_to(routes_dir.parent)
@@ -104,7 +101,7 @@ def add_page(
 
 @app.command()
 def add_api(
-    path: str = Argument(..., help="Route path relative to routes directory"),
+    path: Path = Argument(..., help="Route path relative to routes directory"),
     overwrite: bool = Option(False),
 ):
     """Add an API route"""
@@ -115,11 +112,11 @@ def add_api(
     routes_dir = settings.routes_dir
 
     route_dir = routes_dir / path
-    path = route_dir / "api.py"
+    api_module_path = route_dir / "api.py"
     init_path = route_dir / "__init__.py"
 
     rel_route_dir = route_dir.relative_to(routes_dir.parent)
-    rel_path = path.relative_to(routes_dir.parent)
+    rel_path = api_module_path.relative_to(routes_dir.parent)
     rel_init_path = init_path.relative_to(routes_dir.parent)
 
     console.header(f"Creating API module at {rel_route_dir}")
@@ -128,14 +125,14 @@ def add_api(
         console.info(f"Creating route directory for API module: {rel_route_dir}")
         route_dir.mkdir(parents=True)
 
-    if path.exists() and not overwrite:
+    if api_module_path.exists() and not overwrite:
         if not typer.confirm(f"Overwrite API module {rel_path}?"):
             raise typer.Exit()
         console.warning(f"Overwriting API module {rel_path}")
     else:
         console.info(f"Creating API module {rel_path}")
 
-    with path.open("w") as fp:
+    with api_module_path.open("w") as fp:
         fp.write(API_TEMPLATE)
 
     if init_path.exists() and not overwrite:
