@@ -2,6 +2,7 @@
 from typing import Optional
 
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from pydantic import BaseModel, ValidationError, root_validator
 
 from .... import auth
@@ -42,9 +43,14 @@ def patch(request, id):
         return 400, {"messages": messages}
 
     for name in data.__fields__:
+        if name == "completed":
+            continue
         val = getattr(data, name)
         if val is not None:
             setattr(item, name, val)
+
+    if data.completed is not None:
+        item.completed = timezone.now()
 
     item.save()
     item.refresh_from_db()
