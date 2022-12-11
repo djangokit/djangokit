@@ -299,17 +299,22 @@ def add_other_django_settings():
             name = env_name[7:]
             if name in known_settings or name == "ROOT_URLCONF":
                 continue
-            if name.startswith("DATABASE_"):
+            if name.startswith("CACHE_") and not name.startswith("CACHE_MIDDLEWARE_"):
+                # Default cache settings
+                caches = settings.setdefault("CACHES", {})
+                setting = caches.setdefault("default", {})
+                _set_nested(setting, 1, "DJANGO_CACHE_", env_name)
+            elif name.startswith("DATABASE_"):
                 # Default database settings
                 setting = settings["DATABASES"]["default"]
-                _set_nested(setting, "DJANGO_DATABASE_", env_name)
+                _set_nested(setting, 1, "DJANGO_DATABASE_", env_name)
             else:
                 # Third party or other setting
                 val = getenv(env_name)
                 settings[name] = val
 
 
-def add_nested_settings(name, env_prefix=None):
+def add_nested_settings(name, min_path_len, env_prefix=None):
     """Process nested settings like CACHES, DATABASES, and LOGGING.
 
     The root setting (e.g., `DATABASES`) is expected to already exist,
@@ -345,10 +350,10 @@ def add_nested_settings(name, env_prefix=None):
         top_level_setting = settings[name] = default
     for env_name in environ:
         if env_name.startswith(env_prefix):
-            _set_nested(top_level_setting, env_prefix, env_name, 2)
+            _set_nested(top_level_setting, min_path_len, env_prefix, env_name)
 
 
-def _set_nested(setting, env_prefix, env_name, min_path_len=1):
+def _set_nested(setting, min_path_len, env_prefix, env_name):
     """Set a sub-setting of the specified setting.
 
     The setting can be a top level setting such as `DATABASES` or a
@@ -393,6 +398,12 @@ import_additional_settings()
 add_djangokit_settings()
 add_known_django_settings()
 add_other_django_settings()
-add_nested_settings("CACHES")
-add_nested_settings("DATABASES")
-add_nested_settings("LOGGING")
+add_nested_settings("CACHES", 2)
+add_nested_settings("DATABASES", 2)
+
+if not isinstance(settings.get("LOGGING"), str):
+    # XXX: Assume that LOGGING_CONFIG="logging.config.fileConfig" and
+    #      LOGGING is a log config file path.
+    #
+    # TODO: Make this more robust.
+    add_nested_settings("LOGGING", 1)

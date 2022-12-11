@@ -20,7 +20,10 @@ export default function Page() {
     <>
       <h2>{data.title}</h2>
       {data.lead ? (
-        <div dangerouslySetInnerHTML={{ __html: data.lead }} className="mb-4" />
+        <div
+          dangerouslySetInnerHTML={{ __html: data.lead }}
+          className="lead mb-4"
+        />
       ) : null}
       <div dangerouslySetInnerHTML={{ __html: data.content }} />
     </>

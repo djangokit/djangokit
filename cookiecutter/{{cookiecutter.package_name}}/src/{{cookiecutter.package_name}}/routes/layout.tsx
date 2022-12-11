@@ -5,19 +5,19 @@ import { Link, Outlet } from "react-router-dom";
 export default function Layout() {
   return (
     <>
-      <header>
+      <header className="p-4 bg-dark text-light">
         <nav>
-          <Link to="/">
+          <Link to="/" className="text-light text-decoration-none">
             Home
           </Link>
         </nav>
       </header>
 
-      <main>
+      <main className="p-4">
         <Outlet />
       </main>
 
-      <footer>&copy; {{ cookiecutter.package_name }}</footer>
+      <footer className="p-4 border-top">&copy; {{ cookiecutter.package_name }}</footer>
     </>
   );
 }

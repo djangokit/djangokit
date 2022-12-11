@@ -22,6 +22,13 @@
   z-index: 100;
 }
 
+blockquote {
+  --bs-text-opacity: 1;
+  background-color: var(--bs-light);
+  border-left: 0.25rem var(--bs-border-style) var(--bs-border-color);
+  padding: 0.25rem;
+}
+
 p:last-child {
   margin-bottom: 0;
 }
@@ -78,9 +85,9 @@ li {
 .codehilite {
   margin-bottom: 1rem;
   padding: 0.5rem;
-  border-radius: var(--bs-border-radius);
-  border-left: 0.25em solid var(--bs-info);
-  border-right: 0.25em solid var(--bs-info);
+  background-color: var(--bs-gray-200);
+  border-left: 0.25em solid var(--bs-dark);
+  border-right: 0.25em solid var(--bs-dark);
 }
 .codehilite pre {
   margin-bottom: 0;
