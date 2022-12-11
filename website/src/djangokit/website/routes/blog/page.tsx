@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FaEdit } from "react-icons/all";
+import { FaEdit } from "react-icons/fa";
 
 import { useApiQuery } from "../../api";
 import { BlogPosts } from "../../models";

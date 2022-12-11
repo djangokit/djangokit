@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import FormCheck from "react-bootstrap/FormCheck";
 import ListGroup from "react-bootstrap/ListGroup";
 
-import { FaBars } from "react-icons/fa";
+import { FaBars, FaEdit } from "react-icons/fa";
 
 import api, { useApiQuery } from "../../api";
 import { Page } from "../../models";
@@ -102,7 +102,7 @@ export default function Page() {
                       setDragInfo({ dragging: -1, target: -1 });
                     }}
                   >
-                    <div className="d-flex align-items-center gap-2">
+                    <div className="d-flex align-items-center gap-4">
                       <Link
                         to={`/docs/${page.slug.slice(4)}`}
                         className="text-decoration-none"
@@ -110,6 +110,13 @@ export default function Page() {
                         {page.title}
                       </Link>
                       <span className="flex-fill" />
+                      <a
+                        title="Edit doc in Django Admin"
+                        href={`/$admin/djangokit_website/page/${page.id}/change/`}
+                        target="djangokit_admin"
+                      >
+                        <FaEdit />
+                      </a>
                       <span title={page.published ? "Unpublish" : "Publish"}>
                         <FormCheck
                           defaultChecked={page.published}

@@ -14,7 +14,7 @@ import {
   FaRegCheckCircle,
   FaRegCircle,
   FaSave,
-} from "react-icons/all";
+} from "react-icons/fa";
 
 import api, { useApiQuery } from "../../api";
 import { TodoItem, TodoItems } from "../../models";
