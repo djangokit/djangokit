@@ -5,8 +5,14 @@
     {% block head %}
       {% include "djangokit/_meta.html" with settings=settings %}
 
+      {% include "djangokit/_title.html" with settings=settings %}
+
       {% block favicon %}
         {% include "djangokit/_favicon.html" with settings=settings %}
+      {% endblock %}
+
+      {% block links %}
+        {% include "djangokit/_links.html" with settings=settings %}
       {% endblock %}
 
       {% block stylesheets %}

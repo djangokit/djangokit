@@ -1,0 +1,5 @@
+{% load static %}
+
+{% for path in settings.global_stylesheets %}
+  <link rel="stylesheet" href="{% static path %}">
+{% endfor %}
