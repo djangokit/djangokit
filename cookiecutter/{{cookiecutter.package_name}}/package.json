@@ -1,5 +1,5 @@
 {
-  "name": "{{ cookiecutter.package_name }}",
+  "name": "{{ cookiecutter.dist_name }}",
   "version": "{{ cookiecutter.version }}",
   "description": "{{ cookiecutter.description }}",
   "author": "{{ cookiecutter.author }}",

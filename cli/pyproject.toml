@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "djangokit-cli"
+name = "org-djangokit-cli"
 version = "0.1.0.dev0"
 description = "DjangoKit command line interface"
 authors = ["Wyatt Baldwin <self@wyattbaldwin.com>"]
@@ -13,14 +13,14 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.8"
 
-djangokit-core = "*"
+org-djangokit-core = "*"
 
 tomli = { version = ">=2.0.1", python = "<3.11" }
 typer = { version = ">=0.7.0", extras = ["all"] }
 watchdog = ">=2.0"
 
 [tool.poetry.group.dev.dependencies]
-djangokit-core = { path = "../core", develop = true }
+org-djangokit-core = { path = "../core", develop = true }
 
 black = "^22.12.0"
 isort = "^5.10.1"
@@ -34,6 +34,9 @@ tox = "^3.27.1"
 [tool.poetry.scripts]
 dk = "djangokit.cli.__main__:app"
 djangokit = "djangokit.cli.__main__:app"
+
+[tool.make-release.args]
+test = false
 
 [tool.ruff]
 ignore = [ "E731" ]

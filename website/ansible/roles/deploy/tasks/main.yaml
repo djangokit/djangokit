@@ -85,6 +85,7 @@
     paths: "{{ remote_pip_wheel_dir }}"
     patterns:
       - "djangokit*.whl"
+      - "org-djangokit*.whl"
   register: old_wheels
 
 - name: Remove old wheels
@@ -109,7 +110,7 @@
     --find-links {{ remote_dist_dir }}
     --cache-dir {{ remote_pip_cache_dir }}
     --wheel-dir {{ remote_pip_wheel_dir }}
-    {{ package_info.name }}
+    {{ package_info.dist_name }}
 
 - name: Install app
   tags:
@@ -118,7 +119,7 @@
   become_user: "{{ site_user }}"
   pip:
     name:
-      - "{{ package_info.name }}"
+      - "{{ package_info.dist_name }}"
     state: present
     virtualenv: "{{ remote_venv }}"
     extra_args: --find-links {{ remote_pip_wheel_dir }} --no-compile --no-index

@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "djangokit-website"
+name = "org-djangokit-website"
 version = "0.1.0.dev0"
-description = "DjangoKit Website"
+description = "DjangoKit.org Website"
 authors = ["Wyatt Baldwin <Wyatt Baldwin>"]
 license = "MIT"
 readme = "README.md"
@@ -16,15 +16,15 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
-djangokit-core = "*"
-djangokit-cli = "*"
+org-djangokit-core = "*"
+org-djangokit-cli = "*"
 markdown = "^3.4.1"
 pygments = "^2.13.0"
 pydantic = "^1.10.2"
 
 [tool.poetry.group.dev.dependencies]
-djangokit-core = { path = "../core", develop = true }
-djangokit-cli = { path = "../cli", develop = true }
+org-djangokit-core = { path = "../core", develop = true }
+org-djangokit-cli = { path = "../cli", develop = true }
 
 ansible = "^7.1.0"
 black = "^22.12.0"
@@ -35,12 +35,16 @@ pytest = "^7.2.0"
 ruff = "^0.0.174"
 runcommands = "^1.0a71"
 
+[tool.make-release.args]
+test = false
+
 [tool.runcommands.globals]
-env = "development"
+env = "production"
+host = "djangokit.org"
 
 [tool.runcommands.envs]
 development = {}
-production = { host = "djangokit.org" }
+production = {}
 
 [tool.ruff]
 ignore = [ "E731" ]
@@ -48,26 +52,6 @@ ignore = [ "E731" ]
 [tool.ruff.per-file-ignores]
 "__init__.py" = [ "F401" ]
 "./commands.py" = [ "F722", "F821" ]
-
-[tool.runcommands.args]
-# NOTE: These default args allow these commands to be run without
-#       needing to specify the env via `run -e production <command>`
-ansible.env = "production"
-ansible.host = "djangokit.org"
-
-provision.env = "production"
-provision.host = "djangokit.org"
-
-prepare.env = "production"
-prepare.host = "djangokit.org"
-
-deploy.env = "production"
-deploy.host = "djangokit.org"
-
-upgrade_remote.env = "production"
-upgrade_remote.host = "djangokit.org"
-
-remote.host = "djangokit.org"
 
 [build-system]
 requires = ["poetry-core"]

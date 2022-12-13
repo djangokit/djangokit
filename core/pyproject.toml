@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "djangokit-core"
+name = "org-djangokit-core"
 version = "0.1.0.dev0"
 description = "DjangoKit core"
 authors = ["Wyatt Baldwin <self@wyattbaldwin.com>"]
@@ -28,6 +28,11 @@ pytest-cov = "^4.0.0"
 pytest-django = "^4.5.2"
 ruff = "^0.0.174"
 tox = "^3.27.1"
+
+[tool.make-release.args]
+test-command = "make test"
+target-branch = "core-release"
+tag-name = "core-v{version}"
 
 [tool.ruff]
 ignore = [ "E731" ]

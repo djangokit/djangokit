@@ -12,6 +12,7 @@ _package_dir: "{{ root }}/src/djangokit/website"
 
 package_info:
   name: "djangokit.website"
+  dist_name: "org-djangokit-website"
   dotenv_file: "{{ root }}/{{ dotenv_file }}"
   public_dotenv_file: "{{ root }}/.env.public"
   package_dir: "{{ _package_dir }}"
