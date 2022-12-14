@@ -1,5 +1,5 @@
 # Changelog for DjangoKit Core
 
-## 0.1.0 - unreleased
+## 0.0.1 - 2022-12-13
 
-In progress...
+Initial version
