@@ -1,4 +1,4 @@
-# Changelog for DjangoKit Core
+# Changelog for DjangoKit CLI
 
 ## 0.0.2 - unreleased
 

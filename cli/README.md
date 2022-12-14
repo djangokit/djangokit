@@ -1,5 +1,8 @@
 # DjangoKit CLI
 
+> NOTE: DjangoKit is a full stack Django+React framework. See
+> https://djangokit.org/ for more information.
+
 This package provides the DjangoKit command line interface. When it's
 installed, it will install the `djangokit` console script.
 
