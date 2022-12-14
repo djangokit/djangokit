@@ -68,7 +68,6 @@ def dbshell():
 
 @app.command()
 def show_settings(
-    env: bool = Option(False, help="Show settings set via env vars"),
     all_: bool = Option(False, "--all", help="Show all settings"),
     only: str = Option(
         None,
@@ -86,38 +85,20 @@ def show_settings(
 
     """
     console = state.console
-
-    if env and all_:
-        console.error("--env and --all can't be used at the same time")
-        raise Abort()
-
     configure_settings_module()
 
     from django.conf import settings
 
     explicit_settings = settings._explicit_settings
 
-    if env:
-        settings_to_show = {}
-        for env_name in chain(dotenv_settings(), os.environ):
-            if env_name.startswith("DJANGO_"):
-                name = env_name[7:]
-                val = getattr(settings, name)
-                settings_to_show[name] = val
-            elif env_name.startswith("DJANGOKIT_"):
-                name = env_name[10:].lower()
-                val = settings.DJANGOKIT[name]
-                dk_settings_to_show = settings_to_show.setdefault("DJANGOKIT", {})
-                dk_settings_to_show[name] = val
+    settings_to_show = vars(settings._wrapped)
+    if all_ or only:
+        settings_to_show = settings_to_show.copy()
+        del settings_to_show["_explicit_settings"]
     else:
-        settings_to_show = vars(settings._wrapped)
-        if all_ or only:
-            settings_to_show = settings_to_show.copy()
-            del settings_to_show["_explicit_settings"]
-        else:
-            settings_to_show = {
-                k: v for k, v in settings_to_show.items() if k in explicit_settings
-            }
+        settings_to_show = {
+            k: v for k, v in settings_to_show.items() if k in explicit_settings
+        }
 
     max_width = min(120, console.width)
 
@@ -140,8 +121,6 @@ def show_settings(
         else:
             console.error(f"Could not find matching setting(s): {only}")
             raise Abort()
-    elif env:
-        header = "Settings loaded from environment:"
     elif all_:
         header = "ALL Django settings for project:"
     else:
