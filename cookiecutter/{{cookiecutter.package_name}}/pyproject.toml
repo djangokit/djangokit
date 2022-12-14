@@ -21,10 +21,10 @@ org-djangokit-cli = "*"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.12.0"
-isort = "^5.10.1"
+isort = "^5.11.2"
 mypy = "^0.990"
 pytest = "^7.2.0"
-ruff = "^0.0.174"
+ruff = "~0.0.178"
 
 [build-system]
 requires = ["poetry-core"]

@@ -23,12 +23,12 @@ watchdog = ">=2.0"
 org-djangokit-core = { path = "../core", develop = true }
 
 black = "^22.12.0"
-isort = "^5.10.1"
+isort = "^5.11.2"
 mypy = "^0.990"
 pytest = "^7.2.0"
 pytest-cov = "^4.0.0"
 pytest-django = "^4.5.2"
-ruff = "^0.0.174"
+ruff = "~0.0.178"
 tox = "^3.27.1"
 
 [tool.poetry.scripts]
