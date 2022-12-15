@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from django.http import HttpRequest
-from django.template.loader import get_template
+from django.template.loader import select_template
 
 from .conf import settings
 from .exceptions import BuildError, RenderError
@@ -26,13 +26,15 @@ def make_client_bundle(
 
     """
     return make_bundle(
-        "client.main.jsx",
+        "client.main",
         "client.bundle.js",
         [
-            "djangokit/context.jsx",
-            "djangokit/routes.jsx",
-            "djangokit/client.app.jsx",
-            "djangokit/client.main.jsx",
+            "context",
+            "routes",
+            "wrapper",
+            "client.auth",
+            "client.wrapper",
+            "client.app",
         ],
         env=env,
         minify=minify,
@@ -52,13 +54,15 @@ def make_server_bundle(
 ) -> Path:
     """Build React app bundle for server side rendering."""
     return make_bundle(
-        "server.main.jsx",
+        "server.main",
         "server.bundle.js",
         [
-            "djangokit/context.jsx",
-            "djangokit/routes.jsx",
-            "djangokit/server.app.jsx",
-            "djangokit/server.main.jsx",
+            "context",
+            "routes",
+            "wrapper",
+            "server.auth",
+            "server.wrapper",
+            "server.app",
         ],
         env=env,
         minify=minify,
@@ -72,7 +76,7 @@ def make_server_bundle(
 def make_bundle(
     entrypoint_name: str,
     bundle_name: str,
-    module_names: List[str],
+    template_names: List[str],
     *,
     env=None,
     minify=True,
@@ -104,16 +108,9 @@ def make_bundle(
 
     # Create entrypoint with routes ------------------------------------
 
-    templates = tuple(
-        (
-            get_template(name),  # Template object
-            build_dir / Path(name).name,  # Build path for template
-        )
-        for name in module_names
-    )
-
+    templates = [get_template(entrypoint_name)]
+    templates.extend(get_template(name) for name in template_names)
     tree = make_route_dir_tree()
-
     context = {
         "env": env,
         "routes": {
@@ -123,8 +120,10 @@ def make_bundle(
         "settings": settings,
     }
 
-    for template, build_path in templates:
+    for template in templates:
         content = template.render(context, request)
+        template_path = Path(template.origin.name)
+        build_path = build_dir / template_path.name
         with build_path.open("w") as fp:
             fp.write(content)
 
@@ -154,6 +153,11 @@ def make_bundle(
         raise BuildError(f"Could not build bundle from {entrypoint_path}")
 
     return bundle_path
+
+
+def get_template(name, extensions=("tsx", "jsx")):
+    candidates = [f"{name}.{ext}" for ext in extensions]
+    return select_template(candidates)
 
 
 def run_bundle(bundle: Path, argv: List[str], *, chdir: Optional[Path] = None) -> str:

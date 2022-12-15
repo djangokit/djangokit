@@ -121,7 +121,6 @@ def get_djangokit_settings():
 debug = getenv("DJANGO_DEBUG", False, bool)
 test = getenv("DJANGO_TEST", False, bool)
 secret_key = f"INSECURE:{uuid4()}" if test else getenv("DJANGO_SECRET_KEY")
-app_dirs_loader = "django.template.loaders.app_directories.Loader"
 
 prepend_installed_apps = getenv("DJANGO_PREPEND_INSTALLED_APPS", [])
 append_installed_apps = getenv("DJANGO_APPEND_INSTALLED_APPS", [])
@@ -129,9 +128,11 @@ append_installed_apps = getenv("DJANGO_APPEND_INSTALLED_APPS", [])
 prepend_middleware = getenv("DJANGO_PREPEND_MIDDLEWARE", [])
 append_middleware = getenv("DJANGO_APPEND_MIDDLEWARE", [])
 
+# Template settings
 cached_loader = "django.template.loaders.cached.Loader"
+template_loader = "djangokit.core.templates.loader.Loader"
 template_loaders: List[Union[str, Tuple[str, List[str]]]] = (
-    [app_dirs_loader] if debug else [(cached_loader, [app_dirs_loader])]
+    [template_loader] if debug else [(cached_loader, [template_loader])]
 )
 
 
