@@ -78,6 +78,10 @@ KNOWN_SETTINGS: Dict[str, Dict[str, Union[type, Any]]] = {
         "type": str,
         "default": "",
     },
+    "noscript_message": {
+        "type": str,
+        "default": "This site requires JavaScript to be enabled in your browser.",
+    },
 }
 
 
@@ -161,6 +165,8 @@ class Settings:
         return f"webmaster@{hostname}"
 
     @cached_property
+    def noscript_message(self) -> bool:
+        return self._get_optional("noscript_message")
 
     # Derived settings -------------------------------------------------
     #
