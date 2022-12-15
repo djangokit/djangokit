@@ -28,7 +28,7 @@ mypy = "^0.990"
 pytest = "^7.2.0"
 pytest-cov = "^4.0.0"
 pytest-django = "^4.5.2"
-ruff = "~0.0.178"
+ruff = "~0.0.181"
 tox = "^3.27.1"
 
 [tool.poetry.scripts]
