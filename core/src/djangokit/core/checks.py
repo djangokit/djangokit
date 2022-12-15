@@ -31,7 +31,7 @@ def check_settings(**kwargs):
     # 1. Check for required settings
     # 2. Ensure settings are of correct type
     # 3. Check for unknown settings
-    from .conf import Settings  # noqa: avoid circular import
+    from .conf import KNOWN_SETTINGS  # noqa: avoid circular import
 
     errors = []
 
@@ -40,9 +40,8 @@ def check_settings(**kwargs):
         return errors
 
     dk_settings = settings.DJANGOKIT
-    known_settings = Settings.known_settings
 
-    for name, info in known_settings.items():
+    for name, info in KNOWN_SETTINGS.items():
         if name in dk_settings:
             type_ = info["type"]
             value = dk_settings[name]
@@ -52,7 +51,7 @@ def check_settings(**kwargs):
             errors.append(make_error("E001", name=name))
 
     for name in dk_settings:
-        if name not in known_settings:
+        if name not in KNOWN_SETTINGS:
             errors.append(make_error("E003", name=name))
 
     return errors

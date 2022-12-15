@@ -45,6 +45,41 @@ from django.utils.module_loading import import_string
 
 from .checks import make_error
 
+# XXX: Keep in sync with :func:`.settings.get_djangokit_settings()`.
+KNOWN_SETTINGS: Dict[str, Dict[str, Union[type, Any]]] = {
+    "package": {
+        "type": str,
+    },
+    "app_label": {
+        "type": str,
+        "default_factory": lambda s: s.package.replace(".", "_"),
+    },
+    "title": {
+        "type": str,
+        "default": "A DjangoKit Site",
+    },
+    "description": {
+        "type": str,
+        "default": "A website made with DjangoKit",
+    },
+    "global_stylesheets": {
+        "type": list,
+        "default": ["global.css"],
+    },
+    "current_user_serializer": {
+        "type": str,
+        "default": "djangokit.core.user.current_user_serializer",
+    },
+    "ssr": {
+        "type": bool,
+        "default": True,
+    },
+    "webmaster": {
+        "type": str,
+        "default": "",
+    },
+}
+
 
 class Settings:
     """DjangoKit settings.
@@ -54,7 +89,7 @@ class Settings:
 
     When a setting is accessed, its value will be retrieved from the
     `DJANGOKIT` dict in the project's Django settings module,if present,
-    or the default value defined in `known_settings` will be used.
+    or the default value defined in `KNOWN_SETTINGS` will be used.
 
     .. note::
         Settings are cached the first time they're accessed. Individual
@@ -63,59 +98,6 @@ class Settings:
         updated after Django startup (e.g., in tests).
 
     """
-
-    # XXX: Keep in sync with `.settings.defaults.DJANGOKIT`.
-    known_settings: Dict[str, Dict[str, Union[type, Any]]] = {
-        "title": {
-            "type": str,
-            "default": "DjangoKit Site",
-        },
-        "description": {
-            "type": str,
-            "default": "A website made with DjangoKit",
-        },
-        "package": {
-            "type": str,
-        },
-        "app_label": {
-            "type": str,
-            "default_factory": lambda s: s.package.replace(".", "_"),
-        },
-        "global_stylesheets": {
-            "type": list,
-            "default": ["global.css"],
-        },
-        "current_user_serializer": {
-            "type": str,
-            "default": "djangokit.core.user.current_user_serializer",
-        },
-        "ssr": {
-            "type": bool,
-            "default": True,
-        },
-        "webmaster": {
-            "type": str,
-            "default": "",
-        },
-    }
-
-    @cached_property
-    def title(self) -> str:
-        """Project title.
-
-        Used as the default HTML page title.
-
-        """
-        return self._get_required("title")
-
-    @cached_property
-    def description(self) -> str:
-        """Project description.
-
-        Used as the default meta description.
-
-        """
-        return self._get_required("description")
 
     @cached_property
     def package(self) -> str:
@@ -135,6 +117,24 @@ class Settings:
 
         """
         return self._get_optional("app_label")
+
+    @cached_property
+    def title(self) -> str:
+        """Project title.
+
+        Used as the default HTML page title.
+
+        """
+        return self._get_optional("title")
+
+    @cached_property
+    def description(self) -> str:
+        """Project description.
+
+        Used as the default meta description.
+
+        """
+        return self._get_required("description")
 
     @cached_property
     def global_stylesheets(self) -> List[str]:
@@ -161,8 +161,6 @@ class Settings:
         return f"webmaster@{hostname}"
 
     @cached_property
-    def static_build_dir(self) -> Path:
-        return self.app_dir / "static" / "build"
 
     # Derived settings -------------------------------------------------
     #
@@ -193,6 +191,10 @@ class Settings:
     def routes_package(self) -> str:
         return f"{self.package}.routes"
 
+    @cached_property
+    def static_build_dir(self) -> Path:
+        return self.app_dir / "static" / "build"
+
     # Utilities --------------------------------------------------------
 
     def as_dict(self) -> Dict[str, Any]:
@@ -202,7 +204,7 @@ class Settings:
         Django settings module in the `DJANGOKIT` dict.
 
         """
-        return {name: getattr(self, name) for name in self.known_settings}
+        return {name: getattr(self, name) for name in KNOWN_SETTINGS}
 
     @property
     def _settings(self) -> Dict[str, Any]:
@@ -226,7 +228,7 @@ class Settings:
             value = self._settings[name]
             self._check_type(name, value)
         else:
-            info = self.known_settings[name]
+            info = KNOWN_SETTINGS[name]
             if "default" in info:
                 value = info["default"]
             elif "default_factory" in info:
@@ -239,7 +241,7 @@ class Settings:
         return value
 
     def _check_type(self, name, value):
-        type_ = self.known_settings[name]["type"]
+        type_ = KNOWN_SETTINGS[name]["type"]
         if not isinstance(value, type_):
             err = make_error("E002", name=name, type=type_, value=value)
             raise ImproperlyConfigured(err.msg)

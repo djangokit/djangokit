@@ -81,6 +81,7 @@ from uuid import uuid4
 from django.conf import global_settings
 from django.core.exceptions import ImproperlyConfigured
 
+from .conf import KNOWN_SETTINGS
 from .env import getenv, load_dotenv
 
 load_dotenv()
@@ -102,6 +103,21 @@ class Settings:
 
 
 djangokit_package = getenv("DJANGOKIT_PACKAGE")
+
+
+def get_djangokit_settings():
+    # XXX: Keep in sync with :data:`.conf.KNOWN_SETTINGS`.
+    dk_settings = {
+        "package": djangokit_package,
+        "app_label": djangokit_package.replace(".", "_"),
+    }
+    for name in KNOWN_SETTINGS:
+        known = KNOWN_SETTINGS[name]
+        if "default" in known:
+            dk_settings[name] = known["default"]
+    return dk_settings
+
+
 debug = getenv("DJANGO_DEBUG", False, bool)
 test = getenv("DJANGO_TEST", False, bool)
 secret_key = f"INSECURE:{uuid4()}" if test else getenv("DJANGO_SECRET_KEY")
@@ -117,17 +133,7 @@ template_loaders: List[Union[str, Tuple[str, List[str]]]] = (
 #       global default will be used.
 defaults = Settings(
     # DjangoKit
-    # XXX: Keep in sync with `.conf.Settings.known_settings`.
-    DJANGOKIT={
-        "title": "A DjangoKit Site",
-        "description": "A website made with DjangoKit",
-        "package": djangokit_package,
-        "app_label": djangokit_package.replace(".", "_"),
-        "global_stylesheets": ["global.css"],
-        "current_user_serializer": "djangokit.core.user.current_user_serializer",
-        "ssr": True,
-        "webmaster": "",
-    },
+    DJANGOKIT=get_djangokit_settings(),
     # Basics
     ROOT_URLCONF="djangokit.core.urls",
     SECRET_KEY=secret_key,
