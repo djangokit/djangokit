@@ -122,6 +122,13 @@ debug = getenv("DJANGO_DEBUG", False, bool)
 test = getenv("DJANGO_TEST", False, bool)
 secret_key = f"INSECURE:{uuid4()}" if test else getenv("DJANGO_SECRET_KEY")
 app_dirs_loader = "django.template.loaders.app_directories.Loader"
+
+prepend_installed_apps = getenv("DJANGO_PREPEND_INSTALLED_APPS", [])
+append_installed_apps = getenv("DJANGO_APPEND_INSTALLED_APPS", [])
+
+prepend_middleware = getenv("DJANGO_PREPEND_MIDDLEWARE", [])
+append_middleware = getenv("DJANGO_APPEND_MIDDLEWARE", [])
+
 cached_loader = "django.template.loaders.cached.Loader"
 template_loaders: List[Union[str, Tuple[str, List[str]]]] = (
     [app_dirs_loader] if debug else [(cached_loader, [app_dirs_loader])]
@@ -142,27 +149,35 @@ defaults = Settings(
     TIME_ZONE="America/Los_Angeles",
     USE_TZ=True,
     # Apps
-    INSTALLED_APPS=[
-        djangokit_package,
-        "djangokit.core",
-        "django.contrib.admin",
-        "django.contrib.auth",
-        "django.contrib.contenttypes",
-        "django.contrib.sessions",
-        "django.contrib.messages",
-        "django.contrib.staticfiles",
-    ],
+    INSTALLED_APPS=(
+        prepend_installed_apps
+        + [
+            djangokit_package,
+            "djangokit.core",
+            "django.contrib.admin",
+            "django.contrib.auth",
+            "django.contrib.contenttypes",
+            "django.contrib.sessions",
+            "django.contrib.messages",
+            "django.contrib.staticfiles",
+        ]
+        + append_installed_apps
+    ),
     # Middleware
-    MIDDLEWARE=[
-        "django.middleware.security.SecurityMiddleware",
-        "django.contrib.sessions.middleware.SessionMiddleware",
-        "django.middleware.common.CommonMiddleware",
-        "django.middleware.csrf.CsrfViewMiddleware",
-        "django.contrib.auth.middleware.AuthenticationMiddleware",
-        "django.contrib.messages.middleware.MessageMiddleware",
-        "django.middleware.clickjacking.XFrameOptionsMiddleware",
-        "djangokit.core.middleware.djangokit_middleware",
-    ],
+    MIDDLEWARE=(
+        prepend_middleware
+        + [
+            "django.middleware.security.SecurityMiddleware",
+            "django.contrib.sessions.middleware.SessionMiddleware",
+            "django.middleware.common.CommonMiddleware",
+            "django.middleware.csrf.CsrfViewMiddleware",
+            "django.contrib.auth.middleware.AuthenticationMiddleware",
+            "django.contrib.messages.middleware.MessageMiddleware",
+            "django.middleware.clickjacking.XFrameOptionsMiddleware",
+            "djangokit.core.middleware.djangokit_middleware",
+        ]
+        + append_middleware
+    ),
     # Databases
     DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
     DATABASES={
