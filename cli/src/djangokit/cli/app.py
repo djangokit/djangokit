@@ -4,7 +4,6 @@ This defines the CLI app. The global `app` can be imported from here and
 used to add commands.
 
 """
-import enum
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -18,14 +17,6 @@ from typer import Context, Option
 from .utils import Console, params
 
 app = typer.Typer()
-
-
-class Env(enum.Enum):
-
-    dev = "dev"
-    development = "development"
-    prod = "prod"
-    production = "production"
 
 
 @dataclass
@@ -53,7 +44,7 @@ state = State()
 @app.callback(no_args_is_help=True)
 def main(
     ctx: Context,
-    env_opt: Env = Option(
+    env: str = Option(
         state.env,
         "-e",
         "--env",
@@ -100,18 +91,16 @@ def main(
     """
     console = state.console
 
-    if env_opt == Env.dev:
-        env_opt = Env.development
-    elif env_opt == Env.prod:
-        env_opt = Env.production
-
-    env = env_opt.value
     os.environ["ENV"] = env
 
     # Set .env path from env when .env path isn't passed in or set as an
     # env var.
     if params.is_default(ctx, "dotenv_path"):
         dotenv_path = Path(f".env.{env}")
+    if env == "dev":
+        env = "development"
+    elif env == "prod":
+        env = "production"
 
     os.environ["DOTENV_PATH"] = str(dotenv_path)
 
