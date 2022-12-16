@@ -26,6 +26,8 @@ def start(
     ssr: bool = Option(True, envvar="DJANGOKIT_SSR"),
     minify: bool = False,
     watch: bool = True,
+    host: str = "127.0.0.1",
+    port: int = 8000,
     debug: bool = Option(
         True,
         help=(
@@ -62,7 +64,7 @@ def start(
         environ["DJANGOKIT_SSR"] = "false"
     build_client(ssr=ssr, minify=minify, watch=watch, join=False)
     console.header("Running Django dev server")
-    run_django_command("runserver")
+    run_django_command(f"runserver {host}:{port}")
 
 
 @app.command()
