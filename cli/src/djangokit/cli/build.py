@@ -40,6 +40,7 @@ def build_client(
 
     bundle_kwargs = {
         "env": state.env,
+        "dotenv_file": state.dotenv_file,
         "minify": minify,
         "source_map": minify,
         "quiet": state.quiet,
@@ -82,6 +83,7 @@ def build_server(
 
     bundle_kwargs = {
         "env": state.env,
+        "dotenv_file": state.dotenv_file,
         "minify": minify,
         "source_map": minify,
         "quiet": state.quiet,

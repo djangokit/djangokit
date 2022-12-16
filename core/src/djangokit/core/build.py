@@ -1,3 +1,4 @@
+import json
 import subprocess
 from pathlib import Path
 from typing import List, Optional
@@ -6,11 +7,13 @@ from django.http import HttpRequest
 from django.template.loader import select_template
 
 from .conf import settings
+from .env import get_dotenv_settings, getenv
 from .exceptions import BuildError, RenderError
 
 
 def make_client_bundle(
     env=None,
+    dotenv_file=None,
     minify=False,
     source_map=False,
     quiet=None,
@@ -37,6 +40,7 @@ def make_client_bundle(
             "client.app",
         ],
         env=env,
+        dotenv_file=dotenv_file,
         minify=minify,
         source_map=source_map,
         quiet=quiet,
@@ -47,6 +51,7 @@ def make_client_bundle(
 def make_server_bundle(
     request: HttpRequest,
     env=None,
+    dotenv_file=None,
     minify=False,
     source_map=False,
     quiet=None,
@@ -65,6 +70,7 @@ def make_server_bundle(
             "server.app",
         ],
         env=env,
+        dotenv_file=dotenv_file,
         minify=minify,
         source_map=source_map,
         quiet=quiet,
@@ -79,6 +85,7 @@ def make_bundle(
     template_names: List[str],
     *,
     env=None,
+    dotenv_file=None,
     minify=True,
     source_map=False,
     quiet=None,
@@ -105,6 +112,7 @@ def make_bundle(
     bundle_path = build_dir / bundle_name
 
     build_dir.mkdir(exist_ok=True)
+    dotenv_settings = get_dotenv_settings(path=dotenv_file, env=env)
 
     # Create entrypoint with routes ------------------------------------
 
@@ -134,11 +142,16 @@ def make_bundle(
         "esbuild",
         str(entrypoint_path),
         "--bundle",
-        f"--define:DEBUG={str(debug).lower()}",
-        f"--define:ENV='{env}'",
         f"--inject:{build_dir / 'context.jsx'}",
         f"--outfile={bundle_path}",
+        f"--define:DEBUG={json.dumps(debug)}",
+        f"--define:ENV={json.dumps(env)}",
     ]
+
+    # Inject env vars read from .env file.
+    for name, val in dotenv_settings.items():
+        val = getenv(name, val)
+        args.append(f"--define:{name}={json.dumps(val)}")
 
     if minify:
         args.append("--minify")
