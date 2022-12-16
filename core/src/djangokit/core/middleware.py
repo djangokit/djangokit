@@ -11,9 +11,12 @@ def djangokit_middleware(get_response):
       tell if it was made via `fetch()` rather than via a form. This can
       be used in views / API handlers to decide whether to redirect.
 
-    - If the request is a modifying type, adds a `data` attribute. The
-      data will be extracted from `request.POST` or `request.body`
-      depending on the `Content-Type` header.
+      When making requests, the `X-HTTP-Requested-With` header needs to
+      be set to `fetch` or `XMLHttpRequest` for this to work.
+
+    - If the request is a modifying type, adds a `data` attribute to the
+      request. The data will be extracted from `request.POST` or
+      `request.body` (as JSON) depending on the `Content-Type` header.
 
     """
     fetch_types = ("fetch", "XMLHttpRequest")

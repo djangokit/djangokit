@@ -254,7 +254,6 @@ default_settings = DefaultSettings(
         "django.contrib.auth.middleware.AuthenticationMiddleware",
         "django.contrib.messages.middleware.MessageMiddleware",
         "django.middleware.clickjacking.XFrameOptionsMiddleware",
-        "djangokit.core.middleware.djangokit_middleware",
     ],
     # Databases
     DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
@@ -500,8 +499,12 @@ def append_settings():
 def add_djangokit_settings():
     """Add DjangoKit settings defined in the environment.
 
-    This also adds the app's package and "djangokit.core" to the front
-    of `INSTALLED_APPS`.
+    This also:
+
+    - Adds the app's package and "djangokit.core" to the front of
+      `INSTALLED_APPS`.
+
+    - Adds the DjangoKit middleware to the end of `MIDDLEWARE`.
 
     """
     dk_settings = settings.setdefault("DJANGOKIT", default_settings.DJANGOKIT).copy()
@@ -530,6 +533,11 @@ def add_djangokit_settings():
 
     installed_apps = settings["INSTALLED_APPS"]
     settings["INSTALLED_APPS"] = [package, "djangokit.core"] + installed_apps
+
+    middleware = settings["MIDDLEWARE"]
+    settings["MIDDLEWARE"] = middleware + [
+        "djangokit.core.middleware.djangokit_middleware"
+    ]
 
 
 import_additional_settings()
