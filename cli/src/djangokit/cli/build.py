@@ -190,10 +190,10 @@ def get_build_watch_event_handler() -> Tuple[WatchEventHandler, Observer]:
     """Get the singleton build watch event handler."""
     handler = WatchEventHandler(state.console)
     core_dir = Path(djangokit.core.__path__[0])
-    app_dir = settings.DJANGOKIT.app_dir
+    package_dir = settings.DJANGOKIT.package_dir
     observer = Observer()
 
-    for d in (core_dir, app_dir):
+    for d in (core_dir, package_dir):
         state.console.info(f"Watching {d}")
         observer.schedule(handler, d, recursive=True)
 

@@ -168,7 +168,8 @@ class DjangoKitSettings:
         return serializer
 
     @cached_property
-    def app_dir(self) -> Path:
+    def package_dir(self) -> Path:
+        """Top level package directory."""
         module = import_module(self.package)
         paths = module.__path__
         if len(paths) > 1:
@@ -182,19 +183,19 @@ class DjangoKitSettings:
 
     @cached_property
     def models_dir(self) -> Path:
-        return self.app_dir / "models"
+        return self.package_dir / "models"
 
     @cached_property
     def routes_dir(self) -> Path:
-        return self.app_dir / "routes"
+        return self.package_dir / "routes"
 
     @cached_property
     def routes_package(self) -> str:
         return f"{self.package}.routes"
 
     @cached_property
-    def static_build_dir(self) -> Path:
-        return self.app_dir / "static" / "build"
+    def static_dir(self) -> Path:
+        return self.package_dir / "static"
 
     def as_dict(self) -> Dict[str, Any]:
         """Return a dict with *all* DjangoKit settings.

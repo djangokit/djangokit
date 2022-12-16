@@ -249,7 +249,7 @@ def add_model(
     # Register model with Django Admin ---------------------------------
 
     if register_admin:
-        admin_path = settings.DJANGOKIT.app_dir / "admin.py"
+        admin_path = settings.DJANGOKIT.package_dir / "admin.py"
         with admin_path.open("a") as fp:
             fp.write(f"\nfrom .models import {class_name}\n")
             fp.write(f"admin.site.register({class_name})")
