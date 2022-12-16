@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import djangokit.core
+from django.conf import settings
 from djangokit.core.build import make_client_bundle, make_server_bundle, run_bundle
 from djangokit.core.http import make_request
 from typer import Option
@@ -188,10 +189,8 @@ class WatchEventHandler(PatternMatchingEventHandler):
 def get_build_watch_event_handler() -> Tuple[WatchEventHandler, Observer]:
     """Get the singleton build watch event handler."""
     handler = WatchEventHandler(state.console)
-
     core_dir = Path(djangokit.core.__path__[0])
-    app_dir = state.settings.app_dir
-
+    app_dir = settings.DJANGOKIT.app_dir
     observer = Observer()
 
     for d in (core_dir, app_dir):

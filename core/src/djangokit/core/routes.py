@@ -7,9 +7,9 @@ from types import ModuleType
 from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
 from django import urls as urlconf
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
-from .conf import settings
 from .exceptions import RouteError
 from .views import ApiView, PageView
 
@@ -89,7 +89,7 @@ def make_route_dir_tree(path=None, parent=None) -> "RouteDirNode":
 
     """
     if path is None:
-        path = settings.routes_dir
+        path = settings.DJANGOKIT.routes_dir
 
     directories = []
     file_names = []
@@ -215,9 +215,9 @@ class RouteDirNode:
     @cached_property
     def package_name(self) -> str:
         if self.is_root:
-            return settings.routes_package
+            return settings.DJANGOKIT.routes_package
         package_name = ".".join(self.rel_path.parts)
-        return f"{settings.routes_package}.{package_name}"
+        return f"{settings.DJANGOKIT.routes_package}.{package_name}"
 
     @cached_property
     def api_module(self) -> Optional[ModuleType]:

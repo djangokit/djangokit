@@ -1,7 +1,6 @@
 from os import getenv
 
-from django.conf import settings as django_settings
-from djangokit.core.conf import settings
+from django.conf import settings
 
 INCLUDE_SETTINGS = (
     "DEBUG",
@@ -23,11 +22,11 @@ def get(request):
     }
 
     if request.user.is_superuser:
-        dk_settings = settings.as_dict()
+        dk_settings = settings.DJANGOKIT.as_dict()
         for n, v in dk_settings.items():
             if callable(v):
                 dk_settings[n] = f"{v.__module__}.{v.__name__}"
-        data["settings"] = {n: getattr(django_settings, n) for n in INCLUDE_SETTINGS}
+        data["settings"] = {n: getattr(settings, n) for n in INCLUDE_SETTINGS}
         data["settings"]["DJANGOKIT"] = dk_settings
 
     return data

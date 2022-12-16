@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import typer
+from django.conf import settings
 from typer import Argument, Option
 
 from ..app import app, state
@@ -57,8 +58,7 @@ def add_page(
     configure_settings_module()
 
     console = state.console
-    settings = state.settings
-    routes_dir = settings.routes_dir
+    routes_dir = settings.DJANGOKIT.routes_dir
     ext = ".tsx" if state.use_typescript else ".jsx"
 
     route_dir = routes_dir / path
@@ -108,8 +108,7 @@ def add_api(
     configure_settings_module()
 
     console = state.console
-    settings = state.settings
-    routes_dir = settings.routes_dir
+    routes_dir = settings.DJANGOKIT.routes_dir
 
     route_dir = routes_dir / path
     api_module_path = route_dir / "api.py"

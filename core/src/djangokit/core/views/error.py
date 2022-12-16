@@ -40,11 +40,10 @@ template::
 """
 import logging
 
+from django.conf import settings
 from django.http import response
 from django.template import loader
 from django.views import defaults
-
-from ..conf import settings
 
 log = logging.getLogger(__name__)
 
@@ -125,7 +124,7 @@ def generic_error(
         template = loader.get_template(template_name)
         context = {
             "exception": exception,
-            "settings": settings,
+            "settings": settings.DJANGOKIT,
             "status_code": status_code,
             "explanation": explanation,
             "detail": detail,

@@ -2,6 +2,7 @@ import json
 import logging
 import os
 
+from django.conf import settings
 from django.contrib.staticfiles.finders import find
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.http import HttpRequest
@@ -10,7 +11,6 @@ from django.template.loader import render_to_string
 from django.views.generic import TemplateView
 
 from ..build import run_bundle
-from ..conf import settings
 
 log = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class PageView(TemplateView):
     def extra_context(self):
         markup = self.render()
         return {
-            "settings": settings,
+            "settings": settings.DJANGOKIT,
             "markup": markup,
             "page_path": self.page_path,
         }
@@ -47,7 +47,7 @@ class PageView(TemplateView):
         if request.user.is_authenticated:
             return ""
 
-        if not settings.ssr:
+        if not settings.DJANGOKIT.ssr:
             return self.render_loading()
 
         bundle_name = "build/server.bundle.js"
@@ -64,7 +64,7 @@ class PageView(TemplateView):
                 return self.render_loading()
 
         csrf_token = csrf.get_token(request)
-        current_user_data = settings.current_user_serializer(request.user)
+        current_user_data = settings.DJANGOKIT.current_user_serializer_obj(request.user)
         current_user_json = json.dumps(current_user_data)
         argv = [request.path, csrf_token, current_user_json]
 
@@ -74,6 +74,6 @@ class PageView(TemplateView):
     def render_loading(self):
         return render_to_string(
             "djangokit/_loading.html",
-            context={"settings": settings},
+            context={"settings": settings.DJANGOKIT},
             request=self.request,
         )

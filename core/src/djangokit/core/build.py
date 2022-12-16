@@ -3,10 +3,10 @@ import subprocess
 from pathlib import Path
 from typing import List, Optional
 
+from django.conf import settings
 from django.http import HttpRequest
 from django.template.loader import select_template
 
-from .conf import settings
 from .env import get_dotenv_settings, getenv
 from .exceptions import BuildError, RenderError
 
@@ -107,7 +107,7 @@ def make_bundle(
     if quiet is None:
         quiet = env == "production"
 
-    build_dir = settings.static_build_dir
+    build_dir = settings.DJANGOKIT.static_build_dir
     entrypoint_path = build_dir / entrypoint_name
     bundle_path = build_dir / bundle_name
 
@@ -125,7 +125,7 @@ def make_bundle(
             "imports": tree.js_imports("../../routes"),
             "routes": tree.js_routes(),
         },
-        "settings": settings,
+        "settings": settings.DJANGOKIT,
     }
 
     for template in templates:

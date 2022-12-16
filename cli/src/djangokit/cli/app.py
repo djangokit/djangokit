@@ -4,13 +4,12 @@ This defines the CLI app. The global `app` can be imported from here and
 used to add commands.
 
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from os import environ
 from pathlib import Path
 from typing import Optional
 
 import typer
-from djangokit.core.conf import Settings, settings
 from djangokit.core.env import load_dotenv
 from typer import Context, Option
 
@@ -31,7 +30,6 @@ class State:
 
     settings_module: str = "djangokit.core.settings"
     additional_settings_module: Optional[str] = None
-    settings: Settings = field(default_factory=lambda: settings)
     settings_module_configured: bool = False
 
     use_typescript: bool = True
