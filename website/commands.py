@@ -73,8 +73,8 @@ def ansible(env, host, version=None, tags=(), skip_tags=(), extra_vars=()):
     if extra_vars:
         extra_vars = tuple(("--extra-var", f"{n}={v}") for (n, v) in extra_vars.items())
 
-    load_dotenv(".env.public")
-    load_dotenv(f".env.{env}")
+    load_dotenv(path=".env.public")
+    load_dotenv(env=env)
 
     c.local(
         (

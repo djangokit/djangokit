@@ -44,7 +44,7 @@ remote_build_dir: "{{ remote_site_root }}/{{ version }}"
 remote_app_dir: "{{ remote_build_dir }}/app"
 remote_dist_dir: "{{ remote_app_dir }}/dist"
 remote_venv: "{{ remote_app_dir }}/venv"
-remote_dotenv_path: "{{ remote_app_dir }}/{{ dotenv_file }}"
+remote_dotenv_file: "{{ remote_app_dir }}/{{ dotenv_file }}"
 
 # Static
 remote_static_dir: "{{ remote_build_dir }}/static"

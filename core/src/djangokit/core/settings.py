@@ -84,6 +84,10 @@ from django.core.exceptions import ImproperlyConfigured
 from .conf import KNOWN_SETTINGS
 from .env import getenv, load_dotenv
 
+# NOTE: If the DOTENV_FILE env var isn't set, this will fall back to
+#       using a dotenv file in the current working directory. This is
+#       fine in development, but in production it's usually better to
+#       set DOTENV_FILE explicitly.
 load_dotenv()
 
 

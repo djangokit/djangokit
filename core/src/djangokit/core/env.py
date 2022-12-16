@@ -13,19 +13,23 @@ NotSet = type("NotSet", (), {})
 NOT_SET = NotSet()
 
 
-def get_dotenv_path(path=None) -> Path:
+def get_dotenv_file(*, path=None, env=None) -> Path:
     """Figure out which .env file to use.
 
-    If a path is provided, use that. Otherwise:
+    If `path` is specified, use that. Otherwise:
 
-    - If the `DOTENV_PATH` env var is set, use that
-    - If the `ENV` env var is set, use `./.env.${ENV}`
-    - Fall back to `./.env`
+    1. If `env` is specified, use `./.env.{env}`
+    2. If the `DOTENV_FILE` env var is set, use it
+    3. If the `ENV` env var is set, use `./.env.${ENV}`
+    4. Fall back to `./.env`
 
     """
     if path is None:
-        if "DOTENV_PATH" in os.environ:
-            path = os.environ["DOTENV_PATH"]
+        if env is not None:
+            path = f".env.{env}"
+            log.warning("Using .env file derived from env arg: %s", path)
+        elif "DOTENV_FILE" in os.environ:
+            path = os.environ["DOTENV_FILE"]
         elif "ENV" in os.environ:
             path = f".env.{os.environ['ENV']}"
             log.warning("Using .env file derived from ENV: %s", path)
@@ -35,9 +39,13 @@ def get_dotenv_path(path=None) -> Path:
     return Path(path)
 
 
-def load_dotenv(path=None) -> bool:
-    """Load settings from .env file into environ."""
-    path = get_dotenv_path(path)
+def load_dotenv(*, path=None, env=None) -> bool:
+    """Load settings from .env file into environ.
+
+    See :func:`get_dotenv_file` for details on dotenv file discovery.
+
+    """
+    path = get_dotenv_file(path=path, env=env)
     public_path = path.parent / ".env.public"
     if public_path.exists():
         public_loaded = dotenv.load_dotenv(public_path)
@@ -50,13 +58,15 @@ def load_dotenv(path=None) -> bool:
     return public_loaded or loaded
 
 
-def dotenv_settings(path=None, convert=True) -> Dict[str, Any]:
+def get_dotenv_settings(*, path=None, env=None, convert=True) -> Dict[str, Any]:
     """Load settings from .env file into environ.
 
     By default, the values will be parsed as JSON.
 
+    See :func:`get_dotenv_file` for details on dotenv file discovery.
+
     """
-    path = get_dotenv_path(path)
+    path = get_dotenv_file(path=path, env=env)
     public_path = path.parent / ".env.public"
     values = {}
     if public_path.exists():

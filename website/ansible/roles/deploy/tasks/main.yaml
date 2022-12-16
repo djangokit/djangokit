@@ -158,7 +158,7 @@
   become_user: "{{ site_user }}"
   environment:
     - ENV: "{{ env }}"
-    - DOTENV_PATH: "{{ remote_dotenv_path }}"
+    - DOTENV_FILE: "{{ remote_dotenv_file }}"
     - PATH: "./venv/bin:$PATH"
   command: ./venv/bin/djangokit migrate
   args:

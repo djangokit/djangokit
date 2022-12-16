@@ -4,11 +4,9 @@ import os
 import sys
 from fnmatch import fnmatch
 from getpass import getuser
-from itertools import chain
 from typing import List, Optional
 
 import click
-from djangokit.core.env import dotenv_settings
 from rich.pretty import pretty_repr
 from typer import Abort, Argument, Option
 
@@ -328,12 +326,6 @@ def configure_settings_module(**env_vars):
         return
 
     import django
-
-    os.environ["DJANGO_SETTINGS_MODULE"] = state.settings_module
-
-    if state.additional_settings_module:
-        module = state.additional_settings_module
-        os.environ["DJANGO_ADDITIONAL_SETTINGS_MODULE"] = module
 
     for name, val in env_vars.items():
         if isinstance(val, str):

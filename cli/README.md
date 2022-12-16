@@ -24,7 +24,7 @@ you want to change a default permanently.
 
 - `--env` / `ENV`: Specify the environment to run commands in.
 
-- `--dotenv-path` / `DOTENV_PATH`: Path to `.env` file. This will be
+- `--dotenv-file` / `DOTENV_FILE`: Path to `.env` file. This will be
   derived from `ENV` if not specified.
 
 - `--settings-module` / `DJANGO_SETTINGS_MODULE`: Specify the Django
