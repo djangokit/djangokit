@@ -11,7 +11,7 @@ packages = [
 ]
 
 include = [
-    "src/djangokit/website/**/*.{ts,tsx}",
+    "CHANGELOG.md",
 ]
 
 [tool.poetry.dependencies]

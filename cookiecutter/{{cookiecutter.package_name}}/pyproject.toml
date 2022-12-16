@@ -11,7 +11,7 @@ packages = [
 ]
 
 include = [
-    "src/{{ cookiecutter.package_name }}/**/*.{css,js,jsx,ts,tsx}",
+    "CHANGELOG.md",
 ]
 
 [tool.poetry.dependencies]
