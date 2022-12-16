@@ -107,12 +107,21 @@ def make_bundle(
     if quiet is None:
         quiet = env == "production"
 
-    build_dir = settings.DJANGOKIT.static_build_dir
-    entrypoint_path = build_dir / entrypoint_name
-    bundle_path = build_dir / bundle_name
-
-    build_dir.mkdir(exist_ok=True)
     dotenv_settings = get_dotenv_settings(path=dotenv_file, env=env)
+
+    # React app templates are rendered into <package>/app/build
+    build_dir = settings.DJANGOKIT.app_dir / "build"
+    build_dir.mkdir(exist_ok=True)
+
+    # Path to React entrypoint that's fed to esbuild.
+    entrypoint_path = build_dir / entrypoint_name
+
+    # Bundles are built into <package>/static/build
+    bundle_dir = settings.DJANGOKIT.static_dir / "build"
+    bundle_dir.mkdir(exist_ok=True)
+
+    # Path to bundle that's output from esbuild.
+    bundle_path = bundle_dir / bundle_name
 
     # Create entrypoint with routes ------------------------------------
 

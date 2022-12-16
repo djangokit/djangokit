@@ -24,6 +24,7 @@ def clean(deep=False):
 
     rm_dir("build")
     rm_dir("dist")
+    rm_dir("src/djangokit/website/app/build")
     rm_dir("src/djangokit/website/static/build")
     rm_dir(".mypy_cache")
     rm_dir(".pytest_cache")

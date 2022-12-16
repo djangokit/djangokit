@@ -182,6 +182,11 @@ class DjangoKitSettings:
         return Path(paths[0])
 
     @cached_property
+    def app_dir(self) -> Path:
+        """The React app directory."""
+        return self.package_dir / "app"
+
+    @cached_property
     def models_dir(self) -> Path:
         return self.package_dir / "models"
 
