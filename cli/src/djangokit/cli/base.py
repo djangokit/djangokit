@@ -1,6 +1,6 @@
 """Base commands."""
-import os
 from functools import partial
+from os import environ
 from pathlib import Path
 
 from typer import Exit, Option
@@ -53,10 +53,13 @@ def start(
     """
     console = state.console
     if not debug:
-        os.environ["DJANGO_DEBUG"] = "false"
-        os.environ["DJANGO_ALLOWED_HOSTS"] = '["localhost"]'
+        environ["DJANGO_DEBUG"] = "false"
+        environ["DJANGO_ALLOWED_HOSTS"] = '["localhost"]'
     if ssr:
+        environ["DJANGOKIT_SSR"] = "true"
         build_server(minify=minify, watch=watch, join=False)
+    else:
+        environ["DJANGOKIT_SSR"] = "false"
     build_client(ssr=ssr, minify=minify, watch=watch, join=False)
     console.header("Running Django dev server")
     run_django_command("runserver")
