@@ -149,6 +149,12 @@ class DjangoKitSettings:
     page_prefix: str = ""
     """URL path prefix for page routes, relative to site root."""
 
+    api_cache_time: int = 0
+    """How long to cache API responses, in seconds."""
+
+    page_cache_time: int = 0
+    """How long to cache rendered pages, in seconds."""
+
     title: str = "A DjangoKit Site"
     """Site title (used for `<title>`)"""
 

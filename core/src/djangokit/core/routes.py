@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Union
 from django import urls as urlconf
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.views.decorators.cache import cache_page
 
 from .exceptions import RouteError
 from .views import ApiView, PageView
@@ -26,12 +27,17 @@ def discover_routes(
     and URLconf for each.
 
     """
-    all_urls = []
-    api_urls = []
-    page_urls = []
     tree = make_route_dir_tree()
+
+    all_urls = []
+
+    api_urls = []
     api_nodes = tree.collect_api_nodes()
+    api_cache_time = settings.DJANGOKIT.api_cache_time
+
+    page_urls = []
     page_nodes = tree.collect_page_nodes()
+    page_cache_time = settings.DJANGOKIT.page_cache_time
 
     for node in api_nodes:
         api_module = node.api_module
@@ -57,6 +63,8 @@ def discover_routes(
             api_module=api_module,
             allowed_methods=allowed_methods,
         )
+        if api_cache_time:
+            view = cache_page(api_cache_time)(view)
         pattern = node.url_pattern
         path_func = urlconf.re_path if pattern.startswith("^") else urlconf.path
         if pattern:
@@ -66,6 +74,8 @@ def discover_routes(
 
     for node in page_nodes:
         view = page_view_class.as_view(page_path=node.path)
+        if page_cache_time:
+            view = cache_page(page_cache_time)(view)
         pattern = node.url_pattern
         path_func = urlconf.re_path if pattern.startswith("^") else urlconf.path
         if pattern:
