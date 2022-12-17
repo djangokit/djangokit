@@ -25,26 +25,57 @@ export default function Layout() {
 
   return (
     <>
-      <header className="p-4 bg-dark text-light border-bottom shadow-sm">
-        <Navbar variant="dark" bg="dark" expand="sm" className="light">
-          <Container fluid className="justify-content-between p-0">
-            <Link to="/" className="navbar-brand">
-              DjangoKit
+      <header className="border-bottom shadow-sm">
+        <div className="d-flex align-items-center justify-content-between p-3 bg-dark text-light">
+          <Link to="/" className="navbar-brand">
+            DjangoKit
+          </Link>
+
+          {currentPath.startsWith("/docs") ? null : (
+            <LinkContainer to="/docs/get-started">
+              <IconButton size="sm" variant="outline-info" icon={<FaRocket />}>
+                <span className="d-inline d-sm-none">Start</span>
+                <span className="d-none d-sm-inline">Get Started</span>
+              </IconButton>
+            </LinkContainer>
+          )}
+
+          {currentUser.isAuthenticated ? (
+            <div className="d-flex align-items-center gap-2">
+              <div>{currentUser.username}</div>
+              <Form method="post" action="/$api/logout">
+                <input name="next" type="hidden" value={currentPath} />
+                <Button type="submit" size="sm" variant="outline-secondary">
+                  Log Out
+                </Button>
+              </Form>
+            </div>
+          ) : (
+            <Link
+              className="btn btn-sm btn-outline-secondary"
+              to={`/login?next=${redirectPath}`}
+            >
+              Log In
             </Link>
+          )}
+        </div>
 
-            {currentPath.startsWith("/docs") ? null : (
-              <LinkContainer to="/docs/get-started">
-                <IconButton variant="outline-info" icon={<FaRocket />}>
-                  <span className="d-inline d-sm-none">Start</span>
-                  <span className="d-none d-sm-inline">Get Started</span>
-                </IconButton>
-              </LinkContainer>
-            )}
-
+        <Navbar variant="dark" bg="dark" expand="sm">
+          <Container fluid>
             <Navbar.Toggle aria-controls="main-navbar" />
-
-            <Navbar.Collapse id="main-navbar" className="flex-grow-0">
+            <Navbar.Collapse
+              id="main-navbar"
+              className="justify-content-start justify-content-sm-end"
+            >
               <Nav>
+                <LinkContainer to="/about">
+                  <Nav.Link>About</Nav.Link>
+                </LinkContainer>
+
+                <LinkContainer to="/ideas">
+                  <Nav.Link>Ideas</Nav.Link>
+                </LinkContainer>
+
                 <LinkContainer to="/docs">
                   <Nav.Link className="d-flex align-items-center">
                     <FaBookReader />
@@ -60,33 +91,10 @@ export default function Layout() {
                   <FaGithub />
                   <span className="d-none d-sm-inline ms-1">Code</span>
                 </Nav.Link>
-
-                {isLogin || currentUser.isAuthenticated ? null : (
-                  <Nav.Link as="div">
-                    <Link
-                      className="btn btn-sm btn-outline-secondary"
-                      to={`/login?next=${redirectPath}`}
-                    >
-                      Log In
-                    </Link>
-                  </Nav.Link>
-                )}
               </Nav>
             </Navbar.Collapse>
           </Container>
         </Navbar>
-
-        {currentUser.isAuthenticated ? (
-          <div className="d-flex align-items-center justify-content-end gap-2 small text-muted">
-            <div>{currentUser.username}</div>
-            <Form method="post" action="/$api/logout">
-              <input name="next" type="hidden" value={currentPath} />
-              <Button type="submit" size="sm" variant="outline-secondary">
-                Log Out
-              </Button>
-            </Form>
-          </div>
-        ) : null}
       </header>
 
       <main className="p-4">

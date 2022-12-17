@@ -1,25 +1,27 @@
+html,
+body,
 #root {
+  width: 100vw;
   height: 100vh;
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr auto;
-  grid-template-areas: "header" "main" "footer";
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
 }
 
 #root > header {
-  grid-area: header;
-  z-index: 100;
+  z-index: 1;
 }
 
 #root > main {
-  grid-area: main;
+  flex: 1 1 auto;
   overflow: auto;
 }
 
 #root > footer {
-  grid-area: footer;
   box-shadow: 0 -0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
-  z-index: 100;
+  z-index: 1;
 }
 
 blockquote {
