@@ -137,6 +137,18 @@ class DjangoKitSettings:
     app_label: str
     """App label for the DjangoKit app (often the same as `package`)."""
 
+    mount_point: str = ""
+    """URL mount point for the DjangoKit app, relative to site root."""
+
+    admin_prefix: str = "$admin/"
+    """URL path to Django Admin, relative to site root."""
+
+    api_prefix: str = "$api/"
+    """URL path prefix for API routes, relative to site root."""
+
+    page_prefix: str = ""
+    """URL path prefix for page routes, relative to site root."""
+
     title: str = "A DjangoKit Site"
     """Site title (used for `<title>`)"""
 
@@ -200,8 +212,39 @@ class DjangoKitSettings:
     def __setitem__(self, name, val):
         return setattr(self, name, val)
 
-            raise ImproperlyConfigured(
-            )
+    def check(self):
+        # Prefixes must be unique.
+        for a, a_label, b, b_label in (
+            (self.admin_prefix, "Admin", self.api_prefix, "API"),
+            (self.admin_prefix, "Admin", self.page_prefix, "Page"),
+            (self.api_prefix, "API", self.page_prefix, "Page"),
+        ):
+            if a == b:
+                raise ImproperlyConfigured(
+                    f"{b_label} prefix must be different from {a_label} prefix."
+                )
+
+        # Mount point & prefixes:
+        # - can be an empty string
+        # - must not be a single slash
+        # - must not start with a slash
+        # - must end with a slash
+        for val, label in (
+            (self.mount_point, "Mount point"),
+            (self.admin_prefix, "Admin prefix"),
+            (self.api_prefix, "API prefix"),
+            (self.page_prefix, "Page prefix"),
+        ):
+            if not val:
+                continue
+            if val == "/":
+                raise ImproperlyConfigured(
+                    f"{label} is not valid (use an empty string instead of a slash)."
+                )
+            if val.startswith("/"):
+                raise ImproperlyConfigured(f"{label} must not start with a slash.")
+            if not val.endswith("/"):
+                raise ImproperlyConfigured(f"{label} must end with a slash.")
 
     def as_dict(self) -> Dict[str, Any]:
         """Return a dict with *all* DjangoKit settings.
@@ -539,6 +582,8 @@ def add_djangokit_settings():
     settings["MIDDLEWARE"] = middleware + [
         "djangokit.core.middleware.djangokit_middleware"
     ]
+
+    dk_settings.check()
 
 
 import_additional_settings()

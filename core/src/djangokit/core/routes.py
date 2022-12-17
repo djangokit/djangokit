@@ -14,27 +14,21 @@ from .exceptions import RouteError
 from .views import ApiView, PageView
 
 
-def discover_routes(page_view_class=PageView, api_view_class=ApiView) -> list:
+def discover_routes(
+    api_prefix,
+    page_prefix,
+    api_view_class=ApiView,
+    page_view_class=PageView,
+) -> list:
     """Find file-based page & API routes and return URLs for them.
 
     Finds page & API routes in the specified package and creates a view
     and URLconf for each.
 
-    Usage in a typical DjangoKit project::
-
-        # src/<package>/urls.py
-        from django.contrib import admin
-        from django.urls import include, path
-        from djangokit.core import discover_routes
-
-        urlpatterns = [
-            path("", include(discover_routes())),
-            path("$admin/", admin.site.urls),
-        ]
-
     """
     all_urls = []
     api_urls = []
+    page_urls = []
     tree = make_route_dir_tree()
     api_nodes = tree.collect_api_nodes()
     page_nodes = tree.collect_page_nodes()
@@ -65,18 +59,22 @@ def discover_routes(page_view_class=PageView, api_view_class=ApiView) -> list:
         )
         pattern = node.url_pattern
         path_func = urlconf.re_path if pattern.startswith("^") else urlconf.path
-        if pattern == "":
-            all_urls.append(path_func("$api", view))
-        else:
+        if pattern:
             api_urls.append(path_func(pattern, view))
-
-    all_urls.append(urlconf.path("$api/", urlconf.include(api_urls)))
+        else:
+            all_urls.append(path_func(api_prefix, view))
 
     for node in page_nodes:
         view = page_view_class.as_view(page_path=node.path)
         pattern = node.url_pattern
         path_func = urlconf.re_path if pattern.startswith("^") else urlconf.path
-        all_urls.append(path_func(pattern, view))
+        if pattern:
+            page_urls.append(path_func(pattern, view))
+        else:
+            all_urls.append(path_func(page_prefix, view))
+
+    all_urls.append(urlconf.path(api_prefix, urlconf.include(api_urls)))
+    all_urls.append(urlconf.path(page_prefix, urlconf.include(page_urls)))
 
     return all_urls
 

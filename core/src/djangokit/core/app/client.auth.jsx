@@ -16,7 +16,7 @@ export default function Auth({ children }) {
   useEffect(() => {
     (async () => {
       try {
-        const result = await fetch("/$api/current-user");
+        const result = await fetch("/{{ settings.api_prefix }}current-user");
         const data = await result.json();
         setCurrentUser(data);
       } catch (err) {

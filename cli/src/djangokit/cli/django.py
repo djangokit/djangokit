@@ -167,12 +167,12 @@ def show_urls(include_admin: bool = False):
 
     console = state.console
     configure_settings_module()
-
     resolver = get_resolver()
     url_patterns = get_patterns(resolver)
+    prefix = rf"^/{settings.DJANGOKIT.admin_prefix}"
 
     if not include_admin:
-        url_patterns = (p for p in url_patterns if not p.startswith("^/$admin"))
+        url_patterns = (p for p in url_patterns if not p.startswith(prefix))
 
     console.header("Django URL patterns in order of precedence:")
     for pattern in url_patterns:
