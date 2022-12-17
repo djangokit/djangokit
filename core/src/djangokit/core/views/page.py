@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+from functools import lru_cache
+from typing import Optional
 
 from django.conf import settings
 from django.contrib.staticfiles.finders import find
@@ -51,17 +53,10 @@ class PageView(TemplateView):
             return self.render_loading()
 
         bundle_name = "build/server.bundle.js"
+        bundle_path = get_ssr_bundle_path(bundle_name)
 
-        if os.getenv("ENV") == "production":
-            bundle_path = staticfiles_storage.path(bundle_name)
-            if not os.path.exists(bundle_path):
-                log.error("SSR bundle path does not exist: %s", bundle_path)
-                return self.render_loading()
-        else:
-            bundle_path = find(bundle_name)
-            if not bundle_path:
-                log.error("Could not find static file for SSR bundle: %s", bundle_name)
-                return self.render_loading()
+        if bundle_path is None:
+            return self.render_loading()
 
         csrf_token = csrf.get_token(request)
         current_user_data = settings.DJANGOKIT.current_user_serializer_obj(request.user)
@@ -77,3 +72,18 @@ class PageView(TemplateView):
             context={"settings": settings.DJANGOKIT},
             request=self.request,
         )
+
+
+@lru_cache(maxsize=None)
+def get_ssr_bundle_path(bundle_name: str) -> Optional[str]:
+    if os.getenv("ENV") == "production":
+        bundle_path = staticfiles_storage.path(bundle_name)
+        if os.path.exists(bundle_path):
+            return bundle_path
+        log.error("SSR bundle path does not exist: %s", bundle_path)
+    else:
+        bundle_path = find(bundle_name)
+        if bundle_path:
+            return bundle_path
+        log.error("Could not find static file for SSR bundle: %s", bundle_name)
+    return None
