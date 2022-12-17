@@ -1,13 +1,13 @@
 import json
 import logging
 import os
-from functools import lru_cache
-from typing import Optional
 from functools import cached_property, lru_cache
+from hashlib import sha1
 
 from django.conf import settings
 from django.contrib.staticfiles.finders import find
 from django.contrib.staticfiles.storage import staticfiles_storage
+from django.core.cache import cache
 from django.http import HttpRequest
 from django.middleware import csrf
 from django.template.loader import render_to_string
@@ -41,6 +41,9 @@ class PageView(TemplateView):
     def render(self) -> str:
         request: HttpRequest = self.request
 
+        if not settings.DJANGOKIT.ssr:
+            return self.render_loading()
+
         # Do CSR only for logged-in users.
         #
         # XXX: This is mainly to avoid issues with React SSR hydration.
@@ -50,22 +53,7 @@ class PageView(TemplateView):
         if request.user.is_authenticated:
             return ""
 
-        if not settings.DJANGOKIT.ssr:
-            return self.render_loading()
-
-        bundle_name = "build/server.bundle.js"
-        bundle_path = get_ssr_bundle_path(bundle_name)
-
-        if bundle_path is None:
-            return self.render_loading()
-
-        csrf_token = csrf.get_token(request)
-        current_user_data = settings.DJANGOKIT.current_user_serializer(request.user)
-        current_user_json = json.dumps(current_user_data)
-        argv = [request.path, csrf_token, current_user_json]
-
-        log.info("Running SSR bundle from static file: %s", bundle_name)
-        return run_bundle(bundle_path, argv)
+        return render(request)
 
     def render_loading(self):
         return render_to_string(
@@ -75,16 +63,41 @@ class PageView(TemplateView):
         )
 
 
+def render(request, bundle_name="build/server.bundle.js") -> str:
+    """Render markup from server bundle and cache result."""
+    dk_settings = settings.DJANGOKIT
+    bundle_path = get_ssr_bundle_path(bundle_name)
+
+    masked_csrf_token = csrf.get_token(request)
+    csrf_token = csrf._unmask_cipher_token(masked_csrf_token)
+    current_user_data = dk_settings.current_user_serializer(request.user)
+    current_user_json = json.dumps(current_user_data)
+    argv = [request.path, csrf_token, current_user_json]
+
+    key = ":".join((bundle_path, *argv))
+    key = sha1(key.encode("utf-8")).hexdigest()
+    result = cache.get(key)
+
+    if result is None:
+        result = run_bundle(bundle_path, argv)
+        cache.set(key, result, None)
+
+    return result
+
+
 @lru_cache(maxsize=None)
-def get_ssr_bundle_path(bundle_name: str) -> Optional[str]:
+def get_ssr_bundle_path(bundle_name) -> str:
+    # NOTE: This path never changes for a given deployment/version, so
+    #       we only need to look it up once.
     if os.getenv("ENV") == "production":
         bundle_path = staticfiles_storage.path(bundle_name)
         if os.path.exists(bundle_path):
             return bundle_path
-        log.error("SSR bundle path does not exist: %s", bundle_path)
+        raise FileNotFoundError(f"SSR bundle path does not exist: {bundle_path}")
     else:
         bundle_path = find(bundle_name)
         if bundle_path:
             return bundle_path
-        log.error("Could not find static file for SSR bundle: %s", bundle_name)
-    return None
+        raise FileNotFoundError(
+            f"Could not find static file for SSR bundle: {bundle_name}"
+        )
