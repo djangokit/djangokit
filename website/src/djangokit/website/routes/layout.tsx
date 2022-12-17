@@ -50,7 +50,9 @@ export default function Layout() {
                 </Button>
               </Form>
             </div>
-          ) : (
+          ) : null}
+
+          {currentUser.isAuthenticated || isLogin ? null : (
             <Link
               className="btn btn-sm btn-outline-secondary"
               to={`/login?next=${redirectPath}`}
@@ -60,14 +62,11 @@ export default function Layout() {
           )}
         </div>
 
-        <Navbar variant="dark" bg="dark" expand="sm">
-          <Container fluid>
+        <Navbar variant="dark" bg="dark" expand="sm" collapseOnSelect>
+          <Container fluid className="justify-content-end">
             <Navbar.Toggle aria-controls="main-navbar" />
-            <Navbar.Collapse
-              id="main-navbar"
-              className="justify-content-start justify-content-sm-end"
-            >
-              <Nav>
+            <Navbar.Collapse id="main-navbar" className="justify-content-end">
+              <Nav className="align-items-end">
                 <LinkContainer to="/about">
                   <Nav.Link>About</Nav.Link>
                 </LinkContainer>
@@ -89,7 +88,7 @@ export default function Layout() {
                   className="d-flex align-items-center"
                 >
                   <FaGithub />
-                  <span className="d-none d-sm-inline ms-1">Code</span>
+                  <span className="ms-1">Code</span>
                 </Nav.Link>
               </Nav>
             </Navbar.Collapse>
