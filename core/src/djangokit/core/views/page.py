@@ -3,6 +3,7 @@ import logging
 import os
 from functools import lru_cache
 from typing import Optional
+from functools import cached_property, lru_cache
 
 from django.conf import settings
 from django.contrib.staticfiles.finders import find
@@ -28,7 +29,7 @@ class PageView(TemplateView):
     template_name = "djangokit/app.html"
     http_method_names = ["get", "head"]
 
-    @property
+    @cached_property
     def extra_context(self):
         markup = self.render()
         return {
