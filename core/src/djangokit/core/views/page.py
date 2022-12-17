@@ -59,7 +59,7 @@ class PageView(TemplateView):
             return self.render_loading()
 
         csrf_token = csrf.get_token(request)
-        current_user_data = settings.DJANGOKIT.current_user_serializer_obj(request.user)
+        current_user_data = settings.DJANGOKIT.current_user_serializer(request.user)
         current_user_json = json.dumps(current_user_data)
         argv = [request.path, csrf_token, current_user_json]
 

@@ -87,12 +87,11 @@ any env settings will still take precedence.
 """
 import socket
 from dataclasses import asdict, dataclass, field, fields
-from functools import cached_property
 from importlib import import_module
 from itertools import chain
 from os import environ
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple, Union
 from uuid import uuid4
 
 from django.conf import global_settings
@@ -127,29 +126,70 @@ class DjangoKitSettings:
     """DjangoKit settings.
 
     This defines the available DjangoKit settings, their types, and
-    their default values. It also contains a number of properties
+    their default values. It also contains a number of attributes
     derived from the DjangoKit settings.
-
-    .. note::
-        The derived properties are cached the first time they're
-        accessed. Individual properties can be cleared using
-        `del settings.DJANGOKIT.<name>`. Clearing is only necessary if
-        the DjangoKit settings are updated after Django startup (e.g.,
-        in tests).
 
     """
 
     package: str
+    """Top level package name of the DjangoKit app."""
+
     app_label: str
+    """App label for the DjangoKit app (often the same as `package`)."""
+
     title: str = "A DjangoKit Site"
+    """Site title (used for `<title>`)"""
+
     description: str = "A website made with DjangoKit"
+    """Site description (used for `<meta name="description">`)"""
+
     global_stylesheets: List[str] = field(default_factory=lambda: ["global.css"])
-    current_user_serializer: str = "djangokit.core.user.current_user_serializer"
+    """Global stylesheets to be injected into the document `<head>`."""
+
+    current_user_serializer: Union[
+        str, Callable
+    ] = "djangokit.core.user.current_user_serializer"
+    """Serializer function used to serialize the current user."""
+
     ssr: bool = True
+    """Whether SSR is enabled."""
+
     webmaster: str = field(default_factory=lambda: f"webmaster@{socket.gethostname()}")
+    """Email address of the webmaster / site admin."""
+
     noscript_message: str = (
         "This site requires JavaScript to be enabled in your browser."
     )
+    """Message to display when browser JS is disabled.
+    
+    Can be set to "" to disable showing a noscript message.
+    
+    """
+
+    def __setattr__(self, name, value):
+        super().__setattr__(name, value)
+        if name == "package":
+            package = value
+            module = import_module(package)
+            paths = module.__path__
+            if len(paths) > 1:
+                raise ImproperlyConfigured(
+                    f"DjangoKit app package {package} appears to be a "
+                    "namespace package because it resolves to multiple "
+                    "file system paths. You might need to add an "
+                    "__init__.py to the package."
+                )
+            package_dir = Path(paths[0])
+            self.package_dir = package_dir
+            self.app_dir = package_dir / "app"
+            self.models_dir = package_dir / "models"
+            self.routes_dir = package_dir / "routes"
+            self.routes_package = f"{package}.routes"
+            self.static_dir = package_dir / "static"
+        elif name == "current_user_serializer":
+            serializer = value
+            if isinstance(serializer, str):
+                self.current_user_serializer = import_string(serializer)
 
     def __contains__(self, name):
         return hasattr(self, name)
@@ -160,47 +200,8 @@ class DjangoKitSettings:
     def __setitem__(self, name, val):
         return setattr(self, name, val)
 
-    @cached_property
-    def current_user_serializer_obj(self):
-        serializer = self.current_user_serializer
-        if isinstance(serializer, str):
-            serializer = import_string(serializer)
-        return serializer
-
-    @cached_property
-    def package_dir(self) -> Path:
-        """Top level package directory."""
-        module = import_module(self.package)
-        paths = module.__path__
-        if len(paths) > 1:
             raise ImproperlyConfigured(
-                f"DjangoKit app package {self.package} appears to be a "
-                "namespace package because it resolves to multiple "
-                "file system paths. You might need to add an "
-                "__init__.py to the package."
             )
-        return Path(paths[0])
-
-    @cached_property
-    def app_dir(self) -> Path:
-        """The React app directory."""
-        return self.package_dir / "app"
-
-    @cached_property
-    def models_dir(self) -> Path:
-        return self.package_dir / "models"
-
-    @cached_property
-    def routes_dir(self) -> Path:
-        return self.package_dir / "routes"
-
-    @cached_property
-    def routes_package(self) -> str:
-        return f"{self.package}.routes"
-
-    @cached_property
-    def static_dir(self) -> Path:
-        return self.package_dir / "static"
 
     def as_dict(self) -> Dict[str, Any]:
         """Return a dict with *all* DjangoKit settings.
