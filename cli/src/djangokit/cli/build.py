@@ -14,13 +14,12 @@ from watchdog.events import FileSystemEvent, PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 from .app import app, state
-from .django import configure_settings_module
 from .utils.console import Console
 
 
 @app.command()
 def build_client(
-    ssr: bool = Option(True, envvar="DJANGOKIT_SSR"),
+    ssr: bool = True,
     minify: bool = False,
     watch: bool = Option(False, help="Watch files and rebuild automatically?"),
     join: bool = Option(True, help="Only relevant with --watch"),
@@ -36,12 +35,12 @@ def build_client(
         render into the React root instead.
 
     """
-    configure_settings_module(DJANGOKIT_SSR=ssr)
+    settings.DJANGOKIT.ssr = ssr
     console = state.console
 
     bundle_kwargs = {
         "env": state.env,
-        "dotenv_file": state.dotenv_file,
+        "settings_file": state.settings_file,
         "minify": minify,
         "source_map": minify,
         "quiet": state.quiet,
@@ -77,14 +76,13 @@ def build_server(
     The serer bundle *is* request dependent.
 
     """
-    configure_settings_module()
     console = state.console
 
     bundle_args = [make_request(path=path)]
 
     bundle_kwargs = {
         "env": state.env,
-        "dotenv_file": state.dotenv_file,
+        "settings_file": state.settings_file,
         "minify": minify,
         "source_map": minify,
         "quiet": state.quiet,
@@ -110,7 +108,6 @@ def build_server(
 @app.command()
 def render_markup(path: str = "/", csrf_token: str = "__csrf_token__"):
     """Render markup for the specified request path"""
-    configure_settings_module()
     request = make_request(path=path)
     bundle_kwargs = {
         "env": state.env,

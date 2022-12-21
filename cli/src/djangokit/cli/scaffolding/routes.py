@@ -5,7 +5,6 @@ from django.conf import settings
 from typer import Argument, Option
 
 from ..app import app, state
-from ..django import configure_settings_module
 
 LAYOUT_TEMPLATE = """\
 import { Outlet } from "react-router-dom";
@@ -56,8 +55,6 @@ def add_page(
     module, use the `--with-handlers` flag.
 
     """
-    configure_settings_module()
-
     console = state.console
     routes_dir = settings.DJANGOKIT.routes_dir
     ext = ".tsx" if state.use_typescript else ".jsx"
@@ -106,8 +103,6 @@ def add_handler(
     overwrite: bool = Option(False),
 ):
     """Add a handler module for a route"""
-    configure_settings_module()
-
     console = state.console
     routes_dir = settings.DJANGOKIT.routes_dir
 

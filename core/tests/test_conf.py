@@ -7,18 +7,30 @@ import djangokit.core.test
 
 
 class TestConf(SimpleTestCase):
+    def test_DJANGO_SETTINGS_FILE(self):
+        file = os.environ["DJANGO_SETTINGS_FILE"]
+        file = os.path.abspath(file)
+        expected = os.path.join(djangokit.core.test.__path__[0], "settings.test.toml")
+        self.assertEqual(file, expected)
+
     def test_ENV(self):
-        env = os.environ["ENV"]
-        self.assertEqual(env, "test")
+        self.assertEqual(settings.ENV, "test")
 
-    def test_DOTENV_FILE(self):
-        dotenv_file = os.environ["DOTENV_FILE"]
-        dotenv_file = os.path.abspath(dotenv_file)
-        expected = os.path.join(djangokit.core.test.__path__[0], ".env.test")
-        self.assertEqual(dotenv_file, expected)
+    def test_SECRET_KEY(self):
+        self.assertTrue(settings.SECRET_KEY)
+        self.assertTrue(settings.SECRET_KEY.startswith("TEST-SECRET-KEY-"))
 
-    def test_TEST(self):
-        self.assertTrue(settings.TEST)
+    def test_API_KEY(self):
+        # API.KEY is set from env
+        self.assertTrue(settings.API)
+        self.assertTrue(settings.API["KEY"])
+        self.assertTrue(settings.API["KEY"].startswith("TEST-API-KEY-"))
+
+    def test_SOME_SETTING(self):
+        # SOME_SETTING can be set from env but uses a default from the
+        # settings file
+        self.assertTrue(settings.SOME_SETTING)
+        self.assertEqual(settings.SOME_SETTING, "some setting")
 
     def test_get_known_setting(self):
         package = settings.DJANGOKIT.package

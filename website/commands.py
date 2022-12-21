@@ -3,11 +3,11 @@ import re
 import shutil
 from pathlib import Path
 
-from djangokit.core.env import load_dotenv
 from runcommands import abort, arg, command
 from runcommands import commands as c
 from runcommands import printer
 from runcommands.commands import remote
+from runcommands.util import flatten_args
 
 
 @command
@@ -74,24 +74,26 @@ def ansible(env, host, version=None, tags=(), skip_tags=(), extra_vars=()):
     if extra_vars:
         extra_vars = tuple(("--extra-var", f"{n}={v}") for (n, v) in extra_vars.items())
 
-    load_dotenv(path=".env.public")
-    load_dotenv(env=env)
-
-    c.local(
-        (
-            "ansible-playbook",
-            "-i",
-            f"ansible/{env}",
-            "ansible/site.yaml",
-            tags,
-            skip_tags,
-            extra_vars,
-            ("--extra-var", f"env={env}"),
-            ("--extra-var", f"hostname={host}"),
-            ("--extra-var", f"version={version}"),
-        ),
-        cd=os.path.dirname(__file__),
+    args = (
+        "ansible-playbook",
+        "-i",
+        f"ansible/{env}",
+        "ansible/site.yaml",
+        tags,
+        skip_tags,
+        extra_vars,
+        ("--extra-var", f"env={env}"),
+        ("--extra-var", f"hostname={host}"),
+        ("--extra-var", f"version={version}"),
     )
+
+    cwd = os.path.dirname(__file__)
+    cmd = " ".join(flatten_args(args))
+    cmd = cmd.replace(" -", "\n  -")
+    printer.header(f"Running ansible playbook with CWD = {cwd}")
+    printer.print(cmd, style="bold")
+
+    c.local(args, cd=cwd)
 
 
 @command

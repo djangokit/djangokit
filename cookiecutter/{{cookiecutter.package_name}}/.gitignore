@@ -1,5 +1,5 @@
-.env*
-!.env.public
+settings.*.toml
+!settings.public.toml
 *.sqlite3
 .mypy_cache/
 .pytest_cache/

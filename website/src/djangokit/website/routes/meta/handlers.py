@@ -1,4 +1,4 @@
-from os import getenv
+import os
 
 from django.conf import settings
 
@@ -17,8 +17,8 @@ INCLUDE_SETTINGS = (
 
 def get(request):
     data = {
-        "env": getenv("ENV", "development"),
-        "version": getenv("VERSION"),
+        "env": settings.ENV,
+        "version": os.getenv("VERSION"),
     }
 
     if request.user.is_superuser:

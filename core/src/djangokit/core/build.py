@@ -7,13 +7,13 @@ from django.conf import settings
 from django.http import HttpRequest
 from django.template.loader import select_template
 
-from .env import get_dotenv_settings, getenv
+from .conf import load_settings
 from .exceptions import BuildError, RenderError
 
 
 def make_client_bundle(
     env=None,
-    dotenv_file=None,
+    settings_file=None,
     minify=False,
     source_map=False,
     quiet=None,
@@ -40,7 +40,7 @@ def make_client_bundle(
             "client.app",
         ],
         env=env,
-        dotenv_file=dotenv_file,
+        settings_file=settings_file,
         minify=minify,
         source_map=source_map,
         quiet=quiet,
@@ -51,7 +51,7 @@ def make_client_bundle(
 def make_server_bundle(
     request: HttpRequest,
     env=None,
-    dotenv_file=None,
+    settings_file=None,
     minify=False,
     source_map=False,
     quiet=None,
@@ -70,7 +70,7 @@ def make_server_bundle(
             "server.app",
         ],
         env=env,
-        dotenv_file=dotenv_file,
+        settings_file=settings_file,
         minify=minify,
         source_map=source_map,
         quiet=quiet,
@@ -85,7 +85,7 @@ def make_bundle(
     template_names: List[str],
     *,
     env=None,
-    dotenv_file=None,
+    settings_file=None,
     minify=True,
     source_map=False,
     quiet=None,
@@ -107,7 +107,7 @@ def make_bundle(
     if quiet is None:
         quiet = env == "production"
 
-    dotenv_settings = get_dotenv_settings(path=dotenv_file, env=env)
+    loaded_settings = load_settings(path=settings_file, env=env)
 
     # React app templates are rendered into <package>/app/build
     build_dir = settings.DJANGOKIT.app_dir / "build"
@@ -157,9 +157,19 @@ def make_bundle(
         f"--define:ENV={json.dumps(env)}",
     ]
 
-    # Inject env vars read from .env file.
-    for name, val in dotenv_settings.items():
-        val = getenv(name, val)
+    # Inject settings from file.
+    for name, val in loaded_settings.items():
+        if name in ("django", "djangokit"):
+            continue
+        name = name.upper()
+        args.append(f"--define:{name}={json.dumps(val)}")
+
+    for name, val in loaded_settings.get("django", {}).items():
+        name = f"DJANGO_{name.upper()}"
+        args.append(f"--define:{name}={json.dumps(val)}")
+
+    for name, val in loaded_settings.get("djangokit", {}).items():
+        name = f"DJANGOKIT_{name.upper()}"
         args.append(f"--define:{name}={json.dumps(val)}")
 
     if minify:

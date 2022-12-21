@@ -1,14 +1,14 @@
 """Base commands."""
 from functools import partial
-from os import environ
 from pathlib import Path
 
-from typer import Exit, Option
+from django.conf import settings
+from typer import Context, Exit
 
 from .app import app, state
 from .build import build_client, build_server
 from .django import run_django_command
-from .utils import run, run_node_command, run_poetry_command
+from .utils import params, run, run_node_command, run_poetry_command
 
 
 @app.command()
@@ -23,19 +23,13 @@ def setup(python_version=None):
 
 @app.command()
 def start(
-    ssr: bool = Option(True, envvar="DJANGOKIT_SSR"),
+    ctx: Context,
+    ssr: bool = True,
     minify: bool = False,
     watch: bool = True,
     host: str = "127.0.0.1",
     port: int = 8000,
     reload: bool = True,
-    debug: bool = Option(
-        True,
-        help=(
-            "Allows DEBUG mode to be easily disabled. Useful for "
-            "testing Django error templates, etc."
-        ),
-    ),
 ):
     """Run dev server & watch files
 
@@ -55,14 +49,13 @@ def start(
 
     """
     console = state.console
-    if not debug:
-        environ["DJANGO_DEBUG"] = "false"
-        environ["DJANGO_ALLOWED_HOSTS"] = '["localhost"]'
+
+    if params.is_default(ctx, "ssr"):
+        ssr = settings.DJANGOKIT.ssr
+
     if ssr:
-        environ["DJANGOKIT_SSR"] = "true"
         build_server(minify=minify, watch=watch, join=False)
-    else:
-        environ["DJANGOKIT_SSR"] = "false"
+
     build_client(ssr=ssr, minify=minify, watch=watch, join=False)
     console.header("Running Django dev server")
     reload_opt = None if reload else "--noreload"

@@ -1,12 +1,11 @@
 """Django commands and utilities."""
-import json
-import os
 import sys
 from fnmatch import fnmatch
 from getpass import getuser
 from typing import List, Optional
 
 import click
+import django
 from django.conf import settings
 from django.core.management import execute_from_command_line
 from django.template import Context, Template
@@ -46,7 +45,6 @@ def createsuperuser(username: str = getuser(), email: Optional[str] = None):
 @app.command()
 def makemigrations():
     """Create database migrations for project"""
-    configure_settings_module()
     run_django_command(["makemigrations", settings.DJANGOKIT.app_label])
 
 
@@ -69,6 +67,14 @@ def dbshell():
 
 
 @app.command()
+def collectstatic(static_root: Optional[str] = None, clear: bool = False):
+    """Collect static files."""
+    if static_root is not None:
+        settings.STATIC_ROOT = static_root
+    run_django_command(["collectstatic", "--clear" if clear else None])
+
+
+@app.command()
 def show_settings(
     all_: bool = Option(False, "--all", help="Show all settings"),
     only: str = Option(
@@ -87,7 +93,6 @@ def show_settings(
 
     """
     console = state.console
-    configure_settings_module()
     explicit_settings = settings._explicit_settings
     settings_to_show = vars(settings._wrapped)
     max_width = min(120, console.width)
@@ -166,7 +171,6 @@ def show_urls(include_admin: bool = False):
         return patterns
 
     console = state.console
-    configure_settings_module()
     resolver = get_resolver()
     url_patterns = get_patterns(resolver)
     prefix = rf"^/{settings.DJANGOKIT.admin_prefix}"
@@ -192,9 +196,6 @@ def add_model(
     register_admin: bool = True,
 ):
     """Add new Django model"""
-
-    configure_settings_module()
-
     console = state.console
 
     # Add model --------------------------------------------------------
@@ -304,43 +305,8 @@ def get_model_field(type_: str) -> str:
 # Utilities ------------------------------------------------------------
 
 
-def configure_settings_module(**env_vars):
-    """Configure Django settings module.
-
-    Settings module discovery if the `DJANGO_SETTINGS_MODULE`
-    environment variable isn't already set:
-
-    1. If `DJANGO_SETTINGS_MODULE` is present in the project's .env
-       file, the `DJANGO_SETTINGS_MODULE` env var is set to that value.
-    2. Otherwise, the `DJANGO_SETTINGS_MODULE` env var is set to the
-       default value: "djangokit.core.settings".
-
-    After `DJANGO_SETTINGS_MODULE` is set, `django.setup()` is called
-    and the name of the settings module is returned.
-
-    """
-    if state.settings_module_configured:
-        return
-
-    import django
-
-    for name, val in env_vars.items():
-        if isinstance(val, str):
-            env_val = val
-        else:
-            try:
-                env_val = json.dumps(val)
-            except ValueError:
-                env_val = str(val)
-        os.environ[name] = env_val
-
-    django.setup()
-    state.settings_module_configured = True
-
-
 def run_django_command(args: Args):
     """Run a Django management command."""
-    configure_settings_module()
     args = ["django-admin"] + process_args(args)
     state.console.command(">", " ".join(args))
     execute_from_command_line(args)
