@@ -91,7 +91,7 @@ from importlib import import_module
 from itertools import chain
 from os import environ
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from django.conf import global_settings
@@ -137,23 +137,30 @@ class DjangoKitSettings:
     app_label: str
     """App label for the DjangoKit app (often the same as `package`)."""
 
-    mount_point: str = ""
+    prefix: str = ""
     """URL mount point for the DjangoKit app, relative to site root."""
 
     admin_prefix: str = "$admin/"
-    """URL path to Django Admin, relative to site root."""
+    """Path to Django Admin, relative to `prefix`."""
 
-    api_prefix: str = "$api/"
-    """URL path prefix for API routes, relative to site root."""
+    current_user_path: str = "$current-user"
+    """Path to current user endpoint, relative to `prefix`."""
 
-    page_prefix: str = ""
-    """URL path prefix for page routes, relative to site root."""
+    intercept_extensions: Optional[bool] = None
+    """Whether to intercept URLs with .json extension.
+    
+    If set, GET and HEAD requests with a path that ends with .json will
+    be intercepted and modified as follows:
+    
+    1. The .json extension will be stripped from path and path_info
+    2. The Accept header will be set to application/json
+    
+    .. note:: By default, this is only enabled in `DEBUG` mode.
+    
+    """
 
-    api_cache_time: int = 0
-    """How long to cache API responses, in seconds."""
-
-    page_cache_time: int = 0
-    """How long to cache rendered pages, in seconds."""
+    cache_time: int = 0
+    """How long to cache route view responses, in seconds."""
 
     title: str = "A DjangoKit Site"
     """Site title (used for `<title>`)"""
@@ -220,15 +227,8 @@ class DjangoKitSettings:
 
     def check(self):
         # Prefixes must be unique.
-        for a, a_label, b, b_label in (
-            (self.admin_prefix, "Admin", self.api_prefix, "API"),
-            (self.admin_prefix, "Admin", self.page_prefix, "Page"),
-            (self.api_prefix, "API", self.page_prefix, "Page"),
-        ):
-            if a == b:
-                raise ImproperlyConfigured(
-                    f"{b_label} prefix must be different from {a_label} prefix."
-                )
+        if not self.admin_prefix:
+            raise ImproperlyConfigured(f"Admin prefix must be set.")
 
         # Mount point & prefixes:
         # - can be an empty string
@@ -236,10 +236,8 @@ class DjangoKitSettings:
         # - must not start with a slash
         # - must end with a slash
         for val, label in (
-            (self.mount_point, "Mount point"),
+            (self.prefix, "Mount point"),
             (self.admin_prefix, "Admin prefix"),
-            (self.api_prefix, "API prefix"),
-            (self.page_prefix, "Page prefix"),
         ):
             if not val:
                 continue

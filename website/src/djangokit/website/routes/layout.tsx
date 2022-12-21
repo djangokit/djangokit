@@ -43,7 +43,7 @@ export default function Layout() {
           {currentUser.isAuthenticated ? (
             <div className="d-flex align-items-center gap-2">
               <div>{currentUser.username}</div>
-              <Form method="post" action="/$api/logout">
+              <Form method="post" action="/logout">
                 <input name="next" type="hidden" value={currentPath} />
                 <Button type="submit" size="sm" variant="outline-secondary">
                   Log Out

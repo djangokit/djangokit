@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.core.exceptions import BadRequest
 from django.http import HttpRequest
 
@@ -7,29 +8,51 @@ from django.http import HttpRequest
 def djangokit_middleware(get_response):
     """DjangoKit middleware.
 
-    - Adds an `is_fetch` attribute to the request so that it's easy to
-      tell if it was made via `fetch()` rather than via a form. This can
-      be used in views / API handlers to decide whether to redirect.
+    - Intercepts requests with a path that ends with `.json` and
+      modifies them to remove the `.json` extension and set the `Accept`
+      header to `application/json`.
 
-      When making requests, the `X-HTTP-Requested-With` header needs to
-      be set to `fetch` or `XMLHttpRequest` for this to work.
+    - Adds a `prefers_json` attribute to the request based on the
+      whether the request accepts `application/json` *and* prefers it
+      over HTML. This can be used, for example, in views / handlers to
+      decide whether to return data or redirect.
+
+      The request's `Accept` header needs to `application/json` for this
+      to work.
 
     - If the request is a modifying type, adds a `data` attribute to the
       request. The data will be extracted from `request.POST` or
       `request.body` (as JSON) depending on the `Content-Type` header.
 
     """
-    fetch_types = ("fetch", "XMLHttpRequest")
+    debug = settings.DEBUG
+    dk_settings = settings.DJANGOKIT
+
+    intercept_extensions = dk_settings.intercept_extensions
+    if intercept_extensions is None:
+        intercept_extensions = debug
+
     methods_with_data = ("PATCH", "POST", "PUT")
 
     def middleware(request: HttpRequest):
-        # Add is_fetch attribute
-        requested_with = request.META.get("HTTP_X_REQUESTED_WITH")
-        is_fetch = requested_with and requested_with in fetch_types
-        request.is_fetch = is_fetch
+        method = request.method
+        meta = request.META
+        path = request.path
+
+        if (
+            intercept_extensions
+            and method in ("GET", "HEAD")
+            and path.endswith(".json")
+        ):
+            request.path = path[:-5]
+            request.path_info = request.path_info[:-5]
+            meta["HTTP_ACCEPT"] = "application/json"
+            meta["PATH_INFO"] = request.META["PATH_INFO"][:-5]
+
+        accept = meta.get("HTTP_ACCEPT", "*/*")
+        request.prefers_json = accept == "application/json"
 
         # Add data attribute when appropriate
-        method = request.method
         if method in methods_with_data:
             content_type = request.content_type
             if content_type == "application/x-www-form-urlencoded":

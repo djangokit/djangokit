@@ -5,11 +5,21 @@ from django.http import JsonResponse as DjangoJsonResponse
 from .serializers import JsonEncoder
 
 
-def make_request(path="/", path_info=None):
-    """Make a request object with the specified path."""
+def make_request(**attrs):
+    """Make a request object with the specified attributes."""
+    attrs.setdefault("method", "GET")
+
+    path = attrs.setdefault("path", "/")
+    path_info = attrs.setdefault("path_info", path)
+
+    meta = attrs.setdefault("META", {})
+    meta.setdefault("PATH_INFO", path_info)
+
     request = HttpRequest()
-    request.path = path
-    request.path_info = path_info or path
+
+    for name, val in attrs.items():
+        setattr(request, name, val)
+
     return request
 
 

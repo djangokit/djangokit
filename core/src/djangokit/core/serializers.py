@@ -13,7 +13,7 @@ class JsonEncoder(DjangoJSONEncoder):
     If the model doesn't have a `serialize` method, we fall back to
     Django's `model_to_dict` utility.
 
-    This allows API handlers to return model instances that can be
+    This allows route handlers to return model instances that can be
     automatically serialized to JSON.
 
     """

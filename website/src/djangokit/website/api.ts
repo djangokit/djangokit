@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { Page } from "./models";
 
-const API_ROOT = "/$api";
+const API_ROOT = "/";
 
 class ApiError extends Error {
   constructor(message: string, public response?: any) {
@@ -33,7 +33,7 @@ const api = {
     if (apiPath.charAt(0) === "/") {
       apiPath = apiPath.substring(1);
     }
-    apiPath = apiPath === "" ? API_ROOT : `${API_ROOT}/${apiPath}`;
+    apiPath = apiPath === "" ? API_ROOT : `${API_ROOT}${apiPath}`;
     const url = new URL(`${location.origin}${apiPath}`);
     if (params) {
       Object.entries(params).forEach(([name, value]) => {

@@ -80,7 +80,7 @@ def build_server(
     configure_settings_module()
     console = state.console
 
-    bundle_args = [make_request(path)]
+    bundle_args = [make_request(path=path)]
 
     bundle_kwargs = {
         "env": state.env,
@@ -111,7 +111,7 @@ def build_server(
 def render_markup(path: str = "/", csrf_token: str = "__csrf_token__"):
     """Render markup for the specified request path"""
     configure_settings_module()
-    request = make_request(path)
+    request = make_request(path=path)
     bundle_kwargs = {
         "env": state.env,
         "minify": False,

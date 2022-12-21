@@ -1,15 +1,11 @@
 .PHONY = test
 test:
-	DJANGO_SETTINGS_MODULE=djangokit.core.settings \
-	  DJANGO_TEST=true \
-	  DJANGOKIT_PACKAGE=djangokit.core.test \
+	DOTENV_FILE=src/djangokit/core/test/.env.test \
 	  poetry run pytest -rA --doctest-modules --disable-warnings
 
 .PHONY = test-cov
 test-cov:
-	DJANGO_SETTINGS_MODULE=djangokit.core.settings \
-	  DJANGO_TEST=true \
-	  DJANGOKIT_PACKAGE=djangokit.core.test \
+	DOTENV_FILE=src/djangokit/core/test/.env.test \
 	  poetry run pytest -rA --doctest-modules --disable-warnings --cov=djangokit.core
 
 .PHONY = tox

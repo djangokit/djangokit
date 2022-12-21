@@ -5,34 +5,31 @@ from djangokit.core.routes import RouteDirNode, make_route_dir_tree
 
 @pytest.fixture
 def tree():
-    tree = make_route_dir_tree()
-    return tree
+    return make_route_dir_tree()
+
+
+@pytest.fixture
+def expected_node_ids():
+    return ["$root", "docs", "docs__slug", "_slug", "catchall"]
 
 
 def test_make_route_dir_tree(tree):
     assert tree.root
 
 
-def test_traversal(tree):
+def test_traversal(tree, expected_node_ids):
     def visitor(node: RouteDirNode):
-        if node.has_page:
+        if node.page_module:
             ids.append(node.id)
 
     ids = []
     tree.traverse(visit=visitor)
-    assert ids == ["$root", "docs", "docs__slug", "_slug", "catchall"]
+    assert ids == expected_node_ids
 
 
-def test_collect_page_nodes(tree):
-    nodes = tree.collect_page_nodes()
-    ids = [node.id for node in nodes]
-    assert ids == ["$root", "docs", "docs__slug", "_slug", "catchall"]
-
-
-def test_collect_api_nodes(tree):
-    nodes = tree.collect_api_nodes()
-    ids = [node.id for node in nodes]
-    assert ids == ["$root", "_slug", "catchall"]
+def test_iter(tree, expected_node_ids):
+    nodes = tuple(tree)
+    assert [node.id for node in nodes] == expected_node_ids
 
 
 def test_js_routes(tree):

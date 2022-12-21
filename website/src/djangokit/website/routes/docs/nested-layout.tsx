@@ -23,9 +23,7 @@ export default function NestedLayout() {
   }
 
   return (
-    <div
-      className="d-flex flex-column flex-md-row gap-4"
-    >
+    <div className="d-flex flex-column flex-md-row gap-4">
       <Navbar
         bg="dark"
         variant="dark"

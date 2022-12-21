@@ -68,7 +68,7 @@ export default function Page() {
         <div className="mb-4">
           <Form
             method="post"
-            action="/$api/todo"
+            action="/todo"
             className="d-flex flex-row gap-2 mb-1"
             onSubmit={(event) => {
               event.preventDefault();
