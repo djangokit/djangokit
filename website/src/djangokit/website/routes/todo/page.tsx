@@ -103,9 +103,11 @@ export default function Page() {
         <>
           <h3 className="mt-4 d-flex align-items-center gap-2">
             <FaRegCircle />
-            <span>
-              {todoCount} thing{todoCount === 1 ? "" : "s"} to do
+            <span>{todoCount}</span>
+            <span className="d-none d-sm-inline">
+              thing{todoCount === 1 ? "" : "s"}
             </span>
+            <span>to do</span>
           </h3>
           <div className="d-flex flex-column gap-2">
             {todo.map((item, i) => (
@@ -122,10 +124,11 @@ export default function Page() {
           <div>
             <h3 className="mt-4 d-flex align-items-center gap-2">
               <FaRegCheckCircle />
-              <span>
-                {completedCount} thing{completedCount === 1 ? "" : "s"}{" "}
-                completed
+              <span>{completedCount}</span>
+              <span className="d-none d-sm-inline">
+                thing{completedCount === 1 ? "" : "s"}
               </span>
+              <span>done</span>
               <IconButton
                 variant="outline-secondary"
                 icon={showCompleted ? <FaChevronUp /> : <FaChevronDown />}
@@ -135,7 +138,8 @@ export default function Page() {
                 className="ms-auto"
                 onClick={() => setShowCompleted(!showCompleted)}
               >
-                {showCompleted ? "Hide" : "Show"} completed items
+                {showCompleted ? "Hide" : "Show"}
+                <span className="d-none d-sm-inline"> completed items</span>
               </IconButton>
             </h3>
           </div>
