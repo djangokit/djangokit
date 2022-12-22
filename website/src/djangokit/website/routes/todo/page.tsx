@@ -206,7 +206,7 @@ function Item({ item, itemNumber }: { item: TodoItem; itemNumber: number }) {
         {itemNumber}.
       </div>
 
-      <div className="flex-fill align-self-center p-2 border-end">
+      <div className="flex-fill align-self-center p-2">
         <ItemContent
           item={item}
           rawContent={rawContent}
@@ -216,7 +216,7 @@ function Item({ item, itemNumber }: { item: TodoItem; itemNumber: number }) {
       </div>
 
       {currentUser.isSuperuser ? (
-        <div className="p-2 d-flex flex-column flex-sm-row align-items-center justify-content-center gap-2 text-bg-light">
+        <div className="p-2 d-flex flex-column flex-sm-row align-items-center justify-content-center gap-2 text-bg-light border-start">
           <ItemControls
             item={item}
             rawContent={rawContent}
