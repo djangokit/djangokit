@@ -57,7 +57,7 @@ def add_page(
     """
     console = state.console
     routes_dir = settings.DJANGOKIT.routes_dir
-    ext = ".tsx" if state.use_typescript else ".jsx"
+    ext = "tsx" if state.use_typescript else "jsx"
 
     route_dir = routes_dir / path
     page_path = route_dir / f"page.{ext}"
