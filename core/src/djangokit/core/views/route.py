@@ -1,4 +1,5 @@
 import json
+import os
 from functools import lru_cache
 from hashlib import sha1
 from pathlib import Path
@@ -7,6 +8,7 @@ from typing import Callable, Dict, Optional
 
 from django.conf import settings
 from django.contrib.staticfiles.finders import find
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
@@ -284,7 +286,15 @@ class RouteView(TemplateResponseMixin, View):
 def get_ssr_bundle_path(bundle_name="build/server.bundle.js") -> str:
     # NOTE: This path never changes for a given deployment/version, so
     #       we only need to look it up once.
-    bundle_path = find(bundle_name)
-    if bundle_path is not None:
-        return bundle_path
-    raise FileNotFoundError(f"Could not find static file for SSR bundle: {bundle_name}")
+    if settings.DEBUG or settings.ENV == "test":
+        bundle_path = find(bundle_name)
+        if bundle_path:
+            return bundle_path
+        raise FileNotFoundError(
+            f"Could not find static file for SSR bundle: {bundle_name}"
+        )
+    else:
+        bundle_path = staticfiles_storage.path(bundle_name)
+        if os.path.exists(bundle_path):
+            return bundle_path
+        raise FileNotFoundError(f"SSR bundle path does not exist: {bundle_path}")
