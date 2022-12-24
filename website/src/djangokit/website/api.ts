@@ -58,7 +58,6 @@ const api = {
     options.method = options.method ?? "GET";
     options.headers = options.headers ?? {};
     options.headers["Accept"] = "application/json";
-    options.headers["X-Requested-With"] = "fetch";
 
     if (!this.isSafeMethod(options.method)) {
       const cookies = cookie.parse(document.cookie);
