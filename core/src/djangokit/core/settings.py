@@ -138,9 +138,6 @@ class DjangoKitSettings:
     
     """
 
-    cache_time: int = 0
-    """How long to cache route view responses, in seconds."""
-
     title: str = "A DjangoKit Site"
     """Site title (used for `<title>`)"""
 

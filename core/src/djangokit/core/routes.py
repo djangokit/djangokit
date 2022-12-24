@@ -15,19 +15,13 @@ from .views import RouteView
 
 def discover_routes(view_class=RouteView) -> list:
     """Find file-based routes and return URLs for them."""
-    dk_settings = settings.DJANGOKIT
-    cache_time = dk_settings.cache_time
-
-    def make_view(node):
-        view = view_class.as_view_from_node(node, cache_time)
+    tree = make_route_dir_tree()
+    urls = []
+    for node in tree:
+        view = view_class.as_view_from_node(node)
         pattern = node.url_pattern
         path_func = urlconf.re_path if pattern.startswith("^") else urlconf.path
         urls.append(path_func(pattern, view))
-
-    urls = []
-    tree = make_route_dir_tree()
-    tree.traverse(make_view)
-
     return urls
 
 

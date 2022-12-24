@@ -17,7 +17,6 @@ from django.middleware import csrf
 from django.shortcuts import redirect
 from django.utils.decorators import classonlymethod
 from django.views import View
-from django.views.decorators.cache import cache_page
 from django.views.generic.base import TemplateResponseMixin
 
 from ..build import run_bundle
@@ -65,7 +64,6 @@ class RouteView(TemplateResponseMixin, View):
     def as_view_from_node(
         cls,
         node,
-        cache_time=0,
         ssr_bundle_path: Optional[Path] = None,
     ):
         handler_module = node.handler_module
@@ -85,15 +83,12 @@ class RouteView(TemplateResponseMixin, View):
                     "handlers. Expected at least one handler (get, post, etc)."
                 )
 
-        view = cls.as_view(
+        return cls.as_view(
             page_module=node.page_module,
             handler_module=handler_module,
             allowed_methods=allowed_methods,
             ssr_bundle_path=ssr_bundle_path or get_ssr_bundle_path(),
         )
-        if cache_time:
-            view = cache_page(cache_time)(view)
-        return view
 
     def setup(self, request: HttpRequest, *args, **kwargs):
         self.request = request
