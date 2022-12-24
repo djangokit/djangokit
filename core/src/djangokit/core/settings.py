@@ -392,15 +392,6 @@ def merge_loaded_settings():
         djangokit_settings_from_env.update(dk_settings["from_env"])
     settings["DJANGOKIT"].update(merge_dicts(settings["DJANGOKIT"], dk_settings))
 
-    template_options = settings["TEMPLATES"][0]["OPTIONS"]
-    if "loaders" not in template_options:
-        template_loader = "djangokit.core.templates.loader.Loader"
-        if settings["DEBUG"]:
-            template_options["loaders"] = [template_loader]
-        else:
-            cached_loader = "django.template.loaders.cached.Loader"
-            template_options["loaders"] = [(cached_loader, [template_loader])]
-
 
 def merge_env_settings():
     traverse_from_env_dict(settings, default_django_settings_from_env, False)
@@ -449,6 +440,17 @@ def traverse_from_env_dict(settings_dict, from_env_dict, required, parent_path=N
             )
 
 
+def set_derived_settings():
+    template_options = settings["TEMPLATES"][0]["OPTIONS"]
+    if "loaders" not in template_options:
+        template_loader = "djangokit.core.templates.loader.Loader"
+        if settings["DEBUG"]:
+            template_options["loaders"] = [template_loader]
+        else:
+            cached_loader = "django.template.loaders.cached.Loader"
+            template_options["loaders"] = [(cached_loader, [template_loader])]
+
+
 def prepend_settings():
     for prepend_name, prepend_val in settings.items():
         if prepend_name.startswith("PREPEND_"):
@@ -474,6 +476,7 @@ def add_djangokit_settings():
     - Adds the app's package and "djangokit.core" to the front of
       `INSTALLED_APPS`.
     - Adds the DjangoKit middleware to the end of `MIDDLEWARE`.
+    - Adds template loader option to `TEMPLATES[0]["OPTIONS"]`.
     - Checks the DjangoKit settings to ensure they're valid.
 
     """
@@ -506,6 +509,7 @@ def add_djangokit_settings():
 merge_additional_settings_module()
 merge_loaded_settings()
 merge_env_settings()
+set_derived_settings()
 prepend_settings()
 append_settings()
 
