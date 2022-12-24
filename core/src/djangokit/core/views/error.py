@@ -94,7 +94,6 @@ def page_not_found(request, exception, template_name=TEMPLATE_NAME):
         exception,
         404,
         "Not Found",
-        "not found"
         "<p>The requested page wasn't found.</p>"
         '<p>Please re-check the address or visit our <a href="/">home page</a>.</p>',
         template_name,
