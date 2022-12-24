@@ -204,7 +204,7 @@ class DjangoKitSettings:
     def check(self):
         # Prefixes must be unique.
         if not self.admin_prefix:
-            raise ImproperlyConfigured(f"Admin prefix must be set.")
+            raise ImproperlyConfigured("Admin prefix must be set.")
 
         # Mount point & prefixes:
         # - can be an empty string
