@@ -84,8 +84,7 @@
   find:
     paths: "{{ remote_pip_wheel_dir }}"
     patterns:
-      - "djangokit*.whl"
-      - "org-djangokit*.whl"
+      - "*djangokit*.whl"
   register: old_wheels
 
 - name: Remove old wheels
