@@ -334,6 +334,9 @@ LOGGING = {
         "handlers": ["console"],
         "level": "INFO",
     },
+    "loggers": {
+        # NOTE: Default logger for package is derived below
+    },
 }
 
 # END Default Settings -------------------------------------------------
@@ -500,6 +503,7 @@ def set_derived_settings():
 
     """
     debug = settings["DEBUG"]
+    package = settings["DJANGOKIT"].package
 
     # Set default template loaders option
     template_options = settings["TEMPLATES"][0]["OPTIONS"]
@@ -511,6 +515,15 @@ def set_derived_settings():
         else:
             cached_loader = "django.template.loaders.cached.Loader"
             template_options["loaders"] = [(cached_loader, [template_loader])]
+
+    # Set default logging options for app package
+    log_settings = settings["LOGGING"]
+    loggers = log_settings.setdefault("loggers", {})
+    package_logger = loggers.get(package)
+    if package_logger is None:
+        loggers[package] = {
+            "level": "DEBUG" if debug else "INFO",
+        }
 
 
 merge_additional_settings_module()
