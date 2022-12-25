@@ -260,7 +260,7 @@ class DjangoKitSettings:
 # Default Settings -----------------------------------------------------
 
 # DjangoKit
-DJANGOKIT = {}
+DJANGOKIT: Dict[str, Any] = {}
 
 # Basics
 ENV = "development"

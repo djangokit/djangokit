@@ -5,7 +5,7 @@ from functools import lru_cache
 from hashlib import sha1
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Optional, Union
 
 from django.conf import settings
 from django.contrib.staticfiles.finders import find
@@ -25,7 +25,6 @@ from django.views.generic.base import TemplateResponseMixin
 
 from ..build import run_bundle
 from ..http import JsonResponse
-
 
 log = logging.getLogger(__name__)
 
@@ -64,7 +63,7 @@ class RouteView(TemplateResponseMixin, View):
 
     """
 
-    ssr_bundle_path = None
+    ssr_bundle_path: Path = Path()
     template_name = "djangokit/app.html"
 
     @classonlymethod
@@ -72,7 +71,7 @@ class RouteView(TemplateResponseMixin, View):
         cls,
         node,
         cache_time=0,
-        ssr_bundle_path: Optional[Path] = None,
+        ssr_bundle_path: Optional[Union[str, Path]] = None,
     ):
         page_module = node.page_module
         handler_module = node.handler_module
@@ -92,11 +91,15 @@ class RouteView(TemplateResponseMixin, View):
                     "handlers. Expected at least one handler (get, post, etc)."
                 )
 
+        ssr_bundle_path = (
+            Path(ssr_bundle_path) if ssr_bundle_path else get_ssr_bundle_path()
+        )
+
         view = cls.as_view(
             page_module=page_module,
             handler_module=handler_module,
             allowed_methods=allowed_methods,
-            ssr_bundle_path=ssr_bundle_path or get_ssr_bundle_path(),
+            ssr_bundle_path=ssr_bundle_path,
         )
 
         if cache_time and (
@@ -323,7 +326,7 @@ class RouteView(TemplateResponseMixin, View):
             current_user_json = json.dumps(current_user_data)
             argv = [request.path, csrf_token, current_user_json]
 
-            key = ":".join((bundle_path, *argv))
+            key = ":".join((str(bundle_path), *argv))
             key = sha1(key.encode("utf-8")).hexdigest()
             markup = cache.get(key)
 
@@ -345,18 +348,18 @@ class RouteView(TemplateResponseMixin, View):
 
 
 @lru_cache(maxsize=None)
-def get_ssr_bundle_path(bundle_name="build/server.bundle.js") -> str:
+def get_ssr_bundle_path(bundle_name="build/server.bundle.js") -> Path:
     # NOTE: This path never changes for a given deployment/version, so
     #       we only need to look it up once.
     if settings.DEBUG or settings.ENV == "test":
         bundle_path = find(bundle_name)
         if bundle_path:
-            return bundle_path
+            return Path(bundle_path)
         raise FileNotFoundError(
             f"Could not find static file for SSR bundle: {bundle_name}"
         )
     else:
         bundle_path = staticfiles_storage.path(bundle_name)
         if os.path.exists(bundle_path):
-            return bundle_path
+            return Path(bundle_path)
         raise FileNotFoundError(f"SSR bundle path does not exist: {bundle_path}")

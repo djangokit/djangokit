@@ -1,7 +1,7 @@
 from functools import reduce
 
 
-def merge_dicts(*dicts) -> dict:
+def merge_dicts(*dicts: dict) -> dict:
     """Merge dictionaries recursively."""
     return reduce(_merge_dicts, dicts, {})
 
