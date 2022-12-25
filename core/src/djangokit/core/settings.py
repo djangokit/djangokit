@@ -138,6 +138,14 @@ class DjangoKitSettings:
     
     """
 
+    cache_time: int = 0
+    """How long to cache route view responses for GETs, in seconds.
+    
+    This is coarse-grained caching that will apply to *all* GET requests
+    for *all* routes (both pages and handlers).
+    
+    """
+
     title: str = "A DjangoKit Site"
     """Site title (used for `<title>`)"""
 

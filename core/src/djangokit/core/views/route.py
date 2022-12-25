@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from functools import lru_cache
 from hashlib import sha1
@@ -15,12 +16,18 @@ from django.db import models
 from django.http import HttpRequest, HttpResponse
 from django.middleware import csrf
 from django.shortcuts import redirect
+from django.utils.cache import patch_cache_control
 from django.utils.decorators import classonlymethod
 from django.views import View
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_headers
 from django.views.generic.base import TemplateResponseMixin
 
 from ..build import run_bundle
 from ..http import JsonResponse
+
+
+log = logging.getLogger(__name__)
 
 
 class RouteView(TemplateResponseMixin, View):
@@ -64,8 +71,10 @@ class RouteView(TemplateResponseMixin, View):
     def as_view_from_node(
         cls,
         node,
+        cache_time=0,
         ssr_bundle_path: Optional[Path] = None,
     ):
+        page_module = node.page_module
         handler_module = node.handler_module
         allowed_methods = {}
 
@@ -83,12 +92,58 @@ class RouteView(TemplateResponseMixin, View):
                     "handlers. Expected at least one handler (get, post, etc)."
                 )
 
-        return cls.as_view(
-            page_module=node.page_module,
+        view = cls.as_view(
+            page_module=page_module,
             handler_module=handler_module,
             allowed_methods=allowed_methods,
             ssr_bundle_path=ssr_bundle_path or get_ssr_bundle_path(),
         )
+
+        if cache_time and (
+            page_module or "get" in allowed_methods or "head" in allowed_methods
+        ):
+            view = cls.make_cached_view(view, cache_time)
+
+        return view
+
+    @classonlymethod
+    def make_cached_view(cls, view, cache_time: int):
+        """Wrap `view` to add caching.
+
+        For authenticated users, responses are marked as private and
+        are *not* cached.
+
+        For unauthenticated users, responses are cached based on the
+        `Accept` and `Cookie` headers.
+
+        .. note::
+            Django will automatically add `Cookie` to the `Vary` header
+            when the CSRF cookie is set (and in other cases, such as
+            when the session is accessed). Given the way page rendering
+            currently works, where the CSRF cookie is *always* set,
+            caching of pages will be per-user.
+
+        .. todo::
+            Look into fixing the above issue with page rendering. This
+            might required detecting if a page uses the CSRF token or
+            something along those lines.
+
+        """
+        if not cache_time:
+            return view
+
+        @cache_page(cache_time)
+        @vary_on_headers("Accept")
+        def cached_view(request, *args, **kwargs):
+            response = view(request, *args, **kwargs)
+            public = request.user.is_anonymous
+            if public:
+                patch_cache_control(response, public=True)
+            else:
+                patch_cache_control(response, private=True)
+            return response
+
+        return cached_view
 
     def setup(self, request: HttpRequest, *args, **kwargs):
         self.request = request
@@ -256,7 +311,13 @@ class RouteView(TemplateResponseMixin, View):
 
         if do_ssr:
             bundle_path = self.ssr_bundle_path
+
+            # XXX: Calling get_token() will force the CSRF cookie to
+            #      *always* be set, which conflicts with caching. Need
+            #      to figure out a way to lazily access the token only
+            #      when needed.
             masked_csrf_token = csrf.get_token(request)
+
             csrf_token = csrf._unmask_cipher_token(masked_csrf_token)
             current_user_data = dk_settings.current_user_serializer(user)
             current_user_json = json.dumps(current_user_data)
@@ -267,11 +328,17 @@ class RouteView(TemplateResponseMixin, View):
             markup = cache.get(key)
 
             if markup is None:
+                log.debug("Generating and caching SSR markup with args: %s", argv)
                 markup = run_bundle(bundle_path, argv)
                 cache.set(key, markup, None)
 
             context["markup"] = markup
         else:
+            # XXX: This is a hack to force the CSRF cookie to *always*
+            #      be set in order to avoid 403 errors. This conflicts
+            #      with caching. Need to figure out a way to lazily
+            #      access the token only when needed.
+            csrf.get_token(request)
             context["markup"] = "Loading..."
 
         return self.render_to_response(context)
