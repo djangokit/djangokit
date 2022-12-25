@@ -75,7 +75,7 @@ def flatten_args(args: Args) -> List[str]:
     """
     flattened = []
     for arg in args:
-        if arg is None:
+        if arg in (None, ""):
             continue
         elif isinstance(arg, str):
             flattened.append(arg)
