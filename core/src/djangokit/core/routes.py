@@ -12,18 +12,43 @@ from django.conf import settings
 from .exceptions import RouteError
 
 
-def discover_routes(view_class=None) -> list:
+def discover_routes(view_class=None, cache_time=None) -> list:
     """Find file-based routes and return URLs for them."""
     dk_settings = settings.DJANGOKIT
+
     if view_class is None:
         view_class = dk_settings.route_view_class
-    tree = make_route_dir_tree()
+
+    if cache_time is None:
+        cache_time = dk_settings.cache_time
+
     urls = []
+    tree = make_route_dir_tree()
+
     for node in tree:
-        view = view_class.as_view_from_node(node, dk_settings.cache_time)
+        subpaths = set()
         pattern = node.url_pattern
-        path_func = urlconf.re_path if pattern.startswith("^") else urlconf.path
-        urls.append(path_func(pattern, view))
+        view = view_class.as_view_from_node(node, cache_time=cache_time)
+        handlers = view.djangokit_handlers
+
+        if node.page_module:
+            subpaths.add("")
+            urls.append(urlconf.path(pattern, view, {"__subpath__": ""}))
+
+        for method, method_handlers in handlers.items():
+            for subpath, handler in method_handlers.items():
+                assert subpath == handler.path
+                if subpath not in subpaths:
+                    subpaths.add(subpath)
+                    if subpath == "":
+                        subpattern = pattern
+                    elif pattern == "":
+                        subpattern = subpath
+                    else:
+                        subpattern = f"{pattern}/{subpath}"
+                    conf = urlconf.path(subpattern, view, {"__subpath__": subpath})
+                    urls.append(conf)
+
     return urls
 
 
@@ -204,10 +229,8 @@ class RouteNode:
                 part = part.replace("_", "-")
                 segments.append(part)
         if is_catchall:
-            segments[-1] = ".*"
+            segments[-1] = "<path:path>"
         pattern = "/".join(segments)
-        if is_catchall:
-            pattern = f"^{pattern}"
         return pattern
 
     @cached_property

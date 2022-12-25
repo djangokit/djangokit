@@ -1,21 +1,20 @@
 import json
 import logging
 import os
+from collections import defaultdict
 from functools import lru_cache
 from hashlib import sha1
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, Dict, Optional, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from django.conf import settings
 from django.contrib.staticfiles.finders import find
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
-from django.db import models
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, Http404
 from django.middleware import csrf
-from django.shortcuts import redirect
 from django.utils.cache import patch_cache_control
 from django.utils.decorators import classonlymethod
 from django.views import View
@@ -24,7 +23,8 @@ from django.views.decorators.vary import vary_on_headers
 from django.views.generic.base import TemplateResponseMixin
 
 from ..build import run_bundle
-from ..http import JsonResponse
+from ..serializers import JsonEncoder
+from .handler import Handler
 
 log = logging.getLogger(__name__)
 
@@ -33,6 +33,9 @@ class RouteView(TemplateResponseMixin, View):
 
     path: Path
     """Absolute path to route directory."""
+
+    template_name = "djangokit/app.html"
+    """Template used to render page for both CSR & SSR."""
 
     page_module: Optional[str] = None
     """Page module, if present.
@@ -54,60 +57,128 @@ class RouteView(TemplateResponseMixin, View):
 
     """
 
-    allowed_methods: Dict[str, Callable] = {}
-    """Allowed HTTP methods for view.
-
-    The allowed methods are determined by the presence of a page module
-    and/or the handler functions defined in the configured handler
-    module.
+    handlers: Dict[str, List[Handler]] = {}
+    """Handlers for view (map of HTTP method name to handlers).
+    
+    These are discovered from the route's handler module. Any function
+    in the handler module that is named after a known HTTP method name
+    is considered a handler as is any function that is explicitly
+    declared as a handler using the `handler` decorator.
 
     """
 
+    loader: Optional[Handler] = None
+    """The handler that is the loader for this view."""
+
     ssr_bundle_path: Path = Path()
-    template_name = "djangokit/app.html"
+    """Path to bundle used to render SSR markup."""
 
     @classonlymethod
     def as_view_from_node(
         cls,
         node,
-        cache_time=0,
+        *,
+        template_name: Optional[str] = None,
         ssr_bundle_path: Optional[Union[str, Path]] = None,
-    ):
+        cache_time=0,
+    ) -> Tuple[Callable,]:
         page_module = node.page_module
         handler_module = node.handler_module
-        allowed_methods = {}
 
         if handler_module:
-            for name in dir(handler_module):
-                if name in cls.http_method_names:
-                    allowed_methods[name] = getattr(handler_module, name)
-
-            if "head" not in allowed_methods and "get" in allowed_methods:
-                allowed_methods["head"] = allowed_methods["get"]
-
-            if not allowed_methods:
+            handlers, loader = cls.get_handlers(handler_module)
+            if not handlers:
                 raise ImproperlyConfigured(
                     f"The handler module {handler_module.__name__} doesn't contain any "
                     "handlers. Expected at least one handler (get, post, etc)."
                 )
+        else:
+            handlers = {}
+            loader = None
 
         ssr_bundle_path = (
             Path(ssr_bundle_path) if ssr_bundle_path else get_ssr_bundle_path()
         )
 
         view = cls.as_view(
+            template_name=template_name or cls.template_name,
             page_module=page_module,
             handler_module=handler_module,
-            allowed_methods=allowed_methods,
+            handlers=handlers,
+            loader=loader,
             ssr_bundle_path=ssr_bundle_path,
         )
 
-        if cache_time and (
-            page_module or "get" in allowed_methods or "head" in allowed_methods
-        ):
+        if cache_time and (page_module or "get" in handlers or "head" in handlers):
             view = cls.make_cached_view(view, cache_time)
 
+        view.djangokit_handlers = handlers
         return view
+
+    @classonlymethod
+    def get_handlers(
+        cls,
+        module: ModuleType,
+    ) -> Tuple[Dict[str, List[Handler]], Optional[Handler]]:
+        """Get handlers and loader from `module`.
+
+        Returns:
+            - A dict mapping HTTP method names to handlers
+            - The handler that's designated as the loader for the route,
+              if there is one
+
+        """
+        objects = vars(module)
+        callables = tuple((n, obj) for n, obj in objects.items() if callable(obj))
+
+        if not callables:
+            return {}, None
+
+        module_name = module.__name__
+        handlers = defaultdict(dict)
+        loader = None
+
+        for name, maybe_handler in callables:
+            if isinstance(maybe_handler, Handler):
+                handler = maybe_handler
+            elif name in cls.http_method_names:
+                handler = Handler(maybe_handler, name, path=name)
+            else:
+                continue
+
+            method = handler.method
+            path = handler.path
+            method_handlers = handlers[method]
+
+            if path in method_handlers:
+                raise ImproperlyConfigured(
+                    f"Found duplicate handler path for method {method} in "
+                    f"handler module {module_name}: {path}."
+                )
+            else:
+                method_handlers[path] = handler
+
+            if handler.is_loader:
+                if handler.method != "get":
+                    raise ImproperlyConfigured(
+                        "Only a GET handler can be designated as the loader for a "
+                        f"route (module = {module_name})."
+                    )
+                if loader is not None:
+                    raise ImproperlyConfigured(
+                        "Only one handler per handler module may be "
+                        f"designated as the loader (module = {module_name})."
+                    )
+                loader = handler
+
+            if method == "get" and path == "" and "head" not in handlers:
+                handlers["head"][""] = handler
+
+        if loader is None and "get" in handlers and "" in handlers["get"]:
+            loader = handlers["get"][""]
+            loader.is_loader = True
+
+        return handlers, loader
 
     @classonlymethod
     def make_cached_view(cls, view, cache_time: int):
@@ -152,8 +223,14 @@ class RouteView(TemplateResponseMixin, View):
         self.request = request
         self.args = args
         self.kwargs = kwargs
+        self.subpath = kwargs.pop("__subpath__")
 
-    def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+    def dispatch(
+        self,
+        request: HttpRequest,
+        *args,
+        **kwargs,
+    ) -> HttpResponse:
         """Dispatch request.
 
         `GET`/`HEAD` handling:
@@ -174,126 +251,42 @@ class RouteView(TemplateResponseMixin, View):
             `application/json`. HTML is preferred otherwise.
 
         All other request methods will always be handled by a handler.
-
-        Handlers can return one of the following:
-
-        1. A dict or a model instance, which will be converted to a JSON
-           response with a 200 status code.
-        2. A string, which will be converted to a 200 response with the
-           specified body content.
-        3. An HTTP status code (an `int`), which will be converted to an
-           empty response with the specified status code *or* to a
-           redirect to / if the status code is 301 or 302.
-        4. A status code *and* a dict or model instance, which will be
-           converted to a JSON response with the specified status code
-           and data.
-        5. A status code *and* a string, which will be converted to a
-           response with the specified status code and body  *or* to a
-           redirect if the status code is 301 or 302.
-        6. None, which will be converted to a 204 No Content response.
-        7. A Django response object when more control is needed over the
-           response.
-
-        If there's no handler corresponding to the request's method, a
-        405 response will be returned.
-
-        .. note::
-            To redirect, return 301 or 302 and a redirect location.
-            E.g., `302, "/login"`. Note that you usually want to use
-            302 non-permanent redirects. Note also that trying to
-            redirect with data will raise an error (e.g., `302, {}`).
-
-        Raises:
-            TypeError:
-                When the return value from a handler isn't valid, we
-                raise a `TypeError` because that's a programming error.
+        See class:`Handler` for more information about what handlers can
+        return.
 
         """
         method = request.method.lower()
-        allowed_methods = self.allowed_methods
-        prefers_json = request.prefers_json
-        prefers_html = not prefers_json
+        subpath = kwargs.pop("__subpath__")
+        handlers = self.handlers
+        prefers_html = not request.prefers_json
 
         if (
             method in ("get", "head")
-            and (prefers_html or method not in allowed_methods)
+            and subpath == ""
+            and (prefers_html or method not in handlers)
             and self.page_module
         ):
             return self.render()
 
-        if method not in allowed_methods:
+        if method not in handlers:
             if method == "options":
                 return self.options(request, *args, **kwargs)
             return self.http_method_not_allowed(request, *args, **kwargs)
 
-        handler = allowed_methods[method]
-        result = handler(request, *args, **kwargs)
+        method_handlers = handlers[method]
 
-        if result is None:
-            return HttpResponse(204)
-
-        # XXX: Most common case?
-        if isinstance(result, (dict, models.Model)):
-            return JsonResponse(result)
-
-        if isinstance(result, str):
-            return HttpResponse(result)
-
-        if isinstance(result, int):
-            status = result
-            if status in (301, 302):
-                data = "/"
-            elif prefers_json:
-                data = {}
-            else:
-                data = ""
-            result = (status, data)
-
-        if isinstance(result, tuple):
-            if len(result) != 2:
-                raise TypeError(
-                    f"Handler returned tuple with {len(result)} item(s): {result!r}. "
-                    "(expected 2)."
-                )
-
-            status, data = result
-
-            if not isinstance(status, int):
-                raise TypeError(
-                    f"Handler returned unexpected HTTP status type {type(status)} "
-                    "(expected int)"
-                )
-
-            if status in (301, 302):
-                to = data
-                if not isinstance(to, str):
-                    raise TypeError(
-                        f"Redirect location should be a string; got "
-                        f"{to}: {type(to)}."
-                    )
-                permanent = status == 301
-                return redirect(to, permanent=permanent)
-
-            if isinstance(data, (dict, models.Model)):
-                return JsonResponse(data, status=status)
-
-            if isinstance(data, str):
-                return HttpResponse(data, status=status)
-
-            raise TypeError(
-                f"Handler returned unexpected data type {type(data)} "
-                "(expected dict, Model, or str)"
+        if subpath not in method_handlers:
+            # XXX: This should never happen?
+            log.error(
+                f"Subpath not found for method %s in handler module %s: %s",
+                method,
+                self.handler_module,
+                subpath,
             )
+            raise Http404
 
-        # XXX: Least common case?
-        if isinstance(result, HttpResponse):
-            return result
-
-        raise TypeError(
-            f"Handler returned unexpected object of type {type(result)}: {result!r}. "
-            "Expected dict, Model, int, Tuple[int, dict], Tuple[int, Model], None or "
-            "HttpResponse)."
-        )
+        handler = method_handlers[subpath]
+        return handler(request, *args, **kwargs)
 
     def render(self) -> str:
         """Render app template.
@@ -323,8 +316,13 @@ class RouteView(TemplateResponseMixin, View):
 
             csrf_token = csrf._unmask_cipher_token(masked_csrf_token)
             current_user_data = dk_settings.current_user_serializer(user)
-            current_user_json = json.dumps(current_user_data)
-            argv = [request.path, csrf_token, current_user_json]
+            current_user_json = json.dumps(current_user_data, cls=JsonEncoder)
+            if self.loader is not None:
+                data = self.loader.impl(request, *self.args, **self.kwargs)
+                data = json.dumps(data, cls=JsonEncoder)
+            else:
+                data = ""
+            argv = [request.path, csrf_token, current_user_json, data]
 
             key = ":".join((str(bundle_path), *argv))
             key = sha1(key.encode("utf-8")).hexdigest()

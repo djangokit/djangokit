@@ -158,9 +158,10 @@ class DjangoKitSettings:
     route_view_class: Union[str, type] = "djangokit.core.views.RouteView"
     """The view class used for routes.
     
-    It's expected to have an `as_view_from_node` method that takes
-    :class:`RouteNode`, `cache_time`, and `ssr_bundle_path` args and
-    returns a view (e.g., by calling `cls.as_view()`.
+    It's expected to have an `as_view_from_node` method that takes a
+    :class:`RouteNode` and, optionally, a `template_name`, `cache_time`,
+    and/or `ssr_bundle_path` and returns a view (e.g., by calling
+    `cls.as_view()`).
     
     """
 
