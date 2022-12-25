@@ -28,7 +28,7 @@ def discover_routes(view_class=None) -> list:
 
 
 @lru_cache(maxsize=None)
-def make_route_dir_tree(path=None, parent=None) -> "RouteDirNode":
+def make_route_dir_tree(path=None, parent=None) -> "RouteNode":
     """Make a tree of route directory info.
 
     Returns the root node of the tree.
@@ -60,7 +60,7 @@ def make_route_dir_tree(path=None, parent=None) -> "RouteDirNode":
     error_module = get_tsx_or_jsx_module("error")
     handler_module_name = "handlers.py" if "handlers.py" in file_names else None
 
-    node = RouteDirNode(
+    node = RouteNode(
         parent,
         path,
         layout_module,
@@ -92,9 +92,10 @@ def make_route_dir_tree(path=None, parent=None) -> "RouteDirNode":
 
 
 @dataclasses.dataclass
-class RouteDirNode:
+class RouteNode:
+    """A node in the route tree containing info about a route."""
 
-    parent: Optional["RouteDirNode"]
+    parent: Optional["RouteNode"]
 
     path: Path
     """Absolute path to route directory."""
@@ -114,7 +115,7 @@ class RouteDirNode:
     handler_module_name: Optional[str]
     """Name of handler module, if present."""
 
-    children: List["RouteDirNode"] = dataclasses.field(default_factory=list)
+    children: List["RouteNode"] = dataclasses.field(default_factory=list)
 
     def __hash__(self):
         return hash(self.path)
@@ -138,7 +139,7 @@ class RouteDirNode:
     def depth(self):
         return 0 if self.is_root else len(self.rel_path.parts)
 
-    def traverse(self, visit: Callable[["RouteDirNode"], None], node=None):
+    def traverse(self, visit: Callable[["RouteNode"], None], node=None):
         """Traverse tree starting from specified node."""
         if node is None:
             node = self
@@ -232,7 +233,7 @@ class RouteDirNode:
         return pattern
 
     @cached_property
-    def layout_for_nested_layout(self) -> Optional["RouteDirNode"]:
+    def layout_for_nested_layout(self) -> Optional["RouteNode"]:
         """Find layout for nested layout node."""
         if not self.nested_layout_module:
             return None
@@ -246,11 +247,11 @@ class RouteDirNode:
         )
 
     @cached_property
-    def layout_for_page(self) -> Optional["RouteDirNode"]:
+    def layout_for_page(self) -> Optional["RouteNode"]:
         """Find layout for page node."""
         if not self.page_module:
             return None
-        current: Optional[RouteDirNode] = self
+        current: Optional[RouteNode] = self
         while current is not None:
             if current.layout_module or current.nested_layout_module:
                 return current

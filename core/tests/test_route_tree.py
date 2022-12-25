@@ -1,6 +1,6 @@
 import pytest
 
-from djangokit.core.routes import RouteDirNode, make_route_dir_tree
+from djangokit.core.routes import RouteNode, make_route_dir_tree
 
 
 @pytest.fixture
@@ -18,7 +18,7 @@ def test_make_route_dir_tree(tree):
 
 
 def test_traversal(tree, expected_node_ids):
-    def visitor(node: RouteDirNode):
+    def visitor(node: RouteNode):
         if node.page_module:
             ids.append(node.id)
 
