@@ -70,7 +70,7 @@ def collectstatic(static_root: Optional[str] = None, clear: bool = False):
     """Collect static files."""
     if static_root is not None:
         settings.STATIC_ROOT = static_root
-    run_django_command(["collectstatic", "--clear" if clear else None])
+    run_django_command(["collectstatic", "--clear" if clear else ""])
 
 
 @app.command()

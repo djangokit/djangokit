@@ -58,7 +58,7 @@ def start(
 
     build_client(ssr=ssr, minify=minify, watch=watch, join=False)
     console.header("Running Django dev server")
-    reload_opt = None if reload else "--noreload"
+    reload_opt = "" if reload else "--noreload"
     run_django_command(["runserver", reload_opt, f"{host}:{port}"])
 
 

@@ -55,7 +55,11 @@ def exclusive(group_name: str) -> Callable[[Context, CallbackParam, Any], Any]:
 
     def callback(ctx: Context, param: CallbackParam, value: Any) -> Any:
         name = param.name
-        source = ctx.get_parameter_source(name)
+
+        if name is not None:
+            source = ctx.get_parameter_source(name)
+        else:
+            return value
 
         if source == ParameterSource.DEFAULT:
             return value
