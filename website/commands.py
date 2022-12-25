@@ -1,4 +1,5 @@
 import os
+import posixpath
 import re
 import shutil
 from pathlib import Path
@@ -6,7 +7,7 @@ from pathlib import Path
 from runcommands import abort, arg, command
 from runcommands import commands as c
 from runcommands import printer
-from runcommands.commands import remote
+from runcommands.commands import remote, sync
 from runcommands.util import flatten_args
 
 
@@ -182,27 +183,30 @@ def deploy(
     ansible(env, host, version, tags=tags, skip_tags=skip_tags)
 
 
+def get_current_path():
+    root = "/sites/djangokit.org"
+    readlink_result = remote(
+        "readlink current",
+        run_as="djangokit",
+        cd=root,
+        stdout="capture",
+    )
+    current_path = readlink_result.stdout.strip()
+    if not current_path:
+        abort(404, f"Could not read current link in {root}")
+    return current_path
+
+
 @command
-def clean_remote(root="/sites/djangokit.org", run_as="djangokit", dry_run=False):
+def clean_remote(run_as="djangokit", dry_run=False):
     """Clean up remote.
 
     Removes old deployments under the site root.
 
     """
+    root = "/sites/djangokit.org"
     printer.header(f"Removing old versions from {root}")
-
-    readlink_result = remote(
-        "readlink current",
-        run_as=run_as,
-        cd=root,
-        stdout="capture",
-    )
-
-    current_path = readlink_result.stdout.strip()
-
-    if not current_path:
-        abort(404, f"Could not read current link in {root}")
-
+    current_path = get_current_path()
     current_version = os.path.basename(current_path)
     printer.success(f"Current version: {current_version}")
 
@@ -244,3 +248,20 @@ def clean_remote(root="/sites/djangokit.org", run_as="djangokit", dry_run=False)
             remote(f"rm -r {path}", run_as=run_as)
 
         printer.success("Done")
+
+
+@command
+def push_settings(env, host):
+    """Push settings for env to current deployment and restart uWSGI.
+
+    This provides a simple way to modify production settings without
+    doing a full redeployment.
+
+    """
+    current_path = get_current_path()
+    app_dir = posixpath.join(current_path, "app/")
+    printer.header(f"Pushing {env} settings to {host}:{app_dir}")
+    sync(f"settings.{env}.toml", app_dir, host, run_as="djangokit")
+    printer.info("Restarting uWSGI (this can take a while)...", end="")
+    remote("systemctl restart uwsgi.service", sudo=True)
+    printer.success("Done")
