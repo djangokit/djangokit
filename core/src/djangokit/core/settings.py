@@ -147,6 +147,15 @@ class DjangoKitSettings:
     global_stylesheets: List[str] = field(default_factory=lambda: ["global.css"])
     """Global stylesheets to be injected into the document `<head>`."""
 
+    route_view_class: Union[str, type] = "djangokit.core.views.RouteView"
+    """The view class used for routes.
+    
+    It's expected to have an `as_view_from_node` method that takes
+    :class:`RouteNode`, `cache_time`, and `ssr_bundle_path` args and
+    returns a view (e.g., by calling `cls.as_view()`.
+    
+    """
+
     current_user_serializer: Union[
         str, Callable
     ] = "djangokit.core.user.current_user_serializer"
@@ -187,6 +196,10 @@ class DjangoKitSettings:
             self.routes_dir = package_dir / "routes"
             self.routes_package = f"{package}.routes"
             self.static_dir = package_dir / "static"
+        elif name == "route_view_class":
+            view_class = value
+            if isinstance(view_class, str):
+                self.route_view_class = import_string(value)
         elif name == "current_user_serializer":
             serializer = value
             if isinstance(serializer, str):

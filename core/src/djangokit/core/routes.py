@@ -10,15 +10,17 @@ from django import urls as urlconf
 from django.conf import settings
 
 from .exceptions import RouteError
-from .views import RouteView
 
 
-def discover_routes(view_class=RouteView) -> list:
+def discover_routes(view_class=None) -> list:
     """Find file-based routes and return URLs for them."""
+    dk_settings = settings.DJANGOKIT
+    if view_class is None:
+        view_class = dk_settings.route_view_class
     tree = make_route_dir_tree()
     urls = []
     for node in tree:
-        view = view_class.as_view_from_node(node)
+        view = view_class.as_view_from_node(node, dk_settings.cache_time)
         pattern = node.url_pattern
         path_func = urlconf.re_path if pattern.startswith("^") else urlconf.path
         urls.append(path_func(pattern, view))
