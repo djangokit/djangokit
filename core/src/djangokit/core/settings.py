@@ -303,7 +303,8 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "OPTIONS": {
-            # NOTE: loaders option is configured below
+            # NOTE: Default loaders option is derived below
+            "loaders": None,
             "context_processors": [
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
@@ -437,17 +438,6 @@ def traverse_from_env_dict(settings_dict, from_env_dict, required, parent_path=N
             )
 
 
-def set_derived_settings():
-    template_options = settings["TEMPLATES"][0]["OPTIONS"]
-    if "loaders" not in template_options:
-        template_loader = "djangokit.core.templates.loader.Loader"
-        if settings["DEBUG"]:
-            template_options["loaders"] = [template_loader]
-        else:
-            cached_loader = "django.template.loaders.cached.Loader"
-            template_options["loaders"] = [(cached_loader, [template_loader])]
-
-
 def prepend_settings():
     for prepend_name, prepend_val in settings.items():
         if prepend_name.startswith("PREPEND_"):
@@ -503,10 +493,29 @@ def add_djangokit_settings():
     dk_settings.check()
 
 
+def set_derived_settings():
+    """Set defaults for settings that are derived from other settings.
+
+    If a setting is already set, this has no effect.
+
+    """
+    debug = settings["DEBUG"]
+
+    # Set default template loaders option
+    template_options = settings["TEMPLATES"][0]["OPTIONS"]
+    loaders = template_options.get("loaders")
+    if loaders is None:
+        template_loader = "djangokit.core.templates.loader.Loader"
+        if debug:
+            template_options["loaders"] = [template_loader]
+        else:
+            cached_loader = "django.template.loaders.cached.Loader"
+            template_options["loaders"] = [(cached_loader, [template_loader])]
+
+
 merge_additional_settings_module()
 merge_loaded_settings()
 merge_env_settings()
-set_derived_settings()
 prepend_settings()
 append_settings()
 
@@ -514,3 +523,5 @@ append_settings()
 #       name to the front of INSTALLED_APPS and the DjangoKit middleware
 #       to the end of MIDDLEWARE.
 add_djangokit_settings()
+
+set_derived_settings()
