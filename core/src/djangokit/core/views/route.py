@@ -64,7 +64,7 @@ class RouteView(View):
         private: bool = False,
         cache_control: Optional[dict] = None,
         vary_on: Sequence[str] = ("Accept", "Accept-Encoding", "Accept-Language"),
-        template_name: Optional[str] = "djangokit/app.html",
+        template_name: str = "djangokit/app.html",
         ssr_bundle_path: Optional[Union[str, Path]] = None,
         loader: Optional[Handler] = None,
     ) -> Tuple[Callable[[HttpRequest], HttpResponse]]:
@@ -120,7 +120,7 @@ class RouteView(View):
         private: bool,
         cache_control: Optional[dict],
         vary_on: Sequence[str],
-    ) -> Tuple[Dict[str, List[Handler]], Optional[Handler]]:
+    ) -> Tuple[Dict[str, Dict[str, Handler]], Optional[Handler]]:
         """Get handlers and loader from `module`.
 
         Returns:
@@ -136,7 +136,8 @@ class RouteView(View):
             return {}, None
 
         module_name = module.__name__
-        handlers = defaultdict(dict)
+        # method => path => handler
+        handlers: Dict[str, Dict[str, Handler]] = defaultdict(dict)
         loader = None
 
         cache_config = {
