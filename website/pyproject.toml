@@ -21,6 +21,7 @@ org-djangokit-cli = ">=0.0.2.dev0"
 markdown = "^3.4.1"
 pygments = "^2.13.0"
 pydantic = "^1.10.2"
+pymemcache = "^4.0.0"
 
 [tool.poetry.group.dev.dependencies]
 org-djangokit-core = { path = "../core", develop = true }
