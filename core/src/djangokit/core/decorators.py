@@ -12,14 +12,16 @@ def handler(
     cache_time=0,
     private=False,
     cache_control: Optional[dict] = None,
-    vary_on=(),
+    vary_on=("Accept", "Accept-Encoding", "Accept-Language"),
 ) -> Callable[[Impl], Handler]:
     """Wrap a function to produce a `Handler`.
 
     If a `path` isn't specified, the handler's path will be derived from
-    its name (replacing underscores with dashes).
+    its function name (replacing underscores with dashes).
 
-    Use this to:
+    If `path` is equal to `method`, `path` will be set to `""`.
+
+    Use this decorator to:
 
     1. Add a handler at a subpath.
        a. Specify that a subpath handler should be used as the loader
@@ -39,6 +41,11 @@ def handler(
     """
 
     def wrapper(impl: Impl) -> Handler:
+        nonlocal path
+
+        if not path and path != method:
+            path = impl.__name__.replace("_", "-")
+
         return update_wrapper(
             Handler(
                 impl,

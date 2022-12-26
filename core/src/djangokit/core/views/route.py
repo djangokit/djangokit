@@ -1,41 +1,25 @@
-import json
 import logging
 import os
 from collections import defaultdict
 from functools import lru_cache
-from hashlib import sha1
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 from django.conf import settings
 from django.contrib.staticfiles.finders import find
 from django.contrib.staticfiles.storage import staticfiles_storage
-from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
-from django.http import Http404, HttpRequest, HttpResponse
-from django.middleware import csrf
-from django.utils.cache import patch_cache_control
+from django.http import HttpRequest, HttpResponse
 from django.utils.decorators import classonlymethod
 from django.views import View
-from django.views.decorators.cache import cache_page
-from django.views.decorators.vary import vary_on_headers
-from django.views.generic.base import TemplateResponseMixin
 
-from ..build import run_bundle
-from ..serializers import JsonEncoder
-from .handler import Handler
+from .handler import Handler, PageHandler
 
 log = logging.getLogger(__name__)
 
 
-class RouteView(TemplateResponseMixin, View):
-
-    path: Path
-    """Absolute path to route directory."""
-
-    template_name = "djangokit/app.html"
-    """Template used to render page for both CSR & SSR."""
+class RouteView(View):
 
     page_module: Optional[str] = None
     """Page module, if present.
@@ -43,6 +27,9 @@ class RouteView(TemplateResponseMixin, View):
     This is a JSX file that exports a default function.
 
     """
+
+    page_handler: Optional[PageHandler] = None
+    """Handler used to render page."""
 
     handler_module: Optional[ModuleType] = None
     """Handler module for this view.
@@ -67,58 +54,71 @@ class RouteView(TemplateResponseMixin, View):
 
     """
 
-    loader: Optional[Handler] = None
-    """The handler that is the loader for this view."""
-
-    ssr_bundle_path: Path = Path()
-    """Path to bundle used to render SSR markup."""
-
     @classonlymethod
     def as_view_from_node(
         cls,
         node,
         *,
-        template_name: Optional[str] = None,
-        ssr_bundle_path: Optional[Union[str, Path]] = None,
         cache_time=0,
-    ) -> Tuple[Callable,]:
+        private: bool = False,
+        cache_control: Optional[dict] = None,
+        vary_on: Sequence[str] = ("Accept", "Accept-Encoding", "Accept-Language"),
+        template_name: Optional[str] = "djangokit/app.html",
+        ssr_bundle_path: Optional[Union[str, Path]] = None,
+        loader: Optional[Handler] = None,
+    ) -> Tuple[Callable[[HttpRequest], HttpResponse]]:
         page_module = node.page_module
         handler_module = node.handler_module
 
         if handler_module:
-            handlers, loader = cls.get_handlers(handler_module)
+            handlers, discovered_loader = cls.get_handlers(
+                handler_module,
+                cache_time,
+                private,
+                cache_control,
+                vary_on,
+            )
             if not handlers:
                 raise ImproperlyConfigured(
                     f"The handler module {handler_module.__name__} doesn't contain any "
                     "handlers. Expected at least one handler (get, post, etc)."
                 )
+            if loader is None:
+                loader = discovered_loader
         else:
             handlers = {}
-            loader = None
 
-        ssr_bundle_path = (
-            Path(ssr_bundle_path) if ssr_bundle_path else get_ssr_bundle_path()
-        )
+        if page_module:
+            ssr_bundle_path = (
+                Path(ssr_bundle_path) if ssr_bundle_path else get_ssr_bundle_path()
+            )
+            page_handler = PageHandler(
+                template_name=template_name,
+                ssr_bundle_path=ssr_bundle_path,
+                loader=loader,
+                cache_time=cache_time,
+                private=private,
+                cache_control=cache_control,
+                vary_on=vary_on,
+            )
+        else:
+            page_handler = None
 
-        view = cls.as_view(
-            template_name=template_name or cls.template_name,
+        return cls.as_view(
             page_module=page_module,
+            page_handler=page_handler,
             handler_module=handler_module,
             handlers=handlers,
-            loader=loader,
-            ssr_bundle_path=ssr_bundle_path,
         )
-
-        if cache_time and (page_module or "get" in handlers or "head" in handlers):
-            view = cls.make_cached_view(view, cache_time)
-
-        view.djangokit_handlers = handlers
-        return view
 
     @classonlymethod
     def get_handlers(
         cls,
         module: ModuleType,
+        cache_time: int,
+        private: bool,
+        cache_control: Optional[dict],
+        vary_on: Sequence[str],
     ) -> Tuple[Dict[str, List[Handler]], Optional[Handler]]:
         """Get handlers and loader from `module`.
 
@@ -138,11 +138,22 @@ class RouteView(TemplateResponseMixin, View):
         handlers = defaultdict(dict)
         loader = None
 
+        cache_config = {
+            "cache_time": cache_time,
+            "private": private,
+            "cache_control": cache_control,
+            "vary_on": vary_on,
+        }
+
         for name, maybe_handler in callables:
             if isinstance(maybe_handler, Handler):
                 handler = maybe_handler
+                if not handler.has_cache_config:
+                    handler.set_cache_config(cache_config)
             elif name in cls.http_method_names:
-                handler = Handler(maybe_handler, name, path=name)
+                method = name
+                handler_cache_args = cache_config.copy() if method == "get" else {}
+                handler = Handler(maybe_handler, method, "", **handler_cache_args)
             else:
                 continue
 
@@ -179,45 +190,6 @@ class RouteView(TemplateResponseMixin, View):
             loader.is_loader = True
 
         return handlers, loader
-
-    @classonlymethod
-    def make_cached_view(cls, view, cache_time: int):
-        """Wrap `view` to add caching.
-
-        For authenticated users, responses are marked as private and
-        are *not* cached.
-
-        For unauthenticated users, responses are cached based on the
-        `Accept` and `Cookie` headers.
-
-        .. note::
-            Django will automatically add `Cookie` to the `Vary` header
-            when the CSRF cookie is set (and in other cases, such as
-            when the session is accessed). Given the way page rendering
-            currently works, where the CSRF cookie is *always* set,
-            caching of pages will be per-user.
-
-        .. todo::
-            Look into fixing the above issue with page rendering. This
-            might required detecting if a page uses the CSRF token or
-            something along those lines.
-
-        """
-        if not cache_time:
-            return view
-
-        @cache_page(cache_time)
-        @vary_on_headers("Accept")
-        def cached_view(request, *args, **kwargs):
-            response = view(request, *args, **kwargs)
-            public = request.user.is_anonymous
-            if public:
-                patch_cache_control(response, public=True)
-            else:
-                patch_cache_control(response, private=True)
-            return response
-
-        return cached_view
 
     def setup(self, request: HttpRequest, *args, **kwargs):
         self.request = request
@@ -256,17 +228,18 @@ class RouteView(TemplateResponseMixin, View):
 
         """
         method = request.method.lower()
-        subpath = kwargs.pop("__subpath__")
+        page_handler = self.page_handler
         handlers = self.handlers
+        subpath = kwargs.pop("__subpath__")
         prefers_html = not request.prefers_json
 
         if (
             method in ("get", "head")
             and subpath == ""
             and (prefers_html or method not in handlers)
-            and self.page_module
+            and page_handler
         ):
-            return self.render()
+            return page_handler(request, *args, **kwargs)
 
         if method not in handlers:
             if method == "options":
@@ -274,75 +247,8 @@ class RouteView(TemplateResponseMixin, View):
             return self.http_method_not_allowed(request, *args, **kwargs)
 
         method_handlers = handlers[method]
-
-        if subpath not in method_handlers:
-            # XXX: This should never happen?
-            log.error(
-                f"Subpath not found for method %s in handler module %s: %s",
-                method,
-                self.handler_module,
-                subpath,
-            )
-            raise Http404
-
         handler = method_handlers[subpath]
         return handler(request, *args, **kwargs)
-
-    def render(self) -> str:
-        """Render app template.
-
-        If SSR is enabled in the app's settings, this will also do SSR
-        and inject the markup into the app template.
-
-        """
-        dk_settings = settings.DJANGOKIT
-        request: HttpRequest = self.request
-        user = request.user
-        context = {"view": self, "settings": dk_settings}
-
-        # XXX: We don't do SSR for logged-in users for now, regardless
-        #      of SSR setting. This is mainly to avoid issues with React
-        #      SSR hydration.
-        do_ssr = dk_settings.ssr and not user.is_authenticated
-
-        if do_ssr:
-            bundle_path = self.ssr_bundle_path
-
-            # XXX: Calling get_token() will force the CSRF cookie to
-            #      *always* be set, which conflicts with caching. Need
-            #      to figure out a way to lazily access the token only
-            #      when needed.
-            masked_csrf_token = csrf.get_token(request)
-
-            csrf_token = csrf._unmask_cipher_token(masked_csrf_token)
-            current_user_data = dk_settings.current_user_serializer(user)
-            current_user_json = json.dumps(current_user_data, cls=JsonEncoder)
-            if self.loader is not None:
-                data = self.loader.impl(request, *self.args, **self.kwargs)
-                data = json.dumps(data, cls=JsonEncoder)
-            else:
-                data = ""
-            argv = [request.path, csrf_token, current_user_json, data]
-
-            key = ":".join((str(bundle_path), *argv))
-            key = sha1(key.encode("utf-8")).hexdigest()
-            markup = cache.get(key)
-
-            if markup is None:
-                log.debug("Generating and caching SSR markup with args: %s", argv)
-                markup = run_bundle(bundle_path, argv)
-                cache.set(key, markup, None)
-
-            context["markup"] = markup
-        else:
-            # XXX: This is a hack to force the CSRF cookie to *always*
-            #      be set in order to avoid 403 errors. This conflicts
-            #      with caching. Need to figure out a way to lazily
-            #      access the token only when needed.
-            csrf.get_token(request)
-            context["markup"] = "Loading..."
-
-        return self.render_to_response(context)
 
 
 @lru_cache(maxsize=None)

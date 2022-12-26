@@ -5,8 +5,8 @@ from djangokit.core.views import RouteView
 def test_view_handlers():
     tree = make_route_dir_tree()
     view = RouteView.as_view_from_node(tree.root)
-    assert hasattr(view, "djangokit_handlers")
-    handlers = view.djangokit_handlers
+    assert "handlers" in view.view_initkwargs
+    handlers = view.view_initkwargs["handlers"]
 
     # GET
     assert "get" in handlers
@@ -20,7 +20,7 @@ def test_view_handlers():
     stuff_handler = get_handlers["stuff"]
     assert not stuff_handler.is_loader
     assert stuff_handler.cache_time == 5
-    assert stuff_handler.vary_on == ()
+    assert stuff_handler.vary_on == ("Accept", "Accept-Encoding", "Accept-Language")
 
     assert "things" in get_handlers
     things_handler = get_handlers["things"]
@@ -41,59 +41,48 @@ def test_view_handlers():
     assert head_handlers[""] is get_handlers[""]
 
 
-def test_view_handler_caching(client):
-    response = client.get("/stuff")
+def test_get_page(client):
+    response = client.get("/")
     assert response.status_code == 200
+    assert response["Content-Type"] != "application/json"
 
-    # Cache
-    assert "Cache-Control" in response
-    assert "Expires" in response
-    assert response["Cache-Control"] == "public, max-age=5"
 
-    # Vary
-    assert "Vary" not in response
-
-    # Data
+def check_data(response, expected_data):
     assert "Content-Type" in response
     assert response["Content-Type"] == "application/json"
     data = response.json()
-    assert data == {"slug": "stuff"}
+    assert data == expected_data
+
+
+def test_view_handler_caching(client):
+    response = client.get("/stuff")
+    assert response.status_code == 200
+    check_data(response, {"slug": "stuff"})
+    assert "Cache-Control" in response
+    assert "Expires" in response
+    cache_control = sorted(response["Cache-Control"].split(", "))
+    assert cache_control == ["max-age=5", "public"]
+    assert "Vary" in response
+    assert response["Vary"] == "Accept, Accept-Encoding, Accept-Language, Cookie"
 
 
 def test_view_handler_caching_and_vary_on(client):
     response = client.get("/things")
     assert response.status_code == 200
-
-    # Cache
+    check_data(response, {"slug": "things"})
     assert "Cache-Control" in response
     assert "Expires" in response
-    assert response["Cache-Control"] == "public, max-age=10"
-
-    # Vary
+    cache_control = sorted(response["Cache-Control"].split(", "))
+    assert cache_control == ["max-age=10", "public"]
     assert "Vary" in response
-    assert response["Vary"] == "Accept"
-
-    # Data
-    assert "Content-Type" in response
-    assert response["Content-Type"] == "application/json"
-    data = response.json()
-    assert data == {"slug": "things"}
+    assert response["Vary"] == "Accept, Cookie"
 
 
 def test_view_handler_private_caching(client):
     response = client.get("/private")
     assert response.status_code == 200
-
-    # Cache
+    check_data(response, {"slug": "private"})
     assert "Cache-Control" in response
     assert "Expires" not in response
     assert response["Cache-Control"] == "private"
-
-    # Vary
     assert "Vary" not in response
-
-    # Data
-    assert "Content-Type" in response
-    assert response["Content-Type"] == "application/json"
-    data = response.json()
-    assert data == {"slug": "private"}

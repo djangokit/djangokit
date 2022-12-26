@@ -29,7 +29,7 @@ def discover_routes(view_class=None, cache_time=None) -> list:
         subpaths = set()
         pattern = node.url_pattern
         view = view_class.as_view_from_node(node, cache_time=cache_time)
-        handlers = view.djangokit_handlers
+        handlers = view.view_initkwargs["handlers"]
 
         if node.page_module:
             subpaths.add("")
