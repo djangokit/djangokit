@@ -67,14 +67,6 @@ export default function Layout() {
             <Navbar.Toggle aria-controls="main-navbar" />
             <Navbar.Collapse id="main-navbar" className="justify-content-end">
               <Nav className="align-items-end">
-                <LinkContainer to="/about">
-                  <Nav.Link>About</Nav.Link>
-                </LinkContainer>
-
-                <LinkContainer to="/ideas">
-                  <Nav.Link>Ideas</Nav.Link>
-                </LinkContainer>
-
                 <LinkContainer to="/docs">
                   <Nav.Link className="d-flex align-items-center">
                     <FaBookReader />
