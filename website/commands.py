@@ -111,6 +111,12 @@ def upgrade_remote(env, host):
     ansible(env, host, tags="provision-update-packages")
 
 
+def remove_build_dir():
+    printer.warning("Removing build directory... ", end="")
+    c.local("rm -rf build")
+    printer.success("Done")
+
+
 @command
 def prepare(
     env,
@@ -122,7 +128,7 @@ def prepare(
     """Prepare build locally for deployment."""
     printer.header(f"Preparing deployment to {host} ({env})")
     if clean_:
-        c.local("rm -rf build")
+        remove_build_dir()
     version = version or c.git_version()
     tags = []
     if provision_:
@@ -149,7 +155,7 @@ def deploy(
 ):
     """Deploy site."""
     if clean_:
-        c.local("rm -rf build")
+        remove_build_dir()
 
     version = version or c.git_version()
     bool_as_str = lambda b: "yes" if b else "no"
