@@ -24,16 +24,13 @@
     dest: "{{ remote_site_root }}/current"
     state: link
 
-- name: Create directories for version
+- name: Create app directory for version
   file:
-    path: "{{ item }}"
+    path: "{{ remote_app_dir }}"
     state: directory
     owner: "{{ site_user }}"
     group: "{{ site_user }}"
     mode: 0751
-  with_items:
-    - "{{ remote_app_dir }}"
-    - "{{ remote_static_dir }}"
 
 - name: Create pip directories
   file:
@@ -125,15 +122,22 @@
 
 # Static files
 
-- name: Copy and extract static build archive
+- name: Create static directory
+  file:
+    path: "{{ remote_static_dir }}"
+    state: directory
+    owner: "{{ site_user }}"
+    group: www-data
+    mode: u=rwX,g=rX,o=
+
+- name: Sync static files
   tags:
     - deploy-static
-  unarchive:
-    src: "{{ static_build_archive }}"
-    dest: "{{ remote_build_dir }}"
-    owner: "{{ site_user }}"
-    group: "{{ site_user }}"
-    mode: 0751
+  become: true
+  become_user: root
+  synchronize:
+    src: "{{ static_build_dir }}/"
+    dest: "{{ remote_static_dir }}/"
 
 - name: Set ownership & permissions of static files
   become: true

@@ -29,8 +29,6 @@ app_build_archive: "{{ build_root }}/{{ app_build_archive_name }}"
 
 # Static
 static_build_dir: "{{ build_root }}/static"
-static_build_archive_name: "static.tgz"
-static_build_archive: "{{ build_root }}/{{ static_build_archive_name }}"
 
 # Remote ---------------------------------------------------------------
 
@@ -47,12 +45,13 @@ remote_venv: "{{ remote_app_dir }}/venv"
 remote_settings_file: "{{ remote_app_dir }}/{{ settings_file }}"
 
 # Static
-remote_static_dir: "{{ remote_build_dir }}/static"
+# NOTE: The remote static directory is shared across deployments because
+#       we keep static files for previous versions around for a while.
+remote_static_dir: "{{ remote_site_root }}/static"
 
-# Current app & static deployment directories
+# Current app deployment directories
 remote_current_root: "{{ remote_site_root }}/current"
 remote_current_app: "{{ remote_current_root }}/app"
-remote_current_static: "{{ remote_current_root }}/static"
 
 # pip directories
 remote_pip_root: "{{ remote_site_root }}/pip"

@@ -109,7 +109,6 @@
   with_items:
     - "{{ package_info.static_build_dir }}"
     - "{{ static_build_dir }}"
-    - "{{ static_build_archive }}"
 
 - name: <LOCAL> Build server bundle
   tags:
@@ -154,12 +153,3 @@
     --static-root {{ static_build_dir }}
   args:
     chdir: "{{ root }}"
-
-- name: <LOCAL> Create static archive
-  tags:
-    - prepare-static
-    - deploy-static
-    - create-static-archive
-  archive:
-    path: "{{ static_build_dir }}"
-    dest: "{{ static_build_archive }}"
