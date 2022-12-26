@@ -14,7 +14,8 @@ from django.http import HttpRequest, HttpResponse
 from django.utils.decorators import classonlymethod
 from django.views import View
 
-from .handler import Handler, PageHandler
+from .handler import Handler
+from .page_handler import PageHandler
 
 log = logging.getLogger(__name__)
 
