@@ -4,7 +4,7 @@ from functools import cached_property, lru_cache
 from importlib import import_module
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Dict, List, Literal, Optional, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
 
 from django import urls as urlconf
 from django.conf import settings
@@ -12,15 +12,18 @@ from django.conf import settings
 from .exceptions import RouteError
 
 
-def discover_routes(view_class=None, cache_time=None) -> list:
+def discover_routes(
+    view_class=None,
+    cache_time: Optional[int] = None,
+    private: Optional[bool] = None,
+    cache_control: Optional[dict] = None,
+    vary_on: Optional[Sequence[str]] = None,
+) -> list:
     """Find file-based routes and return URLs for them."""
     dk_settings = settings.DJANGOKIT
 
     if view_class is None:
         view_class = dk_settings.route_view_class
-
-    if cache_time is None:
-        cache_time = dk_settings.cache_time
 
     urls = []
     tree = make_route_dir_tree()
@@ -28,7 +31,15 @@ def discover_routes(view_class=None, cache_time=None) -> list:
     for node in tree:
         subpaths = set()
         pattern = node.url_pattern
-        view = view_class.as_view_from_node(node, cache_time=cache_time)
+        view = view_class.as_view_from_node(
+            node,
+            cache_time=dk_settings.cache_time if cache_time is None else cache_time,
+            private=dk_settings.private if private is None else private,
+            cache_control=dk_settings.cache_control
+            if cache_control is None
+            else cache_control,
+            vary_on=dk_settings.vary_on if vary_on is None else vary_on,
+        )
         handlers = view.view_initkwargs["handlers"]
 
         if node.page_module:

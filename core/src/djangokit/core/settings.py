@@ -91,7 +91,7 @@ from importlib import import_module
 from os import environ
 from pathlib import Path
 from socket import gethostname
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.module_loading import import_string
@@ -139,12 +139,17 @@ class DjangoKitSettings:
     """
 
     cache_time: int = 0
-    """How long to cache route view responses for GETs, in seconds.
+    """How long to cache responses for GETs, in seconds.
     
     This is coarse-grained caching that will apply to *all* GET requests
     for *all* routes (both pages and handlers).
     
     """
+
+    # Additional cache settings
+    private: bool = False
+    cache_control: Optional[dict] = None
+    vary_on: Sequence[str] = ("Accept", "Accept-Encoding", "Accept-Language")
 
     title: str = "A DjangoKit Site"
     """Site title (used for `<title>`)"""
