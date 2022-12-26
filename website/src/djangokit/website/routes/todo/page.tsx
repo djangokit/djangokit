@@ -205,7 +205,7 @@ function Item({ item, itemNumber }: { item: TodoItem; itemNumber: number }) {
   });
 
   return (
-    <div className="d-flex border rounded">
+    <div className="d-flex border rounded hover-highlight">
       <div className="d-flex flex-column align-items-center justify-content-center p-2 text-bg-light border-end">
         {itemNumber}.
       </div>
