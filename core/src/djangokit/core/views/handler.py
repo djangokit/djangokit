@@ -1,6 +1,5 @@
 import logging
 from dataclasses import dataclass, field, fields
-from inspect import signature
 from typing import Callable, Optional, Sequence
 
 from django.core.exceptions import ImproperlyConfigured
@@ -84,7 +83,6 @@ class Handler:
 
     # Derived
     has_cache_config: bool = field(init=False)
-    pass_handler_to_impl: bool = field(init=False)
 
     def __init__(self, impl: Impl, method: str, path: str, **kwargs):
         method = method.lower()
@@ -126,14 +124,6 @@ class Handler:
                 #      unexpected results.
                 raise ImproperlyConfigured("Cannot use private with cache_time.")
 
-        spec = signature(self.impl)
-        if "djangokit_handler" in spec.parameters:
-            self.pass_handler_to_impl = True
-        elif any(p.kind is p.VAR_KEYWORD for p in spec.parameters.values()):
-            self.pass_handler_to_impl = True
-        else:
-            self.pass_handler_to_impl = False
-
     def set_cache_config(self, config):
         for n, v in config.items():
             setattr(self, n, v)
@@ -162,8 +152,6 @@ class Handler:
             something along those lines.
 
         """
-        if self.pass_handler_to_impl:
-            kwargs["djangokit_handler"] = self
         result = self.impl(request, *args, **kwargs)
         response = self.get_response(request, result)
         self.apply_cache_config(request, response)
