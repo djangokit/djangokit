@@ -1,4 +1,4 @@
-from djangokit.core import handler
+from ...decorators import handler
 
 
 def get(_request):
