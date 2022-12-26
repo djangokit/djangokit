@@ -13,7 +13,7 @@ from django.contrib.staticfiles.finders import find
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
-from django.http import HttpRequest, HttpResponse, Http404
+from django.http import Http404, HttpRequest, HttpResponse
 from django.middleware import csrf
 from django.utils.cache import patch_cache_control
 from django.utils.decorators import classonlymethod
@@ -357,7 +357,8 @@ def get_ssr_bundle_path(bundle_name="build/server.bundle.js") -> Path:
             f"Could not find static file for SSR bundle: {bundle_name}"
         )
     else:
-        bundle_path = staticfiles_storage.path(bundle_name)
+        hashed_bundle_name = staticfiles_storage.stored_name(bundle_name)
+        bundle_path = staticfiles_storage.path(hashed_bundle_name)
         if os.path.exists(bundle_path):
             return Path(bundle_path)
         raise FileNotFoundError(f"SSR bundle path does not exist: {bundle_path}")

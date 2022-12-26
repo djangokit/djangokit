@@ -1,3 +1,6 @@
+[django]
+STATICFILES_STORAGE = "djangokit.core.static.ManifestStaticFilesStorage"
+
 [djangokit]
 package = "djangokit.website"
 title = "DjangoKit!"
