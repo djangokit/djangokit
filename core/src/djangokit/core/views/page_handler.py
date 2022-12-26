@@ -8,7 +8,6 @@ from typing import Optional
 from django.conf import settings
 from django.core.cache import cache
 from django.middleware import csrf
-from django.template.response import TemplateResponse
 
 from ..build import run_bundle
 from ..serializers import JsonEncoder
@@ -75,7 +74,7 @@ def render(request, *args, **kwargs):
         csrf.get_token(request)
         context["markup"] = "Loading..."
 
-    return TemplateResponse(request, handler.template_name, context)
+    return render(request, handler.template_name, context)
 
 
 @dataclass
