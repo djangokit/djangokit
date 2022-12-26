@@ -90,9 +90,13 @@ class RouteView(View):
             handlers = {}
 
         if page_module:
-            ssr_bundle_path = (
-                Path(ssr_bundle_path) if ssr_bundle_path else get_ssr_bundle_path()
-            )
+            if ssr_bundle_path:
+                ssr_bundle_path = Path(ssr_bundle_path)
+            else:
+                if settings.DJANGOKIT.ssr:
+                    ssr_bundle_path = get_ssr_bundle_path()
+                else:
+                    ssr_bundle_path = None
             page_handler = PageHandler(
                 template_name=template_name,
                 ssr_bundle_path=ssr_bundle_path,

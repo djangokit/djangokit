@@ -28,7 +28,7 @@ class PageHandler(Handler):
     template_name: str = "djangokit/app.html"
     """Template used to render page for both CSR & SSR."""
 
-    ssr_bundle_path: Path = Path()
+    ssr_bundle_path: Optional[Path] = None
     """Path to bundle used to render SSR markup."""
 
     loader: Optional[Handler] = None
@@ -54,9 +54,7 @@ def make_render(handler):
         # XXX: We don't do SSR for logged-in users for now, regardless
         #      of SSR setting. This is mainly to avoid issues with React
         #      SSR hydration.
-        do_ssr = dk_settings.ssr and not user.is_authenticated
-
-        if do_ssr:
+        if dk_settings.ssr and handler.ssr_bundle_path and not user.is_authenticated:
             bundle_path = handler.ssr_bundle_path
 
             # XXX: Calling get_token() will force the CSRF cookie to
