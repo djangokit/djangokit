@@ -6,8 +6,8 @@ def get(_request):
 
 
 @handler("get", cache_time=5)
-def stuff(_request):
-    return {"slug": "stuff"}
+def stuff(_request, __ext__=None):
+    return {"slug": "stuff", "ext": __ext__}
 
 
 @handler("get", cache_time=10, vary_on=["Accept"])

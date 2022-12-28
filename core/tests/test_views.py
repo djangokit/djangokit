@@ -41,10 +41,22 @@ def test_view_handlers():
     assert head_handlers[""] is get_handlers[""]
 
 
-def test_get_page(client):
+def test_get(client):
     response = client.get("/")
     assert response.status_code == 200
     assert response["Content-Type"] != "application/json"
+
+
+def test_get_with_ext(client):
+    response = client.get("/stuff.ext")
+    assert response.status_code == 200
+    check_data(response, {"slug": "stuff", "ext": "ext"})
+
+
+def test_get_with_unknown_ext(client):
+    # This will trigger the catchall handler
+    response = client.get("/stuff.UNKNOWN_EXT")
+    assert response.status_code == 404
 
 
 def check_data(response, expected_data):
@@ -57,7 +69,7 @@ def check_data(response, expected_data):
 def test_view_handler_caching(client):
     response = client.get("/stuff")
     assert response.status_code == 200
-    check_data(response, {"slug": "stuff"})
+    check_data(response, {"slug": "stuff", "ext": None})
     assert "Cache-Control" in response
     assert "Expires" in response
     cache_control = sorted(response["Cache-Control"].split(", "))

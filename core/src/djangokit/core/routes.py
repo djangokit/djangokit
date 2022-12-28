@@ -2,6 +2,7 @@ import dataclasses
 import posixpath
 from functools import cached_property, lru_cache
 from importlib import import_module
+from inspect import signature
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
@@ -10,6 +11,19 @@ from django import urls as urlconf
 from django.conf import settings
 
 from .exceptions import RouteError
+
+
+class ExtConverter:
+    regex = r"[a-z]+"
+
+    def to_python(self, value):
+        return value
+
+    def to_url(self, value):
+        return value
+
+
+urlconf.register_converter(ExtConverter, "__ext__")
 
 
 def discover_routes(
@@ -29,7 +43,10 @@ def discover_routes(
     tree = make_route_dir_tree()
 
     for node in tree:
-        subpaths = set()
+        # Keep track of patterns that were already added for the node
+        # so that each pattern is only added once.
+        added_patterns = set()
+
         pattern = node.url_pattern
         view = view_class.as_view_from_node(
             node,
@@ -43,22 +60,32 @@ def discover_routes(
         handlers = view.view_initkwargs["handlers"]
 
         if node.page_module:
-            subpaths.add("")
+            added_patterns.add(pattern)
             urls.append(urlconf.path(pattern, view, {"__subpath__": ""}))
 
         for method, method_handlers in handlers.items():
             for subpath, handler in method_handlers.items():
                 assert subpath == handler.path
-                if subpath not in subpaths:
-                    subpaths.add(subpath)
-                    if subpath == "":
-                        subpattern = pattern
-                    elif pattern == "":
-                        subpattern = subpath
-                    else:
-                        subpattern = f"{pattern}/{subpath}"
-                    conf = urlconf.path(subpattern, view, {"__subpath__": subpath})
-                    urls.append(conf)
+
+                if subpath == "":
+                    subpattern = pattern
+                elif pattern == "":
+                    subpattern = subpath
+                else:
+                    subpattern = f"{pattern}/{subpath}"
+
+                view_kwargs = {"__subpath__": subpath}
+
+                if subpattern not in added_patterns:
+                    added_patterns.add(subpattern)
+                    urls.append(urlconf.path(subpattern, view, view_kwargs))
+
+                ext_subpattern = f"{subpattern}.<__ext__:__ext__>"
+                if ext_subpattern not in added_patterns:
+                    added_patterns.add(ext_subpattern)
+                    sig = signature(handler.impl)
+                    if any(name == "__ext__" for name in sig.parameters):
+                        urls.append(urlconf.path(ext_subpattern, view, view_kwargs))
 
     return urls
 
