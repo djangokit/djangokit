@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
 
 from django import urls as urlconf
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 
 from .exceptions import RouteError
 
@@ -180,6 +181,10 @@ class RouteNode:
 
     children: List["RouteNode"] = dataclasses.field(default_factory=list)
 
+    def __post_init__(self):
+        if self.id == "catchall" and self.children:
+            raise ImproperlyConfigured("A catchall route cannot have children")
+
     def __hash__(self):
         return hash(self.path)
 
@@ -254,19 +259,22 @@ class RouteNode:
         if self.is_root:
             return ""
         segments = []
-        is_catchall = self.is_catchall
         for part in self.rel_path.parts:
             if part.startswith("_"):
                 name = part[1:]
-                if is_catchall:
-                    part = rf"(?P<{name}>[^/]+)"
+                if name == "id":
+                    segment = f"<int:{name}>"
+                elif name == "slug":
+                    segment = f"<slug:{name}>"
+                elif name == "uuid":
+                    segment = f"<uuid:{name}>"
                 else:
-                    part = f"<{name}>"
-                segments.append(part)
+                    segment = f"<{name}>"
+                segments.append(segment)
             else:
                 part = part.replace("_", "-")
                 segments.append(part)
-        if is_catchall:
+        if self.is_catchall:
             segments[-1] = "<path:path>"
         pattern = "/".join(segments)
         return pattern
@@ -282,11 +290,10 @@ class RouteNode:
                 name = part[1:]
                 name_parts = name.split("_")
                 name_parts = [name_parts[0]] + [p.capitalize() for p in name_parts[1:]]
-                segment = f"{''.join(name_parts)}"
-                segments.append(f":{segment}")
+                segment = f":{''.join(name_parts)}"
             else:
-                part = part.replace("_", "-")
-                segments.append(part)
+                segment = part.replace("_", "-")
+            segments.append(segment)
         if self.is_catchall:
             segments[-1] = "*"
         pattern = "/".join(segments)
