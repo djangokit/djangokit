@@ -17,7 +17,7 @@ def handler(
     """Wrap a function to produce a `Handler`.
 
     If a `path` isn't specified, the handler's path will be derived from
-    its function name (replacing underscores with dashes).
+    its `impl` name (underscores replaced with dashes).
 
     If `path` is equal to `method`, `path` will be set to `""`.
 
@@ -43,8 +43,9 @@ def handler(
     def wrapper(impl: Impl) -> Handler:
         nonlocal path
 
-        if not path and path != method:
-            path = impl.__name__.replace("_", "-")
+        # NOTE: The order of these two lines matters
+        path = path or impl.__name__.replace("_", "-")
+        path = "" if path == method else path
 
         return update_wrapper(
             Handler(
