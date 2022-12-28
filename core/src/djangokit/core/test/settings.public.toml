@@ -8,4 +8,4 @@ SOME_SETTING = "DJANGO_SOME_SETTING"
 
 [djangokit]
 package = "djangokit.core.test"
-intercept_extensions = true
+intercept_extensions = {".json" = "application/json"}

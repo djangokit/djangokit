@@ -1,4 +1,5 @@
 import json
+import posixpath
 
 from django.conf import settings
 from django.core.exceptions import BadRequest
@@ -25,13 +26,8 @@ def djangokit_middleware(get_response):
       `request.body` (as JSON) depending on the `Content-Type` header.
 
     """
-    debug = settings.DEBUG
     dk_settings = settings.DJANGOKIT
-
     intercept_extensions = dk_settings.intercept_extensions
-    if intercept_extensions is None:
-        intercept_extensions = debug
-
     methods_with_data = ("PATCH", "POST", "PUT")
 
     def middleware(request: HttpRequest):
@@ -39,15 +35,19 @@ def djangokit_middleware(get_response):
         meta = request.META
         path = request.path
 
+        if intercept_extensions:
+            _, ext = posixpath.splitext(path)
+
         if (
             intercept_extensions
             and method in ("GET", "HEAD")
-            and path.endswith(".json")
+            and ext in intercept_extensions
         ):
-            request.path = path[:-5]
-            request.path_info = request.path_info[:-5]
-            meta["HTTP_ACCEPT"] = "application/json"
-            meta["PATH_INFO"] = request.META["PATH_INFO"][:-5]
+            j = -len(ext)
+            request.path = path[:j]
+            request.path_info = request.path_info[:j]
+            meta["HTTP_ACCEPT"] = intercept_extensions[ext]
+            meta["PATH_INFO"] = request.META["PATH_INFO"][:j]
 
         accept = meta.get("HTTP_ACCEPT", "*/*")
         request.prefers_json = accept == "application/json"

@@ -125,17 +125,22 @@ class DjangoKitSettings:
     current_user_path: str = "$current-user"
     """Path to current user endpoint, relative to `prefix`."""
 
-    intercept_extensions: Optional[bool] = None
-    """Whether to intercept URLs with .json extension.
+    intercept_extensions: Optional[Dict[str, str]] = None
+    """URL extensions to intercept.
+
+    Map of extension to content type::
+
+        # settings.public.toml
+        [djangokit.intercept_extensions]
+        ".json" = "application/json"
+        ".geojson" = "application/geo+json"
+
+    If set, GET and HEAD requests with a path that ends with one of the
+    specified extensions will be intercepted and modified as follows:
     
-    If set, GET and HEAD requests with a path that ends with .json will
-    be intercepted and modified as follows:
-    
-    1. The .json extension will be stripped from path and path_info
-    2. The Accept header will be set to application/json
-    
-    .. note:: By default, this is only enabled in `DEBUG` mode.
-    
+    1. The extension will be stripped from path and path_info
+    2. The Accept header will be set to the specified content type
+
     """
 
     cache_time: int = 0
