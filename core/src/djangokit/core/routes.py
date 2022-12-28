@@ -5,7 +5,7 @@ from importlib import import_module
 from inspect import signature
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
 from django import urls as urlconf
 from django.conf import settings
@@ -27,18 +27,10 @@ class ExtConverter:
 urlconf.register_converter(ExtConverter, "__ext__")
 
 
-def discover_routes(
-    view_class=None,
-    cache_time: Optional[int] = None,
-    private: Optional[bool] = None,
-    cache_control: Optional[dict] = None,
-    vary_on: Optional[Sequence[str]] = None,
-) -> list:
+def discover_routes() -> list:
     """Find file-based routes and return URLs for them."""
     dk_settings = settings.DJANGOKIT
-
-    if view_class is None:
-        view_class = dk_settings.route_view_class
+    view_class = dk_settings.route_view_class
 
     urls = []
     tree = make_route_dir_tree()
@@ -51,12 +43,10 @@ def discover_routes(
         pattern = node.url_pattern
         view = view_class.as_view_from_node(
             node,
-            cache_time=dk_settings.cache_time if cache_time is None else cache_time,
-            private=dk_settings.private if private is None else private,
-            cache_control=dk_settings.cache_control
-            if cache_control is None
-            else cache_control,
-            vary_on=dk_settings.vary_on if vary_on is None else vary_on,
+            cache_time=dk_settings.cache_time,
+            private=dk_settings.private,
+            vary_on=dk_settings.vary_on,
+            cache_control=dk_settings.cache_control,
         )
         handlers = view.view_initkwargs["handlers"]
 

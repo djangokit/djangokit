@@ -76,39 +76,19 @@ class Handler:
     method: str
     path: str
     is_loader: bool = False
-    cache_time: int = 0
-    private: bool = False
+    cache_time: Optional[int] = None
+    private: Optional[bool] = None
+    vary_on: Optional[Sequence[str]] = None
     cache_control: Optional[dict] = None
-    vary_on: Sequence[str] = ("Accept", "Accept-Encoding", "Accept-Language")
-
-    # Derived
-    has_cache_config: bool = field(init=False)
-
-    def __init__(self, impl: Impl, method: str, path: str, **kwargs):
-        method = method.lower()
-
-        self.impl = impl
-        self.method = method
-        self.path = path
-        self.has_cache_config = False
-
-        field_names = set(f.name for f in fields(self))
-        for name, val in kwargs.items():
-            if name not in field_names:
-                raise TypeError(
-                    f"__init__() got an unexpected keyword argument {name!r}"
-                )
-            setattr(self, name, val)
-            if name in ("cache_time", "private", "cache_control", "vary_on"):
-                self.has_cache_config = True
-
-        self.__post_init__()
 
     def __post_init__(self):
+        self.check()
+
+    def check(self):
         if self.is_loader and self.method != "get":
             raise ImproperlyConfigured(f"Cannot use {self.method} handler as a loader.")
 
-        if self.cache_time:
+        if self.cache_time is not None:
             if self.method in ("get", "head"):
                 # XXX: Not sure why, but wrapping __call__ directly
                 #      doesn't work right.
@@ -124,10 +104,11 @@ class Handler:
                 #      unexpected results.
                 raise ImproperlyConfigured("Cannot use private with cache_time.")
 
-    def set_cache_config(self, config):
-        for n, v in config.items():
-            setattr(self, n, v)
-        self.has_cache_config = True
+    def set_defaults(self, **defaults):
+        """Set defaults for attributes that aren't set."""
+        for n, v in defaults.items():
+            if v is not None and getattr(self, n) is None:
+                setattr(self, n, v)
         self.__post_init__()
 
     def call(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
@@ -154,7 +135,8 @@ class Handler:
         """
         result = self.impl(request, *args, **kwargs)
         response = self.get_response(request, result)
-        self.apply_cache_config(request, response)
+        if request.method in ("GET", "HEAD"):
+            self.apply_cache_config(request, response)
         return response
 
     def __call__(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
@@ -228,13 +210,15 @@ class Handler:
         )
 
     def apply_cache_config(self, request: HttpRequest, response: HttpResponse):
-        if self.private or request.user.is_authenticated:
-            patch_cache_control(response, private=True)
-        elif self.cache_time:
-            patch_cache_control(response, public=True)
+        if request.method not in ("GET", "HEAD"):
+            return
 
         if self.cache_control:
             patch_cache_control(response, **self.cache_control)
 
-        if self.vary_on and not self.private:
-            patch_vary_headers(response, self.vary_on)
+        if self.private or request.user.is_authenticated:
+            patch_cache_control(response, private=True)
+        elif self.cache_time is not None:
+            patch_cache_control(response, public=True)
+            if self.vary_on:
+                patch_vary_headers(response, self.vary_on)

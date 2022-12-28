@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import Callable, Optional
+from typing import Callable, Optional, Sequence
 
 from .views.handler import Handler, Impl
 
@@ -9,10 +9,10 @@ def handler(
     *,
     path="",
     loader=False,
-    cache_time=0,
-    private=False,
+    cache_time: Optional[int] = None,
+    private: Optional[bool] = None,
+    vary_on: Optional[Sequence[str]] = None,
     cache_control: Optional[dict] = None,
-    vary_on=("Accept", "Accept-Encoding", "Accept-Language"),
 ) -> Callable[[Impl], Handler]:
     """Wrap a function to produce a `Handler`.
 
@@ -35,8 +35,8 @@ def handler(
         loader: Should this handler be used as the route's loader?
         cache_time: Cache time in seconds
         private: Whether `Cache-Control` should be set as private
-        cache_control: Any valid cache control directive
         vary_on: Names of headers to vary on (sets the `Vary` header)
+        cache_control: Any valid cache control directive
 
     """
 
@@ -55,8 +55,8 @@ def handler(
                 is_loader=loader,
                 cache_time=cache_time,
                 private=private,
-                cache_control=cache_control,
                 vary_on=vary_on,
+                cache_control=cache_control,
             ),
             impl,
         )

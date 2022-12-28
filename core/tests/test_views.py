@@ -20,18 +20,18 @@ def test_view_handlers():
     stuff_handler = get_handlers["stuff"]
     assert not stuff_handler.is_loader
     assert stuff_handler.cache_time == 5
-    assert stuff_handler.vary_on == ("Accept", "Accept-Encoding", "Accept-Language")
+    assert stuff_handler.vary_on == ("Accept",)
 
     assert "things" in get_handlers
     things_handler = get_handlers["things"]
     assert not things_handler.is_loader
     assert things_handler.cache_time == 10
-    assert things_handler.vary_on == ["Accept"]
+    assert things_handler.vary_on == ["Accept", "Accept-Language"]
 
     assert "private" in get_handlers
     private_handler = get_handlers["private"]
     assert not private_handler.is_loader
-    assert private_handler.cache_time == 0
+    assert private_handler.cache_time is None
     assert private_handler.private
 
     # HEAD
@@ -75,7 +75,7 @@ def test_view_handler_caching(client):
     cache_control = sorted(response["Cache-Control"].split(", "))
     assert cache_control == ["max-age=5", "public"]
     assert "Vary" in response
-    assert response["Vary"] == "Accept, Accept-Encoding, Accept-Language, Cookie"
+    assert response["Vary"] == "Accept, Cookie"
 
 
 def test_view_handler_caching_and_vary_on(client):
@@ -87,7 +87,7 @@ def test_view_handler_caching_and_vary_on(client):
     cache_control = sorted(response["Cache-Control"].split(", "))
     assert cache_control == ["max-age=10", "public"]
     assert "Vary" in response
-    assert response["Vary"] == "Accept, Cookie"
+    assert response["Vary"] == "Accept, Accept-Language, Cookie"
 
 
 def test_view_handler_private_caching(client):

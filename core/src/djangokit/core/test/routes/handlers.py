@@ -10,7 +10,7 @@ def stuff(_request, __ext__=None):
     return {"slug": "stuff", "ext": __ext__}
 
 
-@handler("get", cache_time=10, vary_on=["Accept"])
+@handler("get", cache_time=10, vary_on=["Accept", "Accept-Language"])
 def things(_request):
     return {"slug": "things"}
 

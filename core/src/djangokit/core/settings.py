@@ -143,18 +143,18 @@ class DjangoKitSettings:
 
     """
 
-    cache_time: int = 0
+    cache_time: Optional[int] = None
     """How long to cache responses for GETs, in seconds.
-    
+
     This is coarse-grained caching that will apply to *all* GET requests
     for *all* routes (both pages and handlers).
-    
+
     """
 
     # Additional cache settings
-    private: bool = False
+    private: Optional[bool] = None
+    vary_on: Optional[Sequence[str]] = ("Accept",)
     cache_control: Optional[dict] = None
-    vary_on: Sequence[str] = ("Accept", "Accept-Encoding", "Accept-Language")
 
     title: str = "A DjangoKit Site"
     """Site title (used for `<title>`)"""

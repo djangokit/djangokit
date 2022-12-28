@@ -60,10 +60,10 @@ class RouteView(View):
         cls,
         node,
         *,
-        cache_time=0,
-        private: bool = False,
+        cache_time: Optional[int] = None,
+        private: Optional[bool] = None,
+        vary_on: Optional[Sequence[str]] = None,
         cache_control: Optional[dict] = None,
-        vary_on: Sequence[str] = ("Accept", "Accept-Encoding", "Accept-Language"),
         template_name: str = "djangokit/app.html",
         ssr_bundle_path: Optional[Union[str, Path]] = None,
         loader: Optional[Handler] = None,
@@ -76,8 +76,8 @@ class RouteView(View):
                 handler_module,
                 cache_time,
                 private,
-                cache_control,
                 vary_on,
+                cache_control,
             )
             if not handlers:
                 raise ImproperlyConfigured(
@@ -103,8 +103,8 @@ class RouteView(View):
                 loader=loader,
                 cache_time=cache_time,
                 private=private,
-                cache_control=cache_control,
                 vary_on=vary_on,
+                cache_control=cache_control,
             )
         else:
             page_handler = None
@@ -120,10 +120,10 @@ class RouteView(View):
     def get_handlers(
         cls,
         module: ModuleType,
-        cache_time: int,
-        private: bool,
-        cache_control: Optional[dict],
-        vary_on: Sequence[str],
+        cache_time: Optional[int] = None,
+        private: Optional[bool] = None,
+        vary_on: Optional[Sequence[str]] = None,
+        cache_control: Optional[dict] = None,
     ) -> Tuple[Dict[str, Dict[str, Handler]], Optional[Handler]]:
         """Get handlers and loader from `module`.
 
@@ -144,22 +144,18 @@ class RouteView(View):
         handlers: Dict[str, Dict[str, Handler]] = defaultdict(dict)
         loader = None
 
-        cache_config = {
+        cache_defaults = {
             "cache_time": cache_time,
             "private": private,
-            "cache_control": cache_control,
             "vary_on": vary_on,
+            "cache_control": cache_control,
         }
 
         for name, maybe_handler in callables:
             if isinstance(maybe_handler, Handler):
                 handler = maybe_handler
-                if not handler.has_cache_config:
-                    handler.set_cache_config(cache_config)
             elif name in cls.http_method_names:
-                method = name
-                handler_cache_args = cache_config.copy() if method == "get" else {}
-                handler = Handler(maybe_handler, method, "", **handler_cache_args)
+                handler = Handler(maybe_handler, name, "")
             else:
                 continue
 
@@ -175,8 +171,11 @@ class RouteView(View):
             else:
                 method_handlers[path] = handler
 
+            if method == "get" and path not in handlers["head"]:
+                handlers["head"][path] = handler
+
             if handler.is_loader:
-                if handler.method != "get":
+                if method != "get":
                     raise ImproperlyConfigured(
                         "Only a GET handler can be designated as the loader for a "
                         f"route (module = {module_name})."
@@ -188,8 +187,8 @@ class RouteView(View):
                     )
                 loader = handler
 
-            if method == "get" and path == "" and "head" not in handlers:
-                handlers["head"][""] = handler
+            if method in ("get", "head"):
+                handler.set_defaults(**cache_defaults)
 
         if loader is None and "get" in handlers and "" in handlers["get"]:
             loader = handlers["get"][""]
