@@ -144,9 +144,11 @@ class Handler:
 
     def get_response(self, request: HttpRequest, result) -> HttpResponse:
         if result is None:
-            return HttpResponse(204)
+            return HttpResponse(status=204)
 
-        # XXX: Most common case?
+        if isinstance(result, HttpResponse):
+            return result
+
         if isinstance(result, (dict, models.Model)):
             return JsonResponse(result)
 
@@ -198,10 +200,6 @@ class Handler:
                 f"Handler returned unexpected data type {type(data)} "
                 "(expected dict, Model, or str)"
             )
-
-        # XXX: Least common case?
-        if isinstance(result, HttpResponse):
-            return result
 
         raise TypeError(
             f"Handler returned unexpected object of type {type(result)}: {result!r}. "
