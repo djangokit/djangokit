@@ -534,6 +534,7 @@ def set_derived_settings():
     If a setting is already set, this has no effect.
 
     """
+    env = settings["ENV"]
     debug = settings["DEBUG"]
     package = settings["DJANGOKIT"].package
 
@@ -548,14 +549,17 @@ def set_derived_settings():
             cached_loader = "django.template.loaders.cached.Loader"
             template_options["loaders"] = [(cached_loader, [template_loader])]
 
-    # Set default logging options for app package
     log_settings = settings["LOGGING"]
-    loggers = log_settings.setdefault("loggers", {})
-    package_logger = loggers.get(package)
-    if package_logger is None:
-        loggers[package] = {
-            "level": "DEBUG" if debug else "INFO",
-        }
+    if env == "test":
+        log_settings["disable_existing_loggers"] = True
+    else:
+        # Set default logging options for app package
+        loggers = log_settings.setdefault("loggers", {})
+        package_logger = loggers.get(package)
+        if package_logger is None:
+            loggers[package] = {
+                "level": "DEBUG" if debug else "INFO",
+            }
 
 
 merge_additional_settings_module()
