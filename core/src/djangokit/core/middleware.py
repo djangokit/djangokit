@@ -9,9 +9,9 @@ from django.http import HttpRequest
 def djangokit_middleware(get_response):
     """DjangoKit middleware.
 
-    - Intercepts requests with a path that ends with `.json` and
-      modifies them to remove the `.json` extension and set the `Accept`
-      header to `application/json`.
+    - Intercepts requests with an extension in `intercept_extensions`
+      and modifies them to remove the extension and set the `Accept`
+      header to the configured extension.
 
     - Adds a `prefers_json` attribute to the request based on the
       whether the request accepts `application/json` *and* prefers it
@@ -38,11 +38,7 @@ def djangokit_middleware(get_response):
         if intercept_extensions:
             _, ext = posixpath.splitext(path)
 
-        if (
-            intercept_extensions
-            and method in ("GET", "HEAD")
-            and ext in intercept_extensions
-        ):
+        if intercept_extensions and ext in intercept_extensions:
             j = -len(ext)
             request.path = path[:j]
             request.path_info = request.path_info[:j]
