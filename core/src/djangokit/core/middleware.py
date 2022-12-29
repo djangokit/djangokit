@@ -51,8 +51,12 @@ def djangokit_middleware(get_response):
         # Add data attribute when appropriate
         if method in methods_with_data:
             content_type = request.content_type
-            if content_type == "application/x-www-form-urlencoded":
+            if content_type in (
+                "application/x-www-form-urlencoded",
+                "multipart/form-data",
+            ):
                 request.data = request.POST
+                request.files = request.FILES
             elif content_type == "application/json":
                 try:
                     request.data = json.loads(request.body)
