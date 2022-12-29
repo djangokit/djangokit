@@ -1,5 +1,5 @@
 import logging
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass
 from typing import Callable, Optional, Sequence
 
 from django.core.exceptions import ImproperlyConfigured
@@ -89,7 +89,7 @@ class Handler:
             raise ImproperlyConfigured(f"Cannot use {self.method} handler as a loader.")
 
         if self.cache_time is not None:
-            if self.method in ("get", "head"):
+            if self.method in ("get", "head", "*"):
                 # XXX: Not sure why, but wrapping __call__ directly
                 #      doesn't work right.
                 self.call = cache_page(self.cache_time)(self.call)

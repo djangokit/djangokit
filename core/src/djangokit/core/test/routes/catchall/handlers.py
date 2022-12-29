@@ -1,2 +1,2 @@
-def get(_request):
-    return 404
+def catchall(_request, *_args, **_kwargs):
+    return 404, {}

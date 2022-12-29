@@ -101,6 +101,7 @@ class RouteView(View):
                 template_name=template_name,
                 ssr_bundle_path=ssr_bundle_path,
                 loader=loader,
+                is_catchall=node.is_catchall,
                 cache_time=cache_time,
                 private=private,
                 vary_on=vary_on,
@@ -156,6 +157,8 @@ class RouteView(View):
                 handler = maybe_handler
             elif name in cls.http_method_names:
                 handler = Handler(maybe_handler, name, "")
+            elif name == "catchall":
+                handler = Handler(maybe_handler, "*", "")
             else:
                 continue
 
@@ -165,8 +168,8 @@ class RouteView(View):
 
             if path in method_handlers:
                 raise ImproperlyConfigured(
-                    f"Found duplicate handler path for method {method} in "
-                    f"handler module {module_name}: {path}."
+                    f"Found duplicate handler path for method {method} in handler "
+                    f"module {module_name}: {path}."
                 )
             else:
                 method_handlers[path] = handler
@@ -182,12 +185,12 @@ class RouteView(View):
                     )
                 if loader is not None:
                     raise ImproperlyConfigured(
-                        "Only one handler per handler module may be "
-                        f"designated as the loader (module = {module_name})."
+                        "Only one handler per handler module may be designated as the "
+                        f"loader (module = {module_name})."
                     )
                 loader = handler
 
-            if method in ("get", "head"):
+            if method in ("get", "head", "*"):
                 handler.set_defaults(**cache_defaults)
 
         if loader is None and "get" in handlers and "" in handlers["get"]:
@@ -237,22 +240,26 @@ class RouteView(View):
         handlers = self.handlers
         subpath = kwargs.pop("__subpath__")
         prefers_html = not request.prefers_json
+        has_method_handler = method in handlers or "*" in handlers
 
         if (
             method in ("get", "head")
             and subpath == ""
-            and (prefers_html or method not in handlers)
+            and (prefers_html or not has_method_handler)
             and page_handler
         ):
-            return page_handler(request, *args, **kwargs)
+            handler = page_handler
+        elif method in handlers and subpath in handlers[method]:
+            handler = handlers[method][subpath]
+        elif "*" in handlers and subpath in handlers["*"]:
+            handler = handlers["*"][subpath]
+        elif "*" in handlers and "" in handlers["*"]:
+            handler = handlers["*"][""]
+        elif method == "options":
+            handler = self.options
+        else:
+            handler = self.http_method_not_allowed
 
-        if method not in handlers:
-            if method == "options":
-                return self.options(request, *args, **kwargs)
-            return self.http_method_not_allowed(request, *args, **kwargs)
-
-        method_handlers = handlers[method]
-        handler = method_handlers[subpath]
         return handler(request, *args, **kwargs)
 
 

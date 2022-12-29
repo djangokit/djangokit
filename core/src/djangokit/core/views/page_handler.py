@@ -24,6 +24,7 @@ class PageHandler(Handler):
     impl: Impl = field(init=False)
     method: str = "get"
     path: str = ""
+    is_catchall: bool = False
 
     template_name: str = "djangokit/app.html"
     """Template used to render page for both CSR & SSR."""
@@ -93,6 +94,7 @@ def make_render(handler):
             csrf.get_token(request)
             context["markup"] = "Loading..."
 
-        return render_template(request, handler.template_name, context)
+        status = 404 if handler.is_catchall else 200
+        return render_template(request, handler.template_name, context, status=status)
 
     return render

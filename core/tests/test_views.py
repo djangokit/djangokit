@@ -47,6 +47,25 @@ def test_get(client):
     assert response["Content-Type"] != "application/json"
 
 
+def test_catchall(client):
+    response = client.get("/not/a/path")
+    assert response.status_code == 404
+    assert response["Content-Type"] != "application/json"
+
+    response = client.get("/not/a/path.json")
+    assert response.status_code == 404
+    assert response["Content-Type"] == "application/json"
+
+    response = client.post(
+        "/not/a/path",
+        "{}",
+        content_type="application/json",
+        HTTP_ACCEPT="application/json",
+    )
+    assert response.status_code == 404
+    assert response["Content-Type"] == "application/json"
+
+
 def test_get_with_ext(client):
     response = client.get("/stuff.ext")
     assert response.status_code == 200
