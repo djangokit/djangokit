@@ -3,7 +3,7 @@ from functools import partial
 from pathlib import Path
 
 from django.conf import settings
-from typer import Context, Exit
+from typer import Abort, Context, Exit
 
 from .app import app, state
 from .build import build_client, build_server
@@ -24,6 +24,7 @@ def setup(python_version=None):
 @app.command()
 def start(
     ctx: Context,
+    csr: bool = True,
     ssr: bool = True,
     minify: bool = False,
     watch: bool = True,
@@ -50,13 +51,26 @@ def start(
     """
     console = state.console
 
+    if params.is_default(ctx, "csr"):
+        csr = settings.DJANGOKIT.csr
+    else:
+        settings.DJANGOKIT.csr = csr
+
     if params.is_default(ctx, "ssr"):
         ssr = settings.DJANGOKIT.ssr
+    else:
+        settings.DJANGOKIT.ssr = ssr
+
+    if csr:
+        build_client(ssr=ssr, minify=minify, watch=watch, join=False)
+    else:
+        console.warning("CSR disabled")
 
     if ssr:
         build_server(minify=minify, watch=watch, join=False)
+    else:
+        console.warning("SSR disabled")
 
-    build_client(ssr=ssr, minify=minify, watch=watch, join=False)
     console.header("Running Django dev server")
     reload_opt = "" if reload else "--noreload"
     run_django_command(["runserver", reload_opt, f"{host}:{port}"])

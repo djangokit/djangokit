@@ -48,8 +48,6 @@ def build_client(
     }
 
     console.header("Building client bundle")
-    if not ssr:
-        console.warning("SSR disabled")
     make_client_bundle(**bundle_kwargs)
     console.print()
 

@@ -180,6 +180,9 @@ class DjangoKitSettings:
     ] = "djangokit.core.user.current_user_serializer"
     """Serializer function used to serialize the current user."""
 
+    csr: bool = True
+    """Whether CSR is enabled."""
+
     ssr: bool = True
     """Whether SSR is enabled."""
 
@@ -223,6 +226,7 @@ class DjangoKitSettings:
             serializer = value
             if isinstance(serializer, str):
                 self.current_user_serializer = import_string(serializer)
+        self.check()
 
     def __contains__(self, name):
         return hasattr(self, name)
@@ -234,6 +238,9 @@ class DjangoKitSettings:
         return setattr(self, name, val)
 
     def check(self):
+        if not (self.csr or self.ssr):
+            raise ImproperlyConfigured("At least one of CSR or SSR must be enabled.")
+
         # Prefixes must be unique.
         if not self.admin_prefix:
             raise ImproperlyConfigured("Admin prefix must be set.")
