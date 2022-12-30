@@ -15,7 +15,7 @@ def make_client_bundle(
     env=None,
     settings_file=None,
     minify=False,
-    source_map=False,
+    source_map=True,
     quiet=None,
     chdir: Optional[Path] = None,
 ) -> Path:

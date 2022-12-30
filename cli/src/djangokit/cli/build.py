@@ -21,6 +21,7 @@ from .utils.console import Console
 def build_client(
     ssr: bool = True,
     minify: bool = False,
+    source_map: bool = True,
     watch: bool = Option(False, help="Watch files and rebuild automatically?"),
     join: bool = Option(True, help="Only relevant with --watch"),
 ):
@@ -42,7 +43,7 @@ def build_client(
         "env": state.env,
         "settings_file": state.settings_file,
         "minify": minify,
-        "source_map": minify,
+        "source_map": source_map,
         "quiet": state.quiet,
     }
 
@@ -68,6 +69,7 @@ def build_client(
 def build_server(
     path="/",
     minify: bool = False,
+    source_map: bool = False,
     watch: bool = Option(False, help="Watch files and rebuild automatically?"),
     join: bool = Option(False, help="Only relevant with --watch"),
 ):
@@ -84,7 +86,7 @@ def build_server(
         "env": state.env,
         "settings_file": state.settings_file,
         "minify": minify,
-        "source_map": minify,
+        "source_map": source_map,
         "quiet": state.quiet,
     }
 
