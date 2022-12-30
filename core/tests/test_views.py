@@ -1,5 +1,5 @@
+from djangokit.core import RouteView
 from djangokit.core.routes import make_route_dir_tree
-from djangokit.core.views import RouteView
 
 
 def test_view_handlers():

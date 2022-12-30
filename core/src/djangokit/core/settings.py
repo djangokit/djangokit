@@ -165,7 +165,7 @@ class DjangoKitSettings:
     global_stylesheets: List[str] = field(default_factory=lambda: ["global.css"])
     """Global stylesheets to be injected into the document `<head>`."""
 
-    route_view_class: Union[str, type] = "djangokit.core.views.RouteView"
+    route_view_class: Union[str, type] = "djangokit.core.RouteView"
     """The view class used for routes.
     
     It's expected to have an `as_view_from_node` method that takes a

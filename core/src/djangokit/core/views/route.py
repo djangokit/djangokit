@@ -4,7 +4,7 @@ from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, Optional, Sequence, Tuple, Union
 
 from django.conf import settings
 from django.contrib.staticfiles.finders import find
