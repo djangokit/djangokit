@@ -155,6 +155,10 @@ def format_(python: bool = True, js: bool = True):
         console.header("Sorting Python imports \[isort]...")
         run("isort --profile black .")
 
+        console.print()
+        console.header("Removing Python lint \[ruff]...")
+        run("ruff --fix .")
+
     if js and check_js_flag():
         run = partial(run_node_command, exit_on_err=False)
 

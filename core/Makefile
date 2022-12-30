@@ -35,3 +35,4 @@ check:
 format:
 	poetry run black .
 	poetry run isort --profile black .
+	poetry run ruff --fix .
