@@ -9,6 +9,8 @@ import djangokit.core
 from django.conf import settings
 from djangokit.core.build import make_client_bundle, make_server_bundle, run_bundle
 from djangokit.core.http import make_request
+from djangokit.core.serializers import dump_json
+from djangokit.core.utils import get_unmasked_csrf_token
 from typer import Option
 from watchdog.events import FileSystemEvent, PatternMatchingEventHandler
 from watchdog.observers import Observer
@@ -106,9 +108,23 @@ def build_server(
 
 
 @app.command()
-def render_markup(path: str = "/", csrf_token: str = "__csrf_token__"):
+def render_markup(path: str = "/", csrf_token=None):
     """Render markup for the specified request path"""
+    from django.contrib.auth.models import AnonymousUser
+
     request = make_request(path=path)
+
+    if csrf_token is None:
+        # NOTE: The CSRF token is arbitrary
+        csrf_token = get_unmasked_csrf_token(request)
+
+    user = AnonymousUser()
+    user_data = settings.DJANGOKIT.current_user_serializer(user)
+    user_json = dump_json(user_data)
+
+    data: Any = {}
+    data_json = dump_json(data)
+
     bundle_kwargs = {
         "env": state.env,
         "minify": False,
@@ -116,7 +132,8 @@ def render_markup(path: str = "/", csrf_token: str = "__csrf_token__"):
         "quiet": state.quiet,
     }
     bundle = make_server_bundle(request, **bundle_kwargs)
-    markup = run_bundle(bundle, [path, csrf_token])
+    markup = run_bundle(bundle, [path, user_json, data_json])
+    markup = markup.replace("__DJANGOKIT_CSRF_TOKEN__", csrf_token)
     print(markup, flush=True)
 
 

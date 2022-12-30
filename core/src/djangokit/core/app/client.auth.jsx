@@ -9,7 +9,7 @@ export default function Auth({ children }) {
   const [currentUser, setCurrentUser] = useState(ANONYMOUS_USER);
 
   useEffect(
-    () => setCsrfToken(cookies["csrftoken"] ?? "__csrf_token__"),
+    () => setCsrfToken(cookies["csrftoken"] ?? "__DJANGOKIT_CSRF_TOKEN__"),
     [cookies]
   );
 

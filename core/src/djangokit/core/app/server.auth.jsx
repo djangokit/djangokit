@@ -1,16 +1,13 @@
-import { ANONYMOUS_USER, CsrfContext, CurrentUserContext } from "./context";
+import { ANONYMOUS_USER, CurrentUserContext } from "./context";
 
-const csrfToken = process.argv[3] || "__csrf_token__";
-const currentUser = process.argv[4]
-  ? JSON.parse(process.argv[4])
+const currentUser = process.argv[3]
+  ? JSON.parse(process.argv[3])
   : ANONYMOUS_USER;
 
 export default function Auth({ children }) {
   return (
-    <CsrfContext.Provider value={csrfToken}>
-      <CurrentUserContext.Provider value={currentUser}>
-        {children}
-      </CurrentUserContext.Provider>
-    </CsrfContext.Provider>
+    <CurrentUserContext.Provider value={currentUser}>
+      {children}
+    </CurrentUserContext.Provider>
   );
 }
