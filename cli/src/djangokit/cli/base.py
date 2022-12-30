@@ -3,7 +3,7 @@ from functools import partial
 from pathlib import Path
 
 from django.conf import settings
-from typer import Abort, Context, Exit
+from typer import Context, Exit
 
 from .app import app, state
 from .build import build_client, build_server
@@ -101,12 +101,12 @@ def update():
 
 
 @app.command()
-def check(python: bool = True, js: bool = True):
+def check(python: bool = True, js: bool = True, exit_on_err: bool = False):
     """Check code for issues"""
     console = state.console
 
     if python:
-        run = partial(run_poetry_command, exit_on_err=False)
+        run = partial(run_poetry_command, exit_on_err=exit_on_err)
 
         console.header("Checking Python formatting \[black]...")
         run("black --check .")
@@ -124,7 +124,7 @@ def check(python: bool = True, js: bool = True):
         run("mypy")
 
     if js and check_js_flag():
-        run = partial(run_node_command, exit_on_err=False)
+        run = partial(run_node_command, exit_on_err=exit_on_err)
 
         console.print()
         console.header("Checking JavaScript formatting \[eslint/prettier]...")
