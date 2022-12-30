@@ -45,8 +45,10 @@ class RouteView(View):
 
     """
 
-    handlers: Dict[str, List[Handler]] = {}
-    """Handlers for view (map of HTTP method name to handlers).
+    handlers: Dict[str, Dict[str, Handler]] = {}
+    """Handlers for view.
+    
+    Map of HTTP method name => subpath => subpath handler.
     
     These are discovered from the route's handler module. Any function
     in the handler module that is named after a known HTTP method name
@@ -235,6 +237,7 @@ class RouteView(View):
         return.
 
         """
+        handler: Handler
         method = request.method.lower()
         page_handler = self.page_handler
         handlers = self.handlers
