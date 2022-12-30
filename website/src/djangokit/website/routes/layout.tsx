@@ -88,59 +88,61 @@ export default function Layout() {
         </Navbar>
       </header>
 
-      <main className="p-4">
-        <Outlet />
-      </main>
+      <div id="wrapper">
+        <main className="p-4">
+          <Outlet />
+        </main>
 
-      <footer className="d-flex align-items-center justify-content-between px-4 py-2 border-top bg-light small">
-        <span>&copy; 2022 DjangoKit.org</span>
+        <footer className="d-flex align-items-center justify-content-between px-4 py-2 border-top bg-light small">
+          <span>&copy; 2022 DjangoKit.org</span>
 
-        <NavDropdown title={<FaBars />}>
-          <LinkContainer to="/blog">
-            <NavDropdown.Item>Blog</NavDropdown.Item>
-          </LinkContainer>
+          <NavDropdown title={<FaBars />}>
+            <LinkContainer to="/blog">
+              <NavDropdown.Item>Blog</NavDropdown.Item>
+            </LinkContainer>
 
-          <LinkContainer to="/todo">
-            <NavDropdown.Item>TODO</NavDropdown.Item>
-          </LinkContainer>
+            <LinkContainer to="/todo">
+              <NavDropdown.Item>TODO</NavDropdown.Item>
+            </LinkContainer>
 
-          <LinkContainer to="/timer">
-            <NavDropdown.Item>Timer</NavDropdown.Item>
-          </LinkContainer>
+            <LinkContainer to="/timer">
+              <NavDropdown.Item>Timer</NavDropdown.Item>
+            </LinkContainer>
 
-          <NavDropdown.Item
-            title="Django Admin"
-            href="/$admin/"
-            target="djangokit_admin"
-          >
-            Admin
-          </NavDropdown.Item>
+            <NavDropdown.Item
+              title="Django Admin"
+              href="/$admin/"
+              target="djangokit_admin"
+            >
+              Admin
+            </NavDropdown.Item>
 
-          {meta.data ? (
-            <>
-              <NavDropdown.Divider />
-              <NavDropdown.Item title="env">
-                {meta.data?.env || "development"}
-              </NavDropdown.Item>
-
-              {meta.data.version ? (
-                <NavDropdown.Item
-                  title="version"
-                  href={githubUrlForVersion(meta.data.version)}
-                >
-                  v{meta.data.version ?? "???"}
+            {meta.data ? (
+              <>
+                <NavDropdown.Divider />
+                <NavDropdown.Item title="env">
+                  {meta.data?.env || "development"}
                 </NavDropdown.Item>
-              ) : null}
 
-              <LinkContainer to="/meta">
-                <NavDropdown.Item title="More metadata">
-                  Metadata
-                </NavDropdown.Item>
-              </LinkContainer>
-            </>
-          ) : null}
-        </NavDropdown>
-      </footer>
+                {meta.data.version ? (
+                  <NavDropdown.Item
+                    title="version"
+                    href={githubUrlForVersion(meta.data.version)}
+                  >
+                    v{meta.data.version ?? "???"}
+                  </NavDropdown.Item>
+                ) : null}
+
+                <LinkContainer to="/meta">
+                  <NavDropdown.Item title="More metadata">
+                    Metadata
+                  </NavDropdown.Item>
+                </LinkContainer>
+              </>
+            ) : null}
+          </NavDropdown>
+        </footer>
+      </div>
     </>
   );
 }
