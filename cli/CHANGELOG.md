@@ -1,5 +1,9 @@
 # Changelog for DjangoKit CLI
 
+## 0.0.3 - unreleased
+
+In progress...
+
 ## 0.0.2 - 2022-12-31
 
 Second alpha prerelease.
