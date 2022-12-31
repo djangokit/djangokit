@@ -1,5 +1,3 @@
-"""API for todo item collection."""
-
 from django.http import HttpRequest
 from django.shortcuts import redirect
 
@@ -34,7 +32,7 @@ def post(request: HttpRequest):
 
     item = TodoItem.objects.create(content=content)
 
-    if request.is_fetch:
+    if request.prefers_json:
         return item
 
     return redirect("/todo")

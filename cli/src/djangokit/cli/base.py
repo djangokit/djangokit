@@ -1,14 +1,14 @@
 """Base commands."""
-import os
 from functools import partial
 from pathlib import Path
 
-from typer import Exit, Option
+from django.conf import settings
+from typer import Context, Exit
 
 from .app import app, state
 from .build import build_client, build_server
 from .django import run_django_command
-from .utils import run, run_node_command, run_poetry_command
+from .utils import params, run, run_node_command, run_poetry_command
 
 
 @app.command()
@@ -23,16 +23,14 @@ def setup(python_version=None):
 
 @app.command()
 def start(
-    ssr: bool = Option(True, envvar="DJANGOKIT_SSR"),
+    ctx: Context,
+    csr: bool = True,
+    ssr: bool = True,
     minify: bool = False,
     watch: bool = True,
-    debug: bool = Option(
-        True,
-        help=(
-            "Allows DEBUG mode to be easily disabled. Useful for "
-            "testing Django error templates, etc."
-        ),
-    ),
+    host: str = "127.0.0.1",
+    port: int = 8000,
+    reload: bool = True,
 ):
     """Run dev server & watch files
 
@@ -52,14 +50,30 @@ def start(
 
     """
     console = state.console
-    if not debug:
-        os.environ["DJANGO_DEBUG"] = "false"
-        os.environ["DJANGO_ALLOWED_HOSTS"] = '["localhost"]'
+
+    if params.is_default(ctx, "csr"):
+        csr = settings.DJANGOKIT.csr
+    else:
+        settings.DJANGOKIT.csr = csr
+
+    if params.is_default(ctx, "ssr"):
+        ssr = settings.DJANGOKIT.ssr
+    else:
+        settings.DJANGOKIT.ssr = ssr
+
+    if csr:
+        build_client(ssr=ssr, minify=minify, watch=watch, join=False)
+    else:
+        console.warning("CSR disabled")
+
     if ssr:
         build_server(minify=minify, watch=watch, join=False)
-    build_client(ssr=ssr, minify=minify, watch=watch, join=False)
+    else:
+        console.warning("SSR disabled")
+
     console.header("Running Django dev server")
-    run_django_command("runserver")
+    reload_opt = "" if reload else "--noreload"
+    run_django_command(["runserver", reload_opt, f"{host}:{port}"])
 
 
 @app.command()
@@ -87,12 +101,12 @@ def update():
 
 
 @app.command()
-def check(python: bool = True, js: bool = True):
+def check(python: bool = True, js: bool = True, exit_on_err: bool = False):
     """Check code for issues"""
     console = state.console
 
     if python:
-        run = partial(run_poetry_command, exit_on_err=False)
+        run = partial(run_poetry_command, exit_on_err=exit_on_err)
 
         console.header("Checking Python formatting \[black]...")
         run("black --check .")
@@ -110,7 +124,7 @@ def check(python: bool = True, js: bool = True):
         run("mypy")
 
     if js and check_js_flag():
-        run = partial(run_node_command, exit_on_err=False)
+        run = partial(run_node_command, exit_on_err=exit_on_err)
 
         console.print()
         console.header("Checking JavaScript formatting \[eslint/prettier]...")
@@ -140,6 +154,10 @@ def format_(python: bool = True, js: bool = True):
         console.print()
         console.header("Sorting Python imports \[isort]...")
         run("isort --profile black .")
+
+        console.print()
+        console.header("Removing Python lint \[ruff]...")
+        run("ruff --fix .")
 
     if js and check_js_flag():
         run = partial(run_node_command, exit_on_err=False)

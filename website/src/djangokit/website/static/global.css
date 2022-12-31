@@ -1,25 +1,33 @@
+html,
+body,
 #root {
-  height: 100vh;
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr auto;
-  grid-template-areas: "header" "main" "footer";
+  width: 100vw;
+  height: 100%;
+  overflow: hidden;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
 }
 
 #root > header {
-  grid-area: header;
-  z-index: 100;
+  z-index: 1;
 }
 
-#root > main {
-  grid-area: main;
+#root > #wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
   overflow: auto;
 }
 
-#root > footer {
-  grid-area: footer;
+#root > #wrapper > main {
+  flex: 1 1 auto;
+}
+
+#root > #wrapper > footer {
   box-shadow: 0 -0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
-  z-index: 100;
 }
 
 blockquote {
@@ -36,8 +44,13 @@ p:last-child {
 ul {
   list-style: "▷ ";
 }
+
 li {
   line-height: 2;
+}
+
+.hover-highlight:hover {
+  background-color: var(--bs-light);
 }
 
 /** Markdown **/
@@ -53,6 +66,7 @@ li {
 .admonition-title {
   font-weight: bold;
 }
+
 .admonition .admonition-title::before {
   margin-right: 0.5em;
 }
@@ -64,6 +78,7 @@ li {
 .admonition.info {
   border-color: rgba(var(--bs-info-rgb), var(--bs-border-opacity));
 }
+
 .admonition.info .admonition-title::before {
   content: "🗄️";
 }
@@ -71,6 +86,7 @@ li {
 .admonition.warning {
   border-color: rgba(var(--bs-warning-rgb), var(--bs-border-opacity));
 }
+
 .admonition.warning .admonition-title::before {
   content: "⚠️";
 }
@@ -78,6 +94,7 @@ li {
 .admonition.danger {
   border-color: rgba(var(--bs-danger-rgb), var(--bs-border-opacity));
 }
+
 .admonition.danger .admonition-title::before {
   content: "⛔️";
 }
@@ -89,6 +106,7 @@ li {
   border-left: 0.25em solid var(--bs-dark);
   border-right: 0.25em solid var(--bs-dark);
 }
+
 .codehilite pre {
   margin-bottom: 0;
 }

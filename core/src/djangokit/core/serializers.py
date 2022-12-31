@@ -1,3 +1,6 @@
+import json
+from functools import partial
+
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.forms import model_to_dict
@@ -13,7 +16,7 @@ class JsonEncoder(DjangoJSONEncoder):
     If the model doesn't have a `serialize` method, we fall back to
     Django's `model_to_dict` utility.
 
-    This allows API handlers to return model instances that can be
+    This allows route handlers to return model instances that can be
     automatically serialized to JSON.
 
     """
@@ -42,3 +45,6 @@ class JsonEncoder(DjangoJSONEncoder):
                     ) from None
             return model_to_dict(o)
         return super().default(o)
+
+
+dump_json = partial(json.dumps, cls=DjangoJSONEncoder)

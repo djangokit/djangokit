@@ -1,18 +1,21 @@
+import json
 import subprocess
 from pathlib import Path
 from typing import List, Optional
 
+from django.conf import settings
 from django.http import HttpRequest
-from django.template.loader import get_template
+from django.template.loader import select_template
 
-from .conf import settings
+from .conf import load_settings
 from .exceptions import BuildError, RenderError
 
 
 def make_client_bundle(
     env=None,
+    settings_file=None,
     minify=False,
-    source_map=False,
+    source_map=True,
     quiet=None,
     chdir: Optional[Path] = None,
 ) -> Path:
@@ -26,15 +29,18 @@ def make_client_bundle(
 
     """
     return make_bundle(
-        "client.main.jsx",
+        "client.main",
         "client.bundle.js",
         [
-            "djangokit/context.jsx",
-            "djangokit/routes.jsx",
-            "djangokit/client.app.jsx",
-            "djangokit/client.main.jsx",
+            "context",
+            "routes",
+            "wrapper",
+            "client.auth",
+            "client.wrapper",
+            "client.app",
         ],
         env=env,
+        settings_file=settings_file,
         minify=minify,
         source_map=source_map,
         quiet=quiet,
@@ -45,6 +51,7 @@ def make_client_bundle(
 def make_server_bundle(
     request: HttpRequest,
     env=None,
+    settings_file=None,
     minify=False,
     source_map=False,
     quiet=None,
@@ -52,15 +59,18 @@ def make_server_bundle(
 ) -> Path:
     """Build React app bundle for server side rendering."""
     return make_bundle(
-        "server.main.jsx",
+        "server.main",
         "server.bundle.js",
         [
-            "djangokit/context.jsx",
-            "djangokit/routes.jsx",
-            "djangokit/server.app.jsx",
-            "djangokit/server.main.jsx",
+            "context",
+            "routes",
+            "wrapper",
+            "server.auth",
+            "server.wrapper",
+            "server.app",
         ],
         env=env,
+        settings_file=settings_file,
         minify=minify,
         source_map=source_map,
         quiet=quiet,
@@ -72,9 +82,10 @@ def make_server_bundle(
 def make_bundle(
     entrypoint_name: str,
     bundle_name: str,
-    module_names: List[str],
+    template_names: List[str],
     *,
     env=None,
+    settings_file=None,
     minify=True,
     source_map=False,
     quiet=None,
@@ -96,35 +107,40 @@ def make_bundle(
     if quiet is None:
         quiet = env == "production"
 
-    build_dir = settings.static_build_dir
-    entrypoint_path = build_dir / entrypoint_name
-    bundle_path = build_dir / bundle_name
+    loaded_settings = load_settings(path=settings_file, env=env)
 
+    # React app templates are rendered into <package>/app/build
+    build_dir = settings.DJANGOKIT.app_dir / "build"
     build_dir.mkdir(exist_ok=True)
+
+    # Path to React entrypoint that's fed to esbuild.
+    entrypoint_path = build_dir / entrypoint_name
+
+    # Bundles are built into <package>/static/build
+    bundle_dir = settings.DJANGOKIT.static_dir / "build"
+    bundle_dir.mkdir(exist_ok=True)
+
+    # Path to bundle that's output from esbuild.
+    bundle_path = bundle_dir / bundle_name
 
     # Create entrypoint with routes ------------------------------------
 
-    templates = tuple(
-        (
-            get_template(name),  # Template object
-            build_dir / Path(name).name,  # Build path for template
-        )
-        for name in module_names
-    )
-
+    templates = [get_template(entrypoint_name)]
+    templates.extend(get_template(name) for name in template_names)
     tree = make_route_dir_tree()
-
     context = {
         "env": env,
         "routes": {
             "imports": tree.js_imports("../../routes"),
             "routes": tree.js_routes(),
         },
-        "settings": settings,
+        "settings": settings.DJANGOKIT,
     }
 
-    for template, build_path in templates:
+    for template in templates:
         content = template.render(context, request)
+        template_path = Path(template.origin.name)
+        build_path = build_dir / template_path.name
         with build_path.open("w") as fp:
             fp.write(content)
 
@@ -135,11 +151,26 @@ def make_bundle(
         "esbuild",
         str(entrypoint_path),
         "--bundle",
-        f"--define:DEBUG={str(debug).lower()}",
-        f"--define:ENV='{env}'",
         f"--inject:{build_dir / 'context.jsx'}",
         f"--outfile={bundle_path}",
+        f"--define:DEBUG={json.dumps(debug)}",
+        f"--define:ENV={json.dumps(env)}",
     ]
+
+    # Inject settings from file.
+    for name, val in loaded_settings.items():
+        if name in ("django", "djangokit"):
+            continue
+        name = name.upper()
+        args.append(f"--define:{name}={json.dumps(val)}")
+
+    for name, val in loaded_settings.get("django", {}).items():
+        name = f"DJANGO_{name.upper()}"
+        args.append(f"--define:{name}={json.dumps(val)}")
+
+    for name, val in loaded_settings.get("djangokit", {}).items():
+        name = f"DJANGOKIT_{name.upper()}"
+        args.append(f"--define:{name}={json.dumps(val)}")
 
     if minify:
         args.append("--minify")
@@ -154,6 +185,11 @@ def make_bundle(
         raise BuildError(f"Could not build bundle from {entrypoint_path}")
 
     return bundle_path
+
+
+def get_template(name, extensions=("tsx", "jsx")):
+    candidates = [f"{name}.{ext}" for ext in extensions]
+    return select_template(candidates)
 
 
 def run_bundle(bundle: Path, argv: List[str], *, chdir: Optional[Path] = None) -> str:

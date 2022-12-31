@@ -6,9 +6,10 @@
 # safe to include in version control.
 #
 # Environment-specific settings should be added to a non-versioned
-# .env.<env> file (e.g. .env.production).
+# settings.<env>.toml file (e.g. settings.production.toml).
 
-DJANGOKIT_TITLE="{{ cookiecutter.project_name }}"
-DJANGOKIT_DESCRIPTION="{{ cookiecutter.description }}"
-DJANGOKIT_PACKAGE="{{ cookiecutter.package_name }}"
-DJANGOKIT_GLOBAL_STYLESHEETS=["global.css"]
+[djangokit]
+package = "{{ cookiecutter.package_name }}"
+title = "{{ cookiecutter.project_name }}"
+description = "{{ cookiecutter.description }}"
+global_stylesheets = ["global.css"]

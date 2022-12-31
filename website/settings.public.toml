@@ -1,0 +1,8 @@
+[django]
+STATICFILES_STORAGE = "djangokit.core.static.ManifestStaticFilesStorage"
+
+[djangokit]
+package = "djangokit.website"
+title = "DjangoKit!"
+description = "DjangoKit - a meta-framework for Django"
+global_stylesheets = ["bootstrap.css", "pygments.css", "global.css"]

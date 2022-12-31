@@ -4,28 +4,19 @@ This defines the CLI app. The global `app` can be imported from here and
 used to add commands.
 
 """
-import enum
-import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from os import environ
 from pathlib import Path
 from typing import Optional
 
+import django
 import typer
-from djangokit.core.conf import Settings, settings
-from djangokit.core.env import dotenv_settings as get_dotenv_settings
+from djangokit.core.conf import load_settings
 from typer import Context, Option
 
 from .utils import Console, params
 
 app = typer.Typer()
-
-
-class Env(enum.Enum):
-
-    dev = "dev"
-    development = "development"
-    prod = "prod"
-    production = "production"
 
 
 @dataclass
@@ -36,12 +27,10 @@ class State:
     cwd: Path = Path.cwd()
 
     env: str = "development"
-    dotenv_path: Path = Path(".env.development")
 
     settings_module: str = "djangokit.core.settings"
     additional_settings_module: Optional[str] = None
-    settings: Settings = field(default_factory=lambda: settings)
-    settings_module_configured: bool = False
+    settings_file: Path = Path("settings.development.toml")
 
     use_typescript: bool = True
     quiet: bool = False
@@ -53,17 +42,11 @@ state = State()
 @app.callback(no_args_is_help=True)
 def main(
     ctx: Context,
-    env_opt: Env = Option(
+    env: str = Option(
         state.env,
         "-e",
         "--env",
         envvar="ENV",
-    ),
-    dotenv_path: Path = Option(
-        state.dotenv_path,
-        "-t",
-        "--dotenv",
-        envvar="DOTENV_PATH",
     ),
     settings_module: str = Option(
         state.settings_module,
@@ -77,20 +60,24 @@ def main(
         "--additional-settings-module",
         envvar="DJANGO_ADDITIONAL_SETTINGS_MODULE",
     ),
+    settings_file: Path = Option(
+        state.settings_file,
+        "-f",
+        "--settings-file",
+        envvar="DJANGO_SETTINGS_FILE",
+    ),
     use_typescript: bool = Option(
         True,
         "-t",
         "--ts",
         "--typescript",
         help="Use TypeScript (e.g., when generating files)",
-        envvar="DJANGOKIT_CLI_USE_TYPESCRIPT",
     ),
     quiet: bool = Option(
         state.quiet,
         "-q",
         "--quiet",
         help="Squelch stdout",
-        envvar="DJANGOKIT_CLI_QUIET",
     ),
 ):
     """DjangoKit CLI
@@ -100,57 +87,61 @@ def main(
     """
     console = state.console
 
-    if env_opt == Env.dev:
-        env_opt = Env.development
-    elif env_opt == Env.prod:
-        env_opt = Env.production
+    if env == "dev":
+        env = "development"
+    elif env == "prod":
+        env = "production"
 
-    env = env_opt.value
-    os.environ["ENV"] = env
+    if params.is_default(ctx, "settings_file"):
+        settings_file = Path(f"settings.{env}.toml")
 
-    # Set .env path from env when .env path isn't passed in or set as an
-    # env var.
-    if params.is_default(ctx, "dotenv_path"):
-        dotenv_path = Path(f".env.{env}")
+    settings_file = settings_file.absolute()
+    loaded_settings = load_settings(path=settings_file, env=env)
+    dk_settings = loaded_settings.get("djangokit", {"cli": {}})
+    cli_settings = dk_settings.get("cli", {})
 
-    os.environ["DOTENV_PATH"] = str(dotenv_path)
+    # For CLI settings that weren't specified on the command line or as
+    # env vars, see if they were loaded from the settings file.
 
-    dotenv_settings = get_dotenv_settings(dotenv_path)
+    def cli_setting(name, value):
+        if params.is_default(ctx, name):
+            if name in cli_settings:
+                return cli_settings[name]
+        return value
 
-    if not dotenv_settings:
-        console.warning(f"No dotenv settings loaded from {dotenv_path}")
+    settings_module = cli_setting("settings_module", settings_module)
+    additional_settings_module = cli_setting(
+        "additional_settings_module", additional_settings_module
+    )
+    use_typescript = cli_setting("use_typescript", use_typescript)
+    quiet = cli_setting("quiet", quiet)
 
-    raw_dotenv_settings = get_dotenv_settings(dotenv_path, convert=False)
-    for env_name, env_val in raw_dotenv_settings.items():
-        if env_name.startswith("DJANGOKIT_CLI_"):
-            os.environ[env_name] = env_val
-
-    # Set Django settings module from .env when it's not passed in or
-    # set as an env var.
-    key = "DJANGO_SETTINGS_MODULE"
-    if params.is_default(ctx, "settings_module") and key in dotenv_settings:
-        settings_module = dotenv_settings[key]
-    key = "DJANGO_ADDITIONAL_SETTINGS_MODULE"
-    if params.is_default(ctx, "additional_settings_module") and key in dotenv_settings:
-        additional_settings_module = dotenv_settings[key]
+    environ["ENV"] = env
+    environ["DJANGO_SETTINGS_MODULE"] = settings_module
+    if additional_settings_module:
+        environ["DJANGO_ADDITIONAL_SETTINGS_MODULE"] = additional_settings_module
+    environ["DJANGO_SETTINGS_FILE"] = str(settings_file)
 
     if quiet:
         state.console.quiet = True
 
     console.header("DjangoKit CLI")
     console.print(f"Environment = {env}")
-    console.print(f"Dotenv file = {dotenv_path}")
     console.print(f"Django settings module = {settings_module}")
     console.print(f"Django additional settings module = {additional_settings_module}")
+    console.print(f"Settings file = {settings_file}")
+    console.print(f"Use TypeScript = {use_typescript}")
     console.print(f"Quiet = {quiet}")
     console.print()
 
     state.env = env
-    state.dotenv_path = dotenv_path
     state.settings_module = settings_module
     state.additional_settings_module = additional_settings_module
+    state.settings_file = settings_file
     state.use_typescript = use_typescript
     state.quiet = quiet
+
+    django.setup()
 
 
 @app.command(hidden=True)

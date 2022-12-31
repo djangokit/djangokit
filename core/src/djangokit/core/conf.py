@@ -1,256 +1,70 @@
-"""DjangoKit settings.
-
-DjangoKit settings are set in your project's .env file(s) along with
-env-specific Django settings:
-
-    # .env.public - public settings common to all environments
-    DJANGOKIT_PACKAGE="my_app"
-    DJANGOKIT_GLOBAL_CSS=["styles.css"]
-
-    # .env.development - dev-specific settings
-    DJANGO_DEBUG=true
-    DJANGO_SECRET_KEY="xxx"
-
-    # .env.production - prod-specific settings
-    DJANGO_DEBUG=false
-    DJANGO_ALLOWED_HOSTS=["example.com"]
-    DJANGO_SECRET_KEY="super secret key that shouldn't be stored in git"
-    DJANGO_DATABASES_default__NAME="/path/to/db.prod.sqlite3"
-
-> NOTE: You can use JSON values for the settings in your .env files.
-
-When accessing a project's DjangoKit settings, it's generally preferable
-to use the `settings` object exported from this module rather than
-accessing the `DJANGOKIT` dict directly::
-
-    from djangokit.core.conf import settings
-
-    settings.package # -> django.conf.settings.DJANGOKIT["package"]
-
-When accessing an optional DjangoKit setting, the default value will
-automatically be used if it's not set in the `DJANGOKIT` dict::
-
-    settings.global_stylesheets  # -> ["global.css"]
-
-"""
-import socket
-from functools import cached_property
-from importlib import import_module
+import os
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Union
+from typing import Any
 
-from django.conf import settings as django_settings
+import toml
 from django.core.exceptions import ImproperlyConfigured
-from django.utils.module_loading import import_string
 
-from .checks import make_error
+from .utils import merge_dicts
 
 
-class Settings:
-    """DjangoKit settings.
+def get_settings_file(*, path=None, env=None):
+    """Figure out which settings file to use.
 
-    This defines the available DjangoKit settings, their types, and
-    their default values.
+    If `path` is specified, use that. Otherwise:
 
-    When a setting is accessed, its value will be retrieved from the
-    `DJANGOKIT` dict in the project's Django settings module,if present,
-    or the default value defined in `known_settings` will be used.
-
-    .. note::
-        Settings are cached the first time they're accessed. Individual
-        settings can be cleared using `del settings.<name>`. Clearing is
-        only necessary if the `DJANGOKIT` settings are dynamically
-        updated after Django startup (e.g., in tests).
+    1. If `env` is specified, use `./settings.{env}.toml`
+    2. If the `DJANGO_SETTINGS_FILE` env var is set, use it
+    3. If the `ENV` env var is set, use `./settings.${ENV}.toml`
+    4. Fall back to `./settings.toml`
 
     """
-
-    # XXX: Keep in sync with `.settings.defaults.DJANGOKIT`.
-    known_settings: Dict[str, Dict[str, Union[type, Any]]] = {
-        "title": {
-            "type": str,
-            "default": "DjangoKit Site",
-        },
-        "description": {
-            "type": str,
-            "default": "A website made with DjangoKit",
-        },
-        "package": {
-            "type": str,
-        },
-        "app_label": {
-            "type": str,
-            "default_factory": lambda s: s.package.replace(".", "_"),
-        },
-        "global_stylesheets": {
-            "type": list,
-            "default": ["global.css"],
-        },
-        "current_user_serializer": {
-            "type": str,
-            "default": "djangokit.core.user.current_user_serializer",
-        },
-        "ssr": {
-            "type": bool,
-            "default": True,
-        },
-        "webmaster": {
-            "type": str,
-            "default": "",
-        },
-    }
-
-    @cached_property
-    def title(self) -> str:
-        """Project title.
-
-        Used as the default HTML page title.
-
-        """
-        return self._get_required("title")
-
-    @cached_property
-    def description(self) -> str:
-        """Project description.
-
-        Used as the default meta description.
-
-        """
-        return self._get_required("description")
-
-    @cached_property
-    def package(self) -> str:
-        """The project's top level package name."""
-        return self._get_required("package")
-
-    @cached_property
-    def app_label(self) -> str:
-        """The project's Django app label.
-
-        Defaults to package name with dots replaced with underscores.
-
-        .. note::
-            In most cases, this shouldn't need to be set explicitly.
-            It's only needed if the project's app label differs from
-            its top level package name.
-
-        """
-        return self._get_optional("app_label")
-
-    @cached_property
-    def global_stylesheets(self) -> List[str]:
-        """CSS files to link in app.html template."""
-        return self._get_optional("global_stylesheets")
-
-    @cached_property
-    def current_user_serializer(self) -> Callable[[Any], Dict[str, Any]]:
-        serializer = self._get_optional("current_user_serializer")
-        if isinstance(serializer, str):
-            serializer = import_string(serializer)
-        return serializer
-
-    @cached_property
-    def ssr(self) -> bool:
-        return self._get_optional("ssr")
-
-    @cached_property
-    def webmaster(self) -> str:
-        webmaster = self._get_optional("webmaster")
-        if webmaster:
-            return webmaster
-        hostname = socket.gethostname()
-        return f"webmaster@{hostname}"
-
-    @cached_property
-    def static_build_dir(self) -> Path:
-        return self.app_dir / "static" / "build"
-
-    # Derived settings -------------------------------------------------
-    #
-    # These are not directly settable in a project.
-
-    @cached_property
-    def app_dir(self) -> Path:
-        module = import_module(self.package)
-        paths = module.__path__
-        if len(paths) > 1:
-            raise ImproperlyConfigured(
-                f"DjangoKit app package {self.package} appears to be a "
-                "namespace package because it resolves to multiple "
-                "file system paths. You might need to add an "
-                "__init__.py to the package."
-            )
-        return Path(paths[0])
-
-    @cached_property
-    def models_dir(self) -> Path:
-        return self.app_dir / "models"
-
-    @cached_property
-    def routes_dir(self) -> Path:
-        return self.app_dir / "routes"
-
-    @cached_property
-    def routes_package(self) -> str:
-        return f"{self.package}.routes"
-
-    # Utilities --------------------------------------------------------
-
-    def as_dict(self) -> Dict[str, Any]:
-        """Return a dict with *all* DjangoKit settings.
-
-        This will include defaults plus any values set in the project's
-        Django settings module in the `DJANGOKIT` dict.
-
-        """
-        return {name: getattr(self, name) for name in self.known_settings}
-
-    @property
-    def _settings(self) -> Dict[str, Any]:
-        """Retrieve `DJANGOKIT` dict from Django settings module."""
-        try:
-            return django_settings.DJANGOKIT
-        except AttributeError:
-            err = make_error("E000")
-            raise ImproperlyConfigured(err.msg)
-
-    def _get_required(self, name) -> Any:
-        if name in self._settings:
-            value = self._settings[name]
-            self._check_type(name, value)
-            return value
-        err = make_error("E001", name=name)
-        raise ImproperlyConfigured(err.msg)
-
-    def _get_optional(self, name) -> Any:
-        if name in self._settings:
-            value = self._settings[name]
-            self._check_type(name, value)
+    if path is None:
+        if env is not None:
+            path = f"settings.{env}.toml"
+        elif "DJANGO_SETTINGS_FILE" in os.environ:
+            path = os.environ["DJANGO_SETTINGS_FILE"]
+        elif "ENV" in os.environ:
+            env = os.environ["ENV"]
+            path = f"settings.{env}.toml"
         else:
-            info = self.known_settings[name]
-            if "default" in info:
-                value = info["default"]
-            elif "default_factory" in info:
-                value = info["default_factory"](self)
-            else:
-                raise ImproperlyConfigured(
-                    "Optional setting must specify a default value or "
-                    "a default factory."
-                )
-        return value
-
-    def _check_type(self, name, value):
-        type_ = self.known_settings[name]["type"]
-        if not isinstance(value, type_):
-            err = make_error("E002", name=name, type=type_, value=value)
-            raise ImproperlyConfigured(err.msg)
-
-    def __getattr__(self, name) -> Any:
-        """Proxy Django settings.
-
-        XXX: Is this useful and/or a good idea?
-
-        """
-        return getattr(django_settings, name)
+            path = "settings.toml"
+    return Path(path)
 
 
-settings = Settings()
+def load_settings(*, path=None, env=None):
+    """Load settings from settings file for env.
+
+    See :func:`get_settings_file` for details on settings file
+    discovery.
+
+    """
+    env_path = get_settings_file(path=path, env=env)
+    public_path = env_path.parent / "settings.public.toml"
+    toml_settings = []
+    for settings_file_path in (public_path, env_path):
+        if settings_file_path.is_file():
+            with settings_file_path.open() as fp:
+                toml_settings.append(toml.load(fp))
+    return merge_dicts(*toml_settings)
+
+
+def getenv(name: str, default=None, required=False) -> Any:
+    """Get setting from environment variable or return `default`.
+
+    If the `required` flag is set, the env var MUST be set, even if a
+    `default` is provided.
+
+    """
+    if required and name not in os.environ:
+        raise ImproperlyConfigured(f"Expected environment variable to be set: {name}")
+    env_val = os.getenv(name, default)
+    if env_val is None:
+        return None
+    try:
+        obj = toml.loads(f"{name} = {env_val}\n")
+    except ValueError:
+        val = env_val
+    else:
+        val = obj[name]
+    return val

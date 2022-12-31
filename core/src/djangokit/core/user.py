@@ -22,6 +22,8 @@ def current_user_serializer(user: Any) -> Dict[str, Any]:
         return {
             "username": user.username,
             "email": user.email,
+            "firstName": user.first_name,
+            "lastName": user.last_name,
             "isAnonymous": user.is_anonymous,
             "isAuthenticated": user.is_authenticated,
             "isStaff": user.is_staff,
@@ -30,6 +32,8 @@ def current_user_serializer(user: Any) -> Dict[str, Any]:
     return {
         "username": None,
         "email": None,
+        "firstName": None,
+        "lastName": None,
         "isAnonymous": True,
         "isAuthenticated": False,
         "isStaff": False,

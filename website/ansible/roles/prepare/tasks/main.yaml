@@ -21,22 +21,22 @@
     path: "{{ app_build_dir }}"
     state: directory
 
-- name: <LOCAL> Copy public dotenv file to build directory
+- name: <LOCAL> Copy public settings file to build directory
   tags:
     - prepare-app
     - prepare-copy-files
     - deploy-app
   template:
-    src: "{{ package_info.public_dotenv_file }}"
+    src: "{{ package_info.public_settings_file }}"
     dest: "{{ app_build_dir }}"
 
-- name: <LOCAL> Copy env-specific dotenv file to build directory
+- name: <LOCAL> Copy env-specific settings file to build directory
   tags:
     - prepare-app
     - prepare-copy-files
     - deploy-app
   template:
-    src: "{{ package_info.dotenv_file }}"
+    src: "{{ package_info.settings_file }}"
     dest: "{{ app_build_dir }}"
 
 - name: <LOCAL> Copy WSGI module to build directory
@@ -54,12 +54,12 @@
     - deploy-app
     - build-distributions
   file:
-    path: "{{ item }}"
+    path: "{{ item }}/dist"
     state: absent
   with_items:
-    - "{{ root }}/dist"
-    - "{{ core_root }}/dist"
-    - "{{ cli_root }}/dist"
+    - "{{ root }}"
+    - "{{ core_root }}"
+    - "{{ cli_root }}"
 
 - name: <LOCAL> Build source distributions
   tags:
@@ -109,7 +109,6 @@
   with_items:
     - "{{ package_info.static_build_dir }}"
     - "{{ static_build_dir }}"
-    - "{{ static_build_archive }}"
 
 - name: <LOCAL> Build server bundle
   tags:
@@ -120,11 +119,12 @@
     - prepare-ssr-build
     - deploy-ssr
   command: >
-    djangokit
+    poetry run djangokit
     --env {{ env }}
     build-server
     --minify
   args:
+    chdir: "{{ root }}"
     creates: "{{ package_info.static_build_dir }}/server.bundle.js"
 
 - name: <LOCAL> Build client bundle
@@ -133,11 +133,12 @@
     - prepare-static-build
     - deploy-static
   command: >
-    djangokit
+    poetry run djangokit
     --env {{ env }}
     build-client
     --minify 
   args:
+    chdir: "{{ root }}"
     creates: "{{ package_info.static_build_dir }}/client.bundle.js"
 
 - name: <LOCAL> Collect Django static files
@@ -145,15 +146,10 @@
     - prepare-static
     - prepare-static-build
     - deploy-static
-  environment:
-    - DJANGO_STATIC_ROOT: "{{ static_build_dir }}"
-  command: djangokit manage collectstatic
-
-- name: <LOCAL> Create static archive
-  tags:
-    - prepare-static
-    - deploy-static
-    - create-static-archive
-  archive:
-    path: "{{ static_build_dir }}"
-    dest: "{{ static_build_archive }}"
+  command: >
+    poetry run djangokit
+    --env {{ env }}
+    collectstatic
+    --static-root {{ static_build_dir }}
+  args:
+    chdir: "{{ root }}"

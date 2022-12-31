@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "org-djangokit-core"
-version = "0.0.2.dev0"
+version = "0.0.3.dev0"
 description = "DjangoKit core"
 authors = ["Wyatt Baldwin <self@wyattbaldwin.com>"]
 license = "MIT"
@@ -11,23 +11,24 @@ packages = [
 ]
 
 include = [
-    "src/djangokit/core/**/*.{css,html,js,jsx}",
+    "CHANGELOG.md",
 ]
 
 [tool.poetry.dependencies]
 python = "^3.8"
 Django = ">=3.0"
-python-dotenv = ">=0.21.0"
+toml = "^0.10.2"
 
 [tool.poetry.group.dev.dependencies]
-black = "^22.12.0"
-isort = "^5.10.1"
-mypy = "^0.990"
-pytest = "^7.2.0"
-pytest-cov = "^4.0.0"
-pytest-django = "^4.5.2"
-ruff = "^0.0.174"
-tox = "^3.27.1"
+black = "*"
+isort = "*"
+mypy = "*"
+pytest = "*"
+pytest-cov = "*"
+pytest-django = "*"
+ruff = "*"
+tox = "*"
+types-toml = "^0.10.8.1"
 
 [tool.make-release.args]
 test-command = "make test"
