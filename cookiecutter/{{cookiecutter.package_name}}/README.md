@@ -31,10 +31,8 @@ Change into the project directory and install the package:
 
 Complete the installation process:
 
-    # NOTE: You might need to activate the virtualenv created by Poetry
-    #       in order to pick up the `dk` command.
-    dk install
+    poetry run dk install
 
 Run the dev server:
 
-    dk start
+    poetry run dk start

@@ -2,94 +2,94 @@ import dataclasses
 import posixpath
 from functools import cached_property, lru_cache
 from importlib import import_module
+from inspect import signature
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
 from django import urls as urlconf
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
-from .conf import settings
 from .exceptions import RouteError
-from .views import ApiView, PageView
 
 
-def discover_routes(page_view_class=PageView, api_view_class=ApiView) -> list:
-    """Find file-based page & API routes and return URLs for them.
+class ExtConverter:
+    regex = r"[a-z]+"
 
-    Finds page & API routes in the specified package and creates a view
-    and URLconf for each.
+    def to_python(self, value):
+        return value
 
-    Usage in a typical DjangoKit project::
+    def to_url(self, value):
+        return value
 
-        # src/<package>/urls.py
-        from django.contrib import admin
-        from django.urls import include, path
-        from djangokit.core import discover_routes
 
-        urlpatterns = [
-            path("", include(discover_routes())),
-            path("$admin/", admin.site.urls),
-        ]
+urlconf.register_converter(ExtConverter, "__ext__")
 
-    """
-    all_urls = []
-    api_urls = []
+
+def discover_routes() -> list:
+    """Find file-based routes and return URLs for them."""
+    dk_settings = settings.DJANGOKIT
+    view_class = dk_settings.route_view_class
+
+    urls = []
     tree = make_route_dir_tree()
-    api_nodes = tree.collect_api_nodes()
-    page_nodes = tree.collect_page_nodes()
 
-    for node in api_nodes:
-        api_module = node.api_module
-        assert isinstance(api_module, ModuleType)
+    for node in tree:
+        # Keep track of patterns that were already added for the node
+        # so that each pattern is only added once.
+        added_patterns = set()
 
-        allowed_methods = {}
-
-        for name in dir(api_module):
-            if name in ApiView.http_method_names:
-                allowed_methods[name] = getattr(api_module, name)
-
-        if "head" not in allowed_methods and "get" in allowed_methods:
-            allowed_methods["head"] = allowed_methods["get"]
-
-        if not allowed_methods:
-            raise ImproperlyConfigured(
-                f"The API module {api_module.__name__} doesn't contain "
-                "any handlers. Expected at least one of get, post, or "
-                "some other handler."
-            )
-
-        view = api_view_class.as_view(
-            api_module=api_module,
-            allowed_methods=allowed_methods,
+        pattern = node.url_pattern
+        view = view_class.as_view_from_node(
+            node,
+            cache_time=dk_settings.cache_time,
+            private=dk_settings.private,
+            vary_on=dk_settings.vary_on,
+            cache_control=dk_settings.cache_control,
         )
-        pattern = node.url_pattern
-        path_func = urlconf.re_path if pattern.startswith("^") else urlconf.path
-        if pattern == "":
-            all_urls.append(path_func("$api", view))
-        else:
-            api_urls.append(path_func(pattern, view))
+        handlers = view.view_initkwargs["handlers"]
 
-    all_urls.append(urlconf.path("$api/", urlconf.include(api_urls)))
+        if node.page_module:
+            added_patterns.add(pattern)
+            urls.append(urlconf.path(pattern, view, {"__subpath__": ""}))
 
-    for node in page_nodes:
-        view = page_view_class.as_view(page_path=node.path)
-        pattern = node.url_pattern
-        path_func = urlconf.re_path if pattern.startswith("^") else urlconf.path
-        all_urls.append(path_func(pattern, view))
+        for method, method_handlers in handlers.items():
+            for subpath, handler in method_handlers.items():
+                assert subpath == handler.path
 
-    return all_urls
+                if subpath == "":
+                    subpattern = pattern
+                elif pattern == "":
+                    subpattern = subpath
+                else:
+                    subpattern = f"{pattern}/{subpath}"
+
+                view_kwargs = {"__subpath__": subpath}
+
+                if subpattern not in added_patterns:
+                    added_patterns.add(subpattern)
+                    urls.append(urlconf.path(subpattern, view, view_kwargs))
+
+                ext_subpattern = f"{subpattern}.<__ext__:__ext__>"
+                if ext_subpattern not in added_patterns:
+                    added_patterns.add(ext_subpattern)
+                    sig = signature(handler.impl)
+                    if any(name == "__ext__" for name in sig.parameters):
+                        urls.append(urlconf.path(ext_subpattern, view, view_kwargs))
+
+    return urls
 
 
 @lru_cache(maxsize=None)
-def make_route_dir_tree(path=None, parent=None) -> "RouteDirNode":
+def make_route_dir_tree(path=None, parent=None) -> "RouteNode":
     """Make a tree of route directory info.
 
     Returns the root node of the tree.
 
     """
     if path is None:
-        path = settings.routes_dir
+        path = settings.DJANGOKIT.routes_dir
 
     directories = []
     file_names = []
@@ -101,26 +101,30 @@ def make_route_dir_tree(path=None, parent=None) -> "RouteDirNode":
         elif entry.is_dir() and name != "__pycache__":
             directories.append(entry)
 
-    def has_tsx_or_jsx(stem: str) -> bool:
-        return f"{stem}.tsx" in file_names or f"{stem}.jsx" in file_names
+    def get_tsx_or_jsx_module(stem: str) -> Optional[str]:
+        candidates = [f"{stem}.tsx", f"{stem}.jsx"]
+        for candidate in candidates:
+            if candidate in file_names:
+                return candidate
+        return None
 
-    has_layout = has_tsx_or_jsx("layout")
-    has_nested_layout = has_tsx_or_jsx("nested-layout")
-    has_page = has_tsx_or_jsx("page")
-    has_error = has_tsx_or_jsx("error")
-    has_api = "api.py" in file_names
+    layout_module = get_tsx_or_jsx_module("layout")
+    nested_layout_module = get_tsx_or_jsx_module("nested-layout")
+    page_module = get_tsx_or_jsx_module("page")
+    error_module = get_tsx_or_jsx_module("error")
+    handler_module_name = "handlers.py" if "handlers.py" in file_names else None
 
-    node = RouteDirNode(
+    node = RouteNode(
         parent,
         path,
-        has_layout,
-        has_nested_layout,
-        has_page,
-        has_error,
-        has_api,
+        layout_module,
+        nested_layout_module,
+        page_module,
+        error_module,
+        handler_module_name,
     )
 
-    if has_layout and has_nested_layout:
+    if layout_module and nested_layout_module:
         raise RouteError(
             "Found both a root layout and a nested layout for route "
             f"{node.rel_path}. Only one type of layout is allowed per "
@@ -142,16 +146,34 @@ def make_route_dir_tree(path=None, parent=None) -> "RouteDirNode":
 
 
 @dataclasses.dataclass
-class RouteDirNode:
+class RouteNode:
+    """A node in the route tree containing info about a route."""
 
-    parent: Optional["RouteDirNode"]
+    parent: Optional["RouteNode"]
+
     path: Path
-    has_layout: bool
-    has_nested_layout: bool
-    has_page: bool
-    has_error: bool
-    has_api: bool
-    children: List["RouteDirNode"] = dataclasses.field(default_factory=list)
+    """Absolute path to route directory."""
+
+    layout_module: Optional[str]
+    """Name of layout module, if present."""
+
+    nested_layout_module: Optional[str]
+    """Name of nested layout module, if present."""
+
+    page_module: Optional[str]
+    """Name of page module, if present."""
+
+    error_module: Optional[str]
+    """Name of error module, if present."""
+
+    handler_module_name: Optional[str]
+    """Name of handler module, if present."""
+
+    children: List["RouteNode"] = dataclasses.field(default_factory=list)
+
+    def __post_init__(self):
+        if self.id == "catchall" and self.children:
+            raise ImproperlyConfigured("A catchall route cannot have children")
 
     def __hash__(self):
         return hash(self.path)
@@ -175,7 +197,7 @@ class RouteDirNode:
     def depth(self):
         return 0 if self.is_root else len(self.rel_path.parts)
 
-    def traverse(self, visit: Callable[["RouteDirNode"], None], node=None):
+    def traverse(self, visit: Callable[["RouteNode"], None], node=None):
         """Traverse tree starting from specified node."""
         if node is None:
             node = self
@@ -185,17 +207,10 @@ class RouteDirNode:
         for child in node.children:
             self.traverse(visit, child)
 
-    def collect_page_nodes(self) -> List["RouteDirNode"]:
-        """Traverse tree and collect all page nodes."""
-        nodes = []
-        self.traverse(lambda node: nodes.append(node) if node.has_page else None)
-        return nodes
-
-    def collect_api_nodes(self) -> List["RouteDirNode"]:
-        """Traverse tree and collect all API nodes."""
-        nodes = []
-        self.traverse(lambda node: nodes.append(node) if node.has_api else None)
-        return nodes
+    def __iter__(self):
+        yield self
+        for child in self.children:
+            yield from child
 
     # Route directory info ---------------------------------------------
 
@@ -214,17 +229,19 @@ class RouteDirNode:
 
     @cached_property
     def package_name(self) -> str:
+        routes_package = settings.DJANGOKIT.routes_package
         if self.is_root:
-            return settings.routes_package
+            return routes_package
         package_name = ".".join(self.rel_path.parts)
-        return f"{settings.routes_package}.{package_name}"
+        return f"{routes_package}.{package_name}"
 
     @cached_property
-    def api_module(self) -> Optional[ModuleType]:
-        if not self.has_api:
+    def handler_module(self) -> Optional[ModuleType]:
+        if not self.handler_module_name:
             return None
-        module_name = f"{self.package_name}.api"
-        return import_module(module_name)
+        name = Path(self.handler_module_name).stem
+        qual_name = f"{self.package_name}.{name}"
+        return import_module(qual_name)
 
     @cached_property
     def url_pattern(self) -> str:
@@ -232,23 +249,24 @@ class RouteDirNode:
         if self.is_root:
             return ""
         segments = []
-        is_catchall = self.is_catchall
         for part in self.rel_path.parts:
             if part.startswith("_"):
                 name = part[1:]
-                if is_catchall:
-                    part = rf"(?P<{name}>[^/]+)"
+                if name == "id":
+                    segment = f"<int:{name}>"
+                elif name == "slug":
+                    segment = f"<slug:{name}>"
+                elif name == "uuid":
+                    segment = f"<uuid:{name}>"
                 else:
-                    part = f"<{name}>"
-                segments.append(part)
+                    segment = f"<{name}>"
+                segments.append(segment)
             else:
                 part = part.replace("_", "-")
                 segments.append(part)
-        if is_catchall:
-            segments[-1] = ".*"
+        if self.is_catchall:
+            segments[-1] = "<path:path>"
         pattern = "/".join(segments)
-        if is_catchall:
-            pattern = f"^{pattern}"
         return pattern
 
     @cached_property
@@ -262,11 +280,10 @@ class RouteDirNode:
                 name = part[1:]
                 name_parts = name.split("_")
                 name_parts = [name_parts[0]] + [p.capitalize() for p in name_parts[1:]]
-                segment = f"{''.join(name_parts)}"
-                segments.append(f":{segment}")
+                segment = f":{''.join(name_parts)}"
             else:
-                part = part.replace("_", "-")
-                segments.append(part)
+                segment = part.replace("_", "-")
+            segments.append(segment)
         if self.is_catchall:
             segments[-1] = "*"
         pattern = "/".join(segments)
@@ -274,13 +291,13 @@ class RouteDirNode:
         return pattern
 
     @cached_property
-    def layout_for_nested_layout(self) -> Optional["RouteDirNode"]:
+    def layout_for_nested_layout(self) -> Optional["RouteNode"]:
         """Find layout for nested layout node."""
-        if not self.has_nested_layout:
+        if not self.nested_layout_module:
             return None
         current = self.parent
         while current is not None:
-            if current.has_layout or current.has_nested_layout:
+            if current.layout_module or current.nested_layout_module:
                 return current
             current = current.parent
         raise RouteError(
@@ -288,13 +305,13 @@ class RouteDirNode:
         )
 
     @cached_property
-    def layout_for_page(self) -> Optional["RouteDirNode"]:
+    def layout_for_page(self) -> Optional["RouteNode"]:
         """Find layout for page node."""
-        if not self.has_page:
+        if not self.page_module:
             return None
-        current: Optional[RouteDirNode] = self
+        current: Optional[RouteNode] = self
         while current is not None:
-            if current.has_layout or current.has_nested_layout:
+            if current.layout_module or current.nested_layout_module:
                 return current
             current = current.parent
         raise RouteError(f"Could not find layout for page {self.rel_path}.")
@@ -328,21 +345,20 @@ class RouteDirNode:
         """Get JS imports for node including imports for child nodes."""
         imports = []
 
-        def imp(node, component, segment, base_path=routes_path, join=posixpath.join):
-            path = join(base_path, *node.rel_path.parts, segment)
-            return f'import {{ default as {component}_{node.id} }} from "{path}";'
+        def imp(node_, component, segment):
+            path = posixpath.join(routes_path, *node_.rel_path.parts, segment)
+            return f'import {{ default as {component}_{node_.id} }} from "{path}";'
 
-        def visitor(node: RouteDirNode):
-            if node.has_layout:
+        for node in self:
+            if node.layout_module:
                 imports.append(imp(node, "Layout", "layout"))
-            elif node.has_nested_layout:
+            elif node.nested_layout_module:
                 imports.append(imp(node, "NestedLayout", "nested-layout"))
-            if node.has_error:
+            if node.error_module:
                 imports.append(imp(node, "Error", "error"))
-            if node.has_page:
+            if node.page_module:
                 imports.append(imp(node, "Page", "page"))
 
-        self.traverse(visitor)
         return "\n".join(imports) if join else imports
 
     def js_routes(self, serialize=True) -> Union[str, List]:
@@ -355,9 +371,9 @@ class RouteDirNode:
             type: Literal["Layout", "NestedLayout", "Error", "Page"]
             id: str
 
-        def visitor(node: RouteDirNode):
-            if node.has_layout or node.has_nested_layout:
-                if node.has_nested_layout:
+        for node in self:
+            if node.layout_module or node.nested_layout_module:
+                if node.nested_layout_module:
                     path = node.route_pattern_for_nested_layout
                     element = Element("NestedLayout", node.id)
                 else:
@@ -366,15 +382,15 @@ class RouteDirNode:
 
                 layout = {"path": path, "element": element}
 
-                if node.has_error:
+                if node.error_module:
                     layout["errorElement"] = Element("Error", node.id)
 
                 layout["children"] = children = []
 
-                if node.has_page:
+                if node.page_module:
                     children.append({"path": "", "element": Element("Page", node.id)})
 
-                if node.has_nested_layout:
+                if node.nested_layout_module:
                     parent_layout = node.layout_for_nested_layout
                     assert parent_layout
                     layout_info = layouts[parent_layout.rel_path]
@@ -384,10 +400,10 @@ class RouteDirNode:
 
                 layouts[node.rel_path] = layout
 
-            elif node.has_page:
+            elif node.page_module:
                 page_layout = node.layout_for_page
                 page = {"path": "", "element": Element("Page", node.id)}
-                if node.has_error:
+                if node.error_module:
                     page["errorElement"] = Element("Error", node.id)
                 if page_layout is None:
                     page["path"] = node.route_pattern
@@ -396,8 +412,6 @@ class RouteDirNode:
                     page["path"] = node.route_pattern_for_page
                     layout_info = layouts[page_layout.rel_path]
                     layout_info["children"].append(page)
-
-        self.traverse(visitor)
 
         if not serialize:
             return top
@@ -427,11 +441,11 @@ class RouteDirNode:
         has = ", ".join(
             item
             for item in (
-                "layout" if self.has_layout else None,
-                "nested layout" if self.has_nested_layout else None,
-                "page" if self.has_page else None,
-                "error" if self.has_error else None,
-                "api" if self.has_api else None,
+                "layout" if self.layout_module else None,
+                "nested layout" if self.nested_layout_module else None,
+                "page" if self.page_module else None,
+                "error" if self.error_module else None,
+                "handler module" if self.handler_module else None,
             )
             if item is not None
         )

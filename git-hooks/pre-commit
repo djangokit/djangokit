@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+import dataclasses
+import shlex
+import subprocess
+import sys
+from typing import List
+
+
+force = "--force" in sys.argv
+
+
+@dataclasses.dataclass
+class Result:
+    return_code: int
+    stdout: str
+    stdout_lines: List[str]
+    stderr: str
+    stderr_lines: List[str]
+
+    def __bool__(self):
+        return self.return_code == 0
+
+
+def err(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
+
+def exit(result, code=1):
+    err("PRE-COMMIT HOOK FAILED")
+    err("STDOUT:")
+    err(result.stdout)
+    err("STDERR:")
+    err(result.stderr)
+    sys.exit(code)
+
+
+def run(cmd, cwd=None):
+    if isinstance(cmd, str):
+        cmd = shlex.split(cmd)
+    result = subprocess.run(cmd, capture_output=True, cwd=cwd)
+    stdout = result.stdout.decode("utf-8")
+    stderr = result.stderr.decode("utf-8")
+    result = Result(
+        return_code=result.returncode,
+        stdout=stdout,
+        stdout_lines=[line for line in stdout.splitlines()],
+        stderr=stderr,
+        stderr_lines=[line for line in stderr.splitlines()],
+    )
+    if not result:
+        exit(result)
+    return result
+
+
+def get_files(path):
+    return run(f"git diff-index --name-only --cached --diff-filter=AM HEAD {path}")
+
+
+def core():
+    result = get_files("core")
+    has_changed_python = any(path.endswith(".py") for path in result.stdout_lines)
+    if has_changed_python or force:
+        print("Formatting core...")
+        run("make format", cwd="core")
+        print("Checking core...")
+        result = run("make check", cwd="core")
+    else:
+        print("Skipping core because no files were changed")
+
+
+def cli():
+    result = get_files("cli")
+    has_changed_python = any(path.endswith(".py") for path in result.stdout_lines)
+    has_changed_js = any(path.endswith(".js") for path in result.stdout_lines)
+    if has_changed_python or force:
+        print("Formatting cli Python...")
+        run("poetry run dk format --no-js", cwd="cli")
+        print("Checking cli Python...")
+        run("poetry run dk check --no-js --exit-on-err", cwd="cli")
+    else:
+        print("Skipping cli Python because no files were changed")
+    if has_changed_js or force:
+        print("Formatting cli JS...")
+        run("poetry run dk format --no-python", cwd="cli")
+        print("Checking cli JS...")
+        run("poetry run dk check --no-python --exit-on-err", cwd="cli")
+    else:
+        print("Skipping cli JS because no files were changed")
+
+
+def website():
+    result = get_files("website")
+    has_changed_python = any(path.endswith(".py") for path in result.stdout_lines)
+    has_changed_js = any(path.endswith(".js") for path in result.stdout_lines)
+    if has_changed_python or force:
+        print("Formatting website Python...")
+        run("poetry run dk format --no-js", cwd="website")
+        print("Checking website Python...")
+        run("poetry run dk check --no-js --exit-on-err", cwd="website")
+    else:
+        print("Skipping website Python because no files were changed")
+    if has_changed_js or force:
+        print("Formatting website JS...")
+        run("poetry run dk format --no-python", cwd="website")
+        print("Checking website JS...")
+        run("poetry run dk check --no-python --exit-on-err", cwd="website")
+    else:
+        print("Skipping website JS because no files were changed")
+
+
+if __name__ == "__main__":
+    core()
+    cli()
+    website()

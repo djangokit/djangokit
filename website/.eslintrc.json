@@ -1,8 +1,11 @@
 {
   "root": true,
   "ignorePatterns": [
-    "build",
-    "dist"
+    "/ansible/",
+    "/static/",
+    "__pycache__/",
+    "build/",
+    "dist/"
   ],
   "parser": "@typescript-eslint/parser",
   "env": {

@@ -68,7 +68,7 @@ export default function Page() {
         <div className="mb-4">
           <Form
             method="post"
-            action="/$api/todo"
+            action="/todo"
             className="d-flex flex-row gap-2 mb-1"
             onSubmit={(event) => {
               event.preventDefault();
@@ -103,9 +103,11 @@ export default function Page() {
         <>
           <h3 className="mt-4 d-flex align-items-center gap-2">
             <FaRegCircle />
-            <span>
-              {todoCount} thing{todoCount === 1 ? "" : "s"} to do
+            <span>{todoCount}</span>
+            <span className="d-none d-sm-inline">
+              thing{todoCount === 1 ? "" : "s"}
             </span>
+            <span>to do</span>
           </h3>
           <div className="d-flex flex-column gap-2">
             {todo.map((item, i) => (
@@ -122,10 +124,11 @@ export default function Page() {
           <div>
             <h3 className="mt-4 d-flex align-items-center gap-2">
               <FaRegCheckCircle />
-              <span>
-                {completedCount} thing{completedCount === 1 ? "" : "s"}{" "}
-                completed
+              <span>{completedCount}</span>
+              <span className="d-none d-sm-inline">
+                thing{completedCount === 1 ? "" : "s"}
               </span>
+              <span>done</span>
               <IconButton
                 variant="outline-secondary"
                 icon={showCompleted ? <FaChevronUp /> : <FaChevronDown />}
@@ -135,7 +138,8 @@ export default function Page() {
                 className="ms-auto"
                 onClick={() => setShowCompleted(!showCompleted)}
               >
-                {showCompleted ? "Hide" : "Show"} completed items
+                {showCompleted ? "Hide" : "Show"}
+                <span className="d-none d-sm-inline"> completed items</span>
               </IconButton>
             </h3>
           </div>
@@ -201,12 +205,12 @@ function Item({ item, itemNumber }: { item: TodoItem; itemNumber: number }) {
   });
 
   return (
-    <div className="d-flex border rounded">
+    <div className="d-flex border rounded hover-highlight">
       <div className="d-flex flex-column align-items-center justify-content-center p-2 text-bg-light border-end">
         {itemNumber}.
       </div>
 
-      <div className="flex-fill align-self-center p-2 border-end">
+      <div className="flex-fill align-self-center p-2">
         <ItemContent
           item={item}
           rawContent={rawContent}
@@ -216,7 +220,7 @@ function Item({ item, itemNumber }: { item: TodoItem; itemNumber: number }) {
       </div>
 
       {currentUser.isSuperuser ? (
-        <div className="p-2 d-flex flex-column flex-sm-row align-items-center justify-content-center gap-2 text-bg-light">
+        <div className="p-2 d-flex flex-column flex-sm-row align-items-center justify-content-center gap-2 text-bg-light border-start">
           <ItemControls
             item={item}
             rawContent={rawContent}

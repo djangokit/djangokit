@@ -1,409 +1,583 @@
 """Default Django settings module used by DjangoKit projects.
 
-Settings can be set via environment variables in a project's .env
-file(s) and/or using standard OS mechanisms.
+There are several default settings defined below.
 
-.. note::
-    ALL Django settings can be set via environment variables.
+Env-specific settings are loaded from TOML files with `django` and
+`djangokit` sections::
 
-.. note::
-    The values of these environment variables will be parsed as JSON,
-    if possible.
+    # settings.public.toml
+    [django]
+    DATABASES.default.ENGINE = "django.db.backends.postgresql"
+    DATABASES.default.NAME = "my_database"
 
-For a given Django setting, the env var name is the name of the setting
-prefixed with `DJANGO_`. For example, here's how you could set the
-`SECRET_KEY`:
+    [djangokit]
+    package = "my_package"
 
-    # .env
-    DJANGO_SECRET_KEY="very-secret-random-value-plz"
+    # settings.development.toml
+    [django]
+    SECRET_KEY = "super secret"
+    DATABASES.default.PASSWORD = "my_database_password"
 
-For a given DjangoKit setting, the env var name is the name of the
-setting prefixed with `DJANGOKIT_`. For example, to set the package
-name:
+The public settings file SHOULD NOT contain any sensitive settings and
+MAY be committed to version control.
 
-    DJANGOKIT_PACKAGE="myapp"
+The env-specific settings file MAY contain sensitive settings and SHOULD
+NOT be committed to version control.
 
-Database Settings
------------------
+The env-specific settings are MERGED into the public settings which are
+MERGED into the base settings.
 
-Settings for the *default* database can be specified using special-case
-env vars::
+Additional Django Settings Module
+---------------------------------
 
-    # .env.production
-    DJANGO_DATABASE_NAME="/production/path/to/db/sqlite.db"
+It's also possible to load settings from an additional Django settings
+module. To do so, set the `DJANGO_ADDITIONAL_SETTINGS_MODULE` env var to
+point at a settings module with additional settings. The specified
+module will be loaded and its settings MERGED into the base settings.
 
-Settings for other databases can be specified using the nested settings
-syntax (see below).
+These additional settings will override the base settings below but any
+env-specific settings will take precedence.
 
-Nested Settings
----------------
+The purpose of this additional settings file is to provide a hook for
+specialized settings loading. For example, if you need to load the
+secret key, database password, etc settings from a secrets manager, the
+additional settings module would be a good place to do that.
 
-Cache, database, and logging settings are a special case due to nesting.
-They can be defined using the following convention (note the double
-underscores and case sensitivity):
+Prepending and Appending Settings
+---------------------------------
 
-    DJANGO_DATABASES_<name>__<key>__<subkey>
+To prepend or append entries to the `INSTALLED_APPS`, `MIDDLEWARE`, and
+other list settings, you can use the following form::
 
-For example, to override the default database settings:
+    PREPEND_INSTALLED_APPS = ["my.app"]
+    APPEND_MIDDLEWARE = ["my.middleware"]
 
-    # .env.production
-    DJANGO_DATABASES_default__ENGINE="django.contrib.gis.db.backends.postgis"
-    DJANGO_DATABASES_default__USER="some_user"
-    DJANGO_DATABASES_default__PASSWORD="some_password"
-    DJANGO_DATABASES_default__HOST="some.host"
+This allows the base settings to be modified without replacing them
+completely, e.g. if you just need to add a single installed app.
 
-Settings for Third Party Apps
-----------------------------
+Environment Variable Settings
+-----------------------------
 
-Settings for third party Django apps can be specified via env vars too,
-in the same manner as other Django settings::
+You can specify that a setting should be loaded from an environment
+variable by adding it to the `[djangokit.from_env]` section of your
+settings file (usually in the `settings.public.toml` file).
 
-    DJANGO_THIRD_PARTY_A="AAA"
-    DJANGO_THIRD_PARTY_B="BBB"
+The values of such settings will be converted from TOML if possible.
+Example::
 
-Advanced Settings
------------------
+    # settings.public.toml
+    [django.from_env]
+    API_KEY = "DJANGO_API_KEY"
+    DATABASES.default.NAME = "DJANGO_DATABASE_NAME"
 
-It's also possible to load settings from an additional settings module.
-To do so, set the `DJANGO_ADDITIONAL_SETTINGS_MODULE` env var to point
-at a settings module with additional settings.
+Note that if `API_KEY` isn't set in the Django settings module or file
+that the `DJANGO_API_KEY` env var will be *required* and an error will
+be raised if it's not set.
 
-These additional settings will override the defaults provided here but
-any env settings will still take precedence.
+Some settings will always be loaded from env vars, if they're present in
+the environment:
+
+# Django setting name/path loaded from env var name
+- `DEBUG` = `DJANGO_DEBUG`
+- `SECRET_KEY` = `DJANGO_SECRET_KEY`
+- `DATABASES.default.HOST` = `DJANGO_DATABASE_HOST`
+- `DATABASES.default.PASSWORD` = `DJANGO_DATABASE_PASSWORD`
+
+.. todo:: Add other known sensitive settings?
 
 """
-import importlib
-from itertools import chain
+from dataclasses import asdict, dataclass, field
+from importlib import import_module
 from os import environ
-from typing import List, Tuple, Union
-from uuid import uuid4
+from pathlib import Path
+from socket import gethostname
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
-from django.conf import global_settings
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.module_loading import import_string
 
-from .env import getenv, load_dotenv
+from .conf import getenv, load_settings
+from .utils import merge_dicts
 
-load_dotenv()
 
+@dataclass
+class DjangoKitSettings:
+    """DjangoKit settings.
 
-class Settings:
+    This defines the available DjangoKit settings, their types, and
+    their default values. It also contains a number of attributes
+    derived from the DjangoKit settings.
 
-    required = object()
+    """
 
-    def __init__(self, **kwargs):
-        for name, val in kwargs.items():
-            setattr(self, name, val)
+    package: str
+    """Top level package name of the DjangoKit app."""
+
+    app_label: str
+    """App label for the DjangoKit app (often the same as `package`)."""
+
+    prefix: str = ""
+    """URL mount point for the DjangoKit app, relative to site root."""
+
+    admin_prefix: str = "$admin/"
+    """Path to Django Admin, relative to `prefix`."""
+
+    current_user_path: str = "$current-user"
+    """Path to current user endpoint, relative to `prefix`."""
+
+    intercept_extensions: Optional[Dict[str, str]] = None
+    """URL extensions to intercept.
+
+    Map of extension to content type::
+
+        # settings.public.toml
+        [djangokit.intercept_extensions]
+        ".json" = "application/json"
+        ".geojson" = "application/geo+json"
+
+    If set, GET and HEAD requests with a path that ends with one of the
+    specified extensions will be intercepted and modified as follows:
+    
+    1. The extension will be stripped from path and path_info
+    2. The Accept header will be set to the specified content type
+
+    """
+
+    cache_time: Optional[int] = None
+    """How long to cache responses for GETs, in seconds.
+
+    This is coarse-grained caching that will apply to *all* GET requests
+    for *all* routes (both pages and handlers).
+
+    """
+
+    # Additional cache settings
+    private: Optional[bool] = None
+    vary_on: Optional[Sequence[str]] = ("Accept",)
+    cache_control: Optional[dict] = None
+
+    title: str = "A DjangoKit Site"
+    """Site title (used for `<title>`)"""
+
+    description: str = "A website made with DjangoKit"
+    """Site description (used for `<meta name="description">`)"""
+
+    global_stylesheets: List[str] = field(default_factory=lambda: ["global.css"])
+    """Global stylesheets to be injected into the document `<head>`."""
+
+    route_view_class: Union[str, type] = "djangokit.core.RouteView"
+    """The view class used for routes.
+    
+    It's expected to have an `as_view_from_node` method that takes a
+    :class:`RouteNode` and, optionally, a `template_name`, `cache_time`,
+    and/or `ssr_bundle_path` and returns a view (e.g., by calling
+    `cls.as_view()`).
+    
+    """
+
+    current_user_serializer: Union[
+        str, Callable
+    ] = "djangokit.core.user.current_user_serializer"
+    """Serializer function used to serialize the current user."""
+
+    csr: bool = True
+    """Whether CSR is enabled."""
+
+    ssr: bool = True
+    """Whether SSR is enabled."""
+
+    webmaster: str = field(default_factory=lambda: f"webmaster@{gethostname()}")
+    """Email address of the webmaster / site admin."""
+
+    noscript_message: str = (
+        "This site requires JavaScript to be enabled in your browser."
+    )
+    """Message to display when browser JS is disabled.
+    
+    Can be set to "" to disable showing a noscript message.
+    
+    """
+
+    def __setattr__(self, name, value):
+        super().__setattr__(name, value)
+        if name == "package":
+            package = value
+            module = import_module(package)
+            paths = module.__path__
+            if len(paths) > 1:
+                raise ImproperlyConfigured(
+                    f"DjangoKit app package {package} appears to be a "
+                    "namespace package because it resolves to multiple "
+                    "file system paths. You might need to add an "
+                    "__init__.py to the package."
+                )
+            package_dir = Path(paths[0])
+            self.package_dir = package_dir
+            self.app_dir = package_dir / "app"
+            self.models_dir = package_dir / "models"
+            self.routes_dir = package_dir / "routes"
+            self.routes_package = f"{package}.routes"
+            self.static_dir = package_dir / "static"
+        elif name == "route_view_class":
+            view_class = value
+            if isinstance(view_class, str):
+                self.route_view_class = import_string(value)
+        elif name == "current_user_serializer":
+            serializer = value
+            if isinstance(serializer, str):
+                self.current_user_serializer = import_string(serializer)
+        self.check()
 
     def __contains__(self, name):
-        return name in self.__dict__
+        return hasattr(self, name)
 
     def __getitem__(self, name):
-        return self.__dict__[name]
+        return getattr(self, name)
+
+    def __setitem__(self, name, val):
+        return setattr(self, name, val)
+
+    def check(self):
+        if not (self.csr or self.ssr):
+            raise ImproperlyConfigured("At least one of CSR or SSR must be enabled.")
+
+        # Prefixes must be unique.
+        if not self.admin_prefix:
+            raise ImproperlyConfigured("Admin prefix must be set.")
+
+        # Mount point & prefixes:
+        # - can be an empty string
+        # - must not be a single slash
+        # - must not start with a slash
+        # - must end with a slash
+        for val, label in (
+            (self.prefix, "Mount point"),
+            (self.admin_prefix, "Admin prefix"),
+        ):
+            if not val:
+                continue
+            if val == "/":
+                raise ImproperlyConfigured(
+                    f"{label} is not valid (use an empty string instead of a slash)."
+                )
+            if val.startswith("/"):
+                raise ImproperlyConfigured(f"{label} must not start with a slash.")
+            if not val.endswith("/"):
+                raise ImproperlyConfigured(f"{label} must end with a slash.")
+
+    def as_dict(self) -> Dict[str, Any]:
+        """Return a dict with *all* DjangoKit settings.
+
+        This will include defaults plus any values set in the project's
+        Django settings module in the `DJANGOKIT` dict.
+
+        """
+        return asdict(self)
 
 
-djangokit_package = getenv("DJANGOKIT_PACKAGE")
-debug = getenv("DJANGO_DEBUG", False, bool)
-test = getenv("DJANGO_TEST", False, bool)
-secret_key = f"INSECURE:{uuid4()}" if test else getenv("DJANGO_SECRET_KEY")
-app_dirs_loader = "django.template.loaders.app_directories.Loader"
-cached_loader = "django.template.loaders.cached.Loader"
-template_loaders: List[Union[str, Tuple[str, List[str]]]] = (
-    [app_dirs_loader] if debug else [(cached_loader, [app_dirs_loader])]
-)
+# Default Settings -----------------------------------------------------
 
+# DjangoKit
+DJANGOKIT: Dict[str, Any] = {}
 
-# NOTE: This only includes defaults that differ from Django's global
-#       defaults. If a setting doesn't have a default here, Django's
-#       global default will be used.
-defaults = Settings(
-    # DjangoKit
-    # XXX: Keep in sync with `.conf.Settings.known_settings`.
-    DJANGOKIT={
-        "title": "A DjangoKit Site",
-        "description": "A website made with DjangoKit",
-        "package": djangokit_package,
-        "app_label": djangokit_package.replace(".", "_"),
-        "global_stylesheets": ["global.css"],
-        "current_user_serializer": "djangokit.core.user.current_user_serializer",
-        "ssr": True,
-        "webmaster": "",
+# Basics
+ENV = "development"
+DEBUG = False
+ROOT_URLCONF = "djangokit.core.urls"
+WSGI_APPLICATION = "djangokit.core.wsgi.application"
+
+# Localization
+TIME_ZONE = "America/Los_Angeles"
+USE_TZ = True
+
+# Apps
+INSTALLED_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+]
+
+# Middleware
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+# Databases
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": "db.sqlite3",
+    }
+}
+
+# Auth
+LOGIN_URL = "/login"
+AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": name}
+    for name in (
+        "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "django.contrib.auth.password_validation.CommonPasswordValidator",
+        "django.contrib.auth.password_validation.NumericPasswordValidator",
+    )
+]
+
+# Static files
+STATIC_ROOT = "static"
+STATIC_URL = "static/"
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+
+# Templates
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "OPTIONS": {
+            # NOTE: Default loaders option is derived below
+            "loaders": None,
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
     },
-    # Basics
-    ROOT_URLCONF="djangokit.core.urls",
-    SECRET_KEY=secret_key,
-    WSGI_APPLICATION="djangokit.core.wsgi.application",
-    # Localization
-    TIME_ZONE="America/Los_Angeles",
-    USE_TZ=True,
-    # Apps
-    INSTALLED_APPS=[
-        djangokit_package,
-        "djangokit.core",
-        "django.contrib.admin",
-        "django.contrib.auth",
-        "django.contrib.contenttypes",
-        "django.contrib.sessions",
-        "django.contrib.messages",
-        "django.contrib.staticfiles",
-    ],
-    # Middleware
-    MIDDLEWARE=[
-        "django.middleware.security.SecurityMiddleware",
-        "django.contrib.sessions.middleware.SessionMiddleware",
-        "django.middleware.common.CommonMiddleware",
-        "django.middleware.csrf.CsrfViewMiddleware",
-        "django.contrib.auth.middleware.AuthenticationMiddleware",
-        "django.contrib.messages.middleware.MessageMiddleware",
-        "django.middleware.clickjacking.XFrameOptionsMiddleware",
-        "djangokit.core.middleware.djangokit_middleware",
-    ],
-    # Databases
-    DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
-    DATABASES={
+]
+
+# Logging
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "default",
+        },
+    },
+    "formatters": {
         "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": "db.sqlite3",
-        }
-    },
-    # Auth
-    LOGIN_URL="/login",
-    AUTH_PASSWORD_VALIDATORS=[
-        {
-            "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"  # noqa
-        },
-        {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-        {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-        {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
-    ],
-    # Static files
-    STATIC_ROOT="static",
-    STATIC_URL="static/",
-    STATICFILES_STORAGE="django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
-    # Templates
-    TEMPLATES=[
-        {
-            "BACKEND": "django.template.backends.django.DjangoTemplates",
-            "OPTIONS": {
-                "loaders": template_loaders,
-                "context_processors": [
-                    "django.template.context_processors.debug",
-                    "django.template.context_processors.request",
-                    "django.contrib.auth.context_processors.auth",
-                    "django.contrib.messages.context_processors.messages",
-                ],
-            },
-        },
-    ],
-    # Logging
-    LOGGING={
-        "version": 1,
-        "disable_existing_loggers": False,
-        "handlers": {
-            "console": {
-                "class": "logging.StreamHandler",
-                "formatter": "default",
-            },
-        },
-        "formatters": {
-            "default": {
-                "format": "[%(levelname)s] %(name)s %(message)s",
-            },
-        },
-        "root": {
-            "handlers": ["console"],
-            "level": "INFO",
+            "format": "[%(levelname)s] %(name)s %(message)s",
         },
     },
-)
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        # NOTE: Default logger for package is derived below
+    },
+}
+
+# END Default Settings -------------------------------------------------
 
 
 settings = globals()
 
+# These settings will always be loaded from environment variables, if
+# the corresponding env vars are set.
+default_django_settings_from_env = {
+    "DEBUG": "DJANGO_DEBUG",
+    "SECRET_KEY": "DJANGO_SECRET_KEY",
+    "DATABASES": {
+        "default": {
+            "HOST": "DJANGO_DATABASE_HOST",
+            "USER": "DJANGO_DATABASE_USER",
+            "PASSWORD": "DJANGO_DATABASE_PASSWORD",
+            "NAME": "DJANGO_DATABASE_NAME",
+        }
+    },
+}
 
-def import_additional_settings():
-    """Import another settings module and add its settings.
+# These dicts will be populated when the settings file is read in
+# merge_loaded_settings().
+django_settings_from_env = {}
+djangokit_settings_from_env = {}
 
-    This is useful if the additional settings are complex and would be
-    hard or impossible to specify as environment variables.
 
-    .. note::
-        Settings specified via environment variables will override
-        settings specified in an additional settings module.
+def merge_additional_settings_module():
+    """Merge settings loaded from additional Django settings file."""
+    name = "DJANGO_ADDITIONAL_SETTINGS_MODULE"
+    if name in environ:
+        additional_settings_module_name = environ[name]
+        additional_settings_module = import_module(additional_settings_module_name)
+        settings.update(merge_dicts(settings, vars(additional_settings_module)))
 
-    """
-    module_name = getenv("DJANGO_ADDITIONAL_SETTINGS_MODULE", None)
-    if module_name:
-        try:
-            module = importlib.import_module(module_name)
-        except ImportError:
-            raise ImportError(
-                "The additional Django settings module "
-                f"`{module_name}`, which was specified via the "
-                "DJANGO_ADDITIONAL_SETTINGS_MODULE environment "
-                "variable, could not be imported. Check that the "
-                "module path is correct and that all imports in the "
-                "module are valid."
+
+def merge_loaded_settings():
+    """Merge settings loaded from TOML settings file."""
+    # Load settings from file(s).
+    loaded_settings = load_settings()
+
+    # Merge loaded Django settings into base settings.
+    django_settings = loaded_settings.get("django", {})
+    if "from_env" in django_settings:
+        django_settings_from_env.update(django_settings["from_env"])
+    django_settings = {n: v for n, v in django_settings.items() if n.isupper()}
+    settings.update(merge_dicts(settings, django_settings))
+
+    # Merge loaded DjangoKit settings into base settings.
+    dk_settings = loaded_settings.get("djangokit", {})
+    dk_settings.pop("cli", None)
+    if "from_env" in dk_settings:
+        djangokit_settings_from_env.update(dk_settings["from_env"])
+    settings["DJANGOKIT"].update(merge_dicts(settings["DJANGOKIT"], dk_settings))
+
+
+def merge_env_settings():
+    traverse_from_env_dict(settings, default_django_settings_from_env, False)
+    traverse_from_env_dict(settings, django_settings_from_env, True)
+    traverse_from_env_dict(
+        settings["DJANGOKIT"],
+        djangokit_settings_from_env,
+        True,
+        "DJANGOKIT",
+    )
+
+
+def traverse_from_env_dict(settings_dict, from_env_dict, required, parent_path=None):
+    # Traverse the from-env dict, which should have the same structure
+    # as the global settings dict, recursively descending into
+    # sub-dicts. When a leaf is reached--an env var name--the env var
+    # will be used as the value of the setting or sub-setting.
+    for segment, env_name_or_subdict in from_env_dict.items():
+        if isinstance(env_name_or_subdict, str):
+            env_name = env_name_or_subdict
+            if env_name in environ:
+                # If the env var is present, use it regardless of
+                # whether it's required.
+                settings_dict[segment] = getenv(env_name, required=True)
+            elif required and segment not in settings_dict:
+                # If the env var is NOT present but is required AND
+                # doesn't have a default value in the settings, that's
+                # an error.
+                path = f"{parent_path}.{segment}" if parent_path else segment
+                raise ImproperlyConfigured(
+                    "Expected environment variable to be set for "
+                    f"setting {path}: {env_name}"
+                )
+        elif isinstance(env_name_or_subdict, dict):
+            traverse_from_env_dict(
+                settings_dict.setdefault(segment, {}),
+                env_name_or_subdict,
+                required,
+                f"{parent_path}.{segment}" if parent_path else segment,
             )
-        for name, val in vars(module).items():
-            if name.isupper():
-                settings[name] = val
+        else:
+            type_ = type(env_name_or_subdict)
+            val = env_name_or_subdict
+            raise ImproperlyConfigured(
+                f"Expected str or dict but got {type_}: {val!r}."
+            )
+
+
+def prepend_settings():
+    for prepend_name, prepend_val in settings.items():
+        if prepend_name.startswith("PREPEND_"):
+            name = prepend_name[8:]
+            current_val = settings[name]
+            settings[name] = prepend_val + current_val
+
+
+def append_settings():
+    for append_name, append_val in settings.items():
+        if append_name.startswith("APPEND_"):
+            name = append_name[7:]
+            current_val = settings[name]
+            settings[name] = current_val + append_val
 
 
 def add_djangokit_settings():
-    """Add DjangoKit settings defined in the environment."""
-    if "DJANGOKIT" not in settings:
-        settings["DJANGOKIT"] = defaults.DJANGOKIT.copy()
-    for name in defaults.DJANGOKIT:
-        env_name = f"DJANGOKIT_{name.upper()}"
-        if env_name in environ:
-            val = getenv(env_name)
-            settings["DJANGOKIT"][name] = val
+    """Add DjangoKit settings.
 
 
-def add_known_django_settings():
-    """Add Django settings defined in the environment.
-
-    If a Django setting isn't defined in the environment and has a
-    default defined in `defaults`, the default will be used. Otherwise,
-    the setting will be left unset (leaving it to be handled internally
-    by Django).
+    - Converts `DJANGOKIT` setting to an instance of
+      :class:`DjangoKitSettings`.
+    - Adds the app's package and "djangokit.core" to the front of
+      `INSTALLED_APPS`.
+    - Adds the DjangoKit middleware to the end of `MIDDLEWARE`.
+    - Adds template loader option to `TEMPLATES[0]["OPTIONS"]`.
+    - Checks the DjangoKit settings to ensure they're valid.
 
     """
-    # NOTE: ROOT_URLCONF is a special case because it isn't defined in
-    #       Django's global settings
-    for name in chain(vars(global_settings), ["ROOT_URLCONF"]):
-        env_name = f"DJANGO_{name}"
-        if env_name in environ:
-            val = getenv(env_name)
-            settings[name] = val
-        elif name not in settings and name in defaults:
-            # TODO: Copy defaults so they aren't overwritten
-            val = defaults[name]
-            settings[name] = val
+    dk_settings = settings.setdefault("DJANGOKIT", {})
+
+    if "app_label" not in dk_settings:
+        package = dk_settings.get("package")
+        if package:
+            dk_settings["app_label"] = package.replace(".", "_")
+
+    try:
+        dk_settings = DjangoKitSettings(**dk_settings)
+    except Exception as exc:
+        raise ImproperlyConfigured(exc)
+
+    package = dk_settings.package
+    settings["DJANGOKIT"] = dk_settings
+
+    installed_apps = settings["INSTALLED_APPS"]
+    settings["INSTALLED_APPS"] = [package, "djangokit.core"] + installed_apps
+
+    middleware = settings["MIDDLEWARE"]
+    settings["MIDDLEWARE"] = middleware + [
+        "djangokit.core.middleware.djangokit_middleware"
+    ]
+
+    dk_settings.check()
 
 
-def add_other_django_settings():
-    """Add other Django settings defined in the environment.
+def set_derived_settings():
+    """Set defaults for settings that are derived from other settings.
 
-    These can include:
-
-    - Settings for third party Django apps
-    - Default database settings
-    - *Any* other settings -- any env var prefixed with `DJANGO_` will
-      be added
-
-    """
-    known_settings = vars(global_settings)
-    for env_name in environ:
-        if env_name.startswith("DJANGO_"):
-            name = env_name[7:]
-            if name in known_settings or name == "ROOT_URLCONF":
-                continue
-            if name.startswith("CACHE_") and not name.startswith("CACHE_MIDDLEWARE_"):
-                # Default cache settings
-                caches = settings.setdefault("CACHES", {})
-                setting = caches.setdefault("default", {})
-                _set_nested(setting, 1, "DJANGO_CACHE_", env_name)
-            elif name.startswith("DATABASE_"):
-                # Default database settings
-                setting = settings["DATABASES"]["default"]
-                _set_nested(setting, 1, "DJANGO_DATABASE_", env_name)
-            else:
-                # Third party or other setting
-                val = getenv(env_name)
-                settings[name] = val
-
-
-def add_nested_settings(name, min_path_len, env_prefix=None):
-    """Process nested settings like CACHES, DATABASES, and LOGGING.
-
-    The root setting (e.g., `DATABASES`) is expected to already exist,
-    at least as an empty dict.
-
-    After stripping the env prefix, the env var name is split on double
-    underscores into segments corresponding to sub-dicts of the root
-    setting. For each segment, a sub-dict is added if not already
-    present.
-
-    Args:
-        name:
-            The name of the setting (e.g. "DATABASES").
-
-        env_prefix:
-            The env prefix (e.g., "DJANGO_DATABASES_")
-
-    For example, consider the following .env file::
-
-        # .env.production
-        DJANGO_DATABASES_default__HOST="some.host"
-
-    This will set `DATABASES["default"]["HOST"] = "some.host"`.
-
-    .. note::
+    If a setting is already set, this has no effect.
 
     """
-    env_prefix = env_prefix or f"DJANGO_{name}_"
-    if name in settings:
-        top_level_setting = settings[name]
+    env = settings["ENV"]
+    debug = settings["DEBUG"]
+    package = settings["DJANGOKIT"].package
+
+    # Set default template loaders option
+    template_options = settings["TEMPLATES"][0]["OPTIONS"]
+    loaders = template_options.get("loaders")
+    if loaders is None:
+        template_loader = "djangokit.core.templates.loader.Loader"
+        if debug:
+            template_options["loaders"] = [template_loader]
+        else:
+            cached_loader = "django.template.loaders.cached.Loader"
+            template_options["loaders"] = [(cached_loader, [template_loader])]
+
+    log_settings = settings["LOGGING"]
+    if env == "test":
+        log_settings["disable_existing_loggers"] = True
     else:
-        default = getattr(global_settings, name, {})
-        top_level_setting = settings[name] = default
-    for env_name in environ:
-        if env_name.startswith(env_prefix):
-            _set_nested(top_level_setting, min_path_len, env_prefix, env_name)
+        # Set default logging options for app package
+        loggers = log_settings.setdefault("loggers", {})
+        package_logger = loggers.get(package)
+        if package_logger is None:
+            loggers[package] = {
+                "level": "DEBUG" if debug else "INFO",
+            }
 
 
-def _set_nested(setting, min_path_len, env_prefix, env_name):
-    """Set a sub-setting of the specified setting.
+merge_additional_settings_module()
+merge_loaded_settings()
+merge_env_settings()
+prepend_settings()
+append_settings()
 
-    The setting can be a top level setting such as `DATABASES` or a
-    nested setting such as `DATABASES["default"]`.
-
-    Example::
-
-        setting = settings.DATABASES["default"]
-        env_prefix = "DJANGO_DATABASE_"
-        env_name = "DJANGO_DATABASE_NAME"
-        _set_nested(setting, env_prefix, env_name)
-        # -> sets DATABASES["default"]["NAME"]
-
-    Example::
-
-        setting = settings.DATABASES
-        env_prefix = "DJANGO_DATABASES_"
-        env_name = "DJANGO_DATABASE_default__NAME"
-        _set_nested(setting, env_prefix, env_name)
-        # -> sets DATABASES["default"]["NAME"]
-
-    """
-    path = env_name[len(env_prefix) :]
-    segments = path.split("__")
-    num_segments = len(segments)
-    if num_segments < min_path_len:
-        raise ImproperlyConfigured(
-            f"Env setting name is not valid: {env_name}. Expected "
-            f"{min_path_len} segments separated by __."
-        )
-    val = getenv(env_name)
-    if num_segments == 1:
-        setting[segments[0]] = val
-    else:
-        obj = setting[segments[0]]
-        for segment in segments[1:-1]:
-            obj = obj.setdefault(segment, {})
-        obj[segments[-1]] = val
-
-
-import_additional_settings()
+# NOTE: The ordering of this matters because it adds the app's package
+#       name to the front of INSTALLED_APPS and the DjangoKit middleware
+#       to the end of MIDDLEWARE.
 add_djangokit_settings()
-add_known_django_settings()
-add_other_django_settings()
-add_nested_settings("CACHES", 2)
-add_nested_settings("DATABASES", 2)
 
-if not isinstance(settings.get("LOGGING"), str):
-    # XXX: Assume that LOGGING_CONFIG="logging.config.fileConfig" and
-    #      LOGGING is a log config file path.
-    #
-    # TODO: Make this more robust.
-    add_nested_settings("LOGGING", 1)
+set_derived_settings()

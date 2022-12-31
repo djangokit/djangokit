@@ -11,7 +11,7 @@ packages = [
 ]
 
 include = [
-    "src/{{ cookiecutter.package_name }}/**/*.{css,js,jsx,ts,tsx}",
+    "CHANGELOG.md",
 ]
 
 [tool.poetry.dependencies]
@@ -20,11 +20,14 @@ org-djangokit-core = "*"
 org-djangokit-cli = "*"
 
 [tool.poetry.group.dev.dependencies]
-black = "^22.12.0"
-isort = "^5.10.1"
-mypy = "^0.990"
-pytest = "^7.2.0"
-ruff = "^0.0.174"
+black = "*"
+isort = "*"
+mypy = "*"
+pytest = "*"
+ruff = "*"
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
 
 [build-system]
 requires = ["poetry-core"]

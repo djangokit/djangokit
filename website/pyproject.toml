@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "org-djangokit-website"
-version = "0.1.0.dev0"
+version = "0.0.2.dev0"
 description = "DjangoKit.org Website"
 authors = ["Wyatt Baldwin <Wyatt Baldwin>"]
 license = "MIT"
@@ -11,29 +11,30 @@ packages = [
 ]
 
 include = [
-    "src/djangokit/website/**/*.{ts,tsx}",
+    "CHANGELOG.md",
 ]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-org-djangokit-core = "*"
-org-djangokit-cli = "*"
+org-djangokit-core = ">=0.0.2.dev0"
+org-djangokit-cli = ">=0.0.2.dev0"
 markdown = "^3.4.1"
 pygments = "^2.13.0"
 pydantic = "^1.10.2"
+pymemcache = "^4.0.0"
 
 [tool.poetry.group.dev.dependencies]
 org-djangokit-core = { path = "../core", develop = true }
 org-djangokit-cli = { path = "../cli", develop = true }
 
-ansible = "^7.1.0"
-black = "^22.12.0"
-bpython = "^0.23"
-isort = "^5.10.1"
-mypy = "^0.990"
-pytest = "^7.2.0"
-ruff = "^0.0.174"
-runcommands = "^1.0a71"
+ansible = "*"
+black = "*"
+bpython = "*"
+isort = "*"
+mypy = "*"
+pytest = "*"
+ruff = "*"
+runcommands = "*"
 
 [tool.make-release.args]
 test = false

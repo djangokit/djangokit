@@ -2,7 +2,7 @@ import React, { createContext, useContext } from "react";
 
 // CSRF ----------------------------------------------------------------
 
-export const CsrfContext = createContext("__csrf_token__");
+export const CsrfContext = createContext("__DJANGOKIT_CSRF_TOKEN__");
 
 export function useCsrfContext() {
   return useContext(CsrfContext);

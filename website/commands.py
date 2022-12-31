@@ -1,13 +1,14 @@
 import os
+import posixpath
 import re
 import shutil
 from pathlib import Path
 
-from djangokit.core.env import load_dotenv
 from runcommands import abort, arg, command
 from runcommands import commands as c
 from runcommands import printer
-from runcommands.commands import remote
+from runcommands.commands import remote, sync
+from runcommands.util import flatten_args
 
 
 @command
@@ -24,6 +25,7 @@ def clean(deep=False):
 
     rm_dir("build")
     rm_dir("dist")
+    rm_dir("src/djangokit/website/app/build")
     rm_dir("src/djangokit/website/static/build")
     rm_dir(".mypy_cache")
     rm_dir(".pytest_cache")
@@ -73,24 +75,26 @@ def ansible(env, host, version=None, tags=(), skip_tags=(), extra_vars=()):
     if extra_vars:
         extra_vars = tuple(("--extra-var", f"{n}={v}") for (n, v) in extra_vars.items())
 
-    load_dotenv(".env.public")
-    load_dotenv(f".env.{env}")
-
-    c.local(
-        (
-            "ansible-playbook",
-            "-i",
-            f"ansible/{env}",
-            "ansible/site.yaml",
-            tags,
-            skip_tags,
-            extra_vars,
-            ("--extra-var", f"env={env}"),
-            ("--extra-var", f"hostname={host}"),
-            ("--extra-var", f"version={version}"),
-        ),
-        cd=os.path.dirname(__file__),
+    args = (
+        "ansible-playbook",
+        "-i",
+        f"ansible/{env}",
+        "ansible/site.yaml",
+        tags,
+        skip_tags,
+        extra_vars,
+        ("--extra-var", f"env={env}"),
+        ("--extra-var", f"hostname={host}"),
+        ("--extra-var", f"version={version}"),
     )
+
+    cwd = os.path.dirname(__file__)
+    cmd = " ".join(flatten_args(args))
+    cmd = cmd.replace(" -", "\n  -")
+    printer.header(f"Running ansible playbook with CWD = {cwd}")
+    printer.print(cmd, style="bold")
+
+    c.local(args, cd=cwd)
 
 
 @command
@@ -107,6 +111,12 @@ def upgrade_remote(env, host):
     ansible(env, host, tags="provision-update-packages")
 
 
+def remove_build_dir():
+    printer.warning("Removing build directory... ", end="")
+    c.local("rm -rf build")
+    printer.success("Done")
+
+
 @command
 def prepare(
     env,
@@ -118,7 +128,7 @@ def prepare(
     """Prepare build locally for deployment."""
     printer.header(f"Preparing deployment to {host} ({env})")
     if clean_:
-        c.local("rm -rf build")
+        remove_build_dir()
     version = version or c.git_version()
     tags = []
     if provision_:
@@ -145,7 +155,7 @@ def deploy(
 ):
     """Deploy site."""
     if clean_:
-        c.local("rm -rf build")
+        remove_build_dir()
 
     version = version or c.git_version()
     bool_as_str = lambda b: "yes" if b else "no"
@@ -179,27 +189,30 @@ def deploy(
     ansible(env, host, version, tags=tags, skip_tags=skip_tags)
 
 
+def get_current_path():
+    root = "/sites/djangokit.org"
+    readlink_result = remote(
+        "readlink current",
+        run_as="djangokit",
+        cd=root,
+        stdout="capture",
+    )
+    current_path = readlink_result.stdout.strip()
+    if not current_path:
+        abort(404, f"Could not read current link in {root}")
+    return current_path
+
+
 @command
-def clean_remote(root="/sites/djangokit.org", run_as="djangokit", dry_run=False):
+def clean_remote(run_as="djangokit", dry_run=False):
     """Clean up remote.
 
     Removes old deployments under the site root.
 
     """
+    root = "/sites/djangokit.org"
     printer.header(f"Removing old versions from {root}")
-
-    readlink_result = remote(
-        "readlink current",
-        run_as=run_as,
-        cd=root,
-        stdout="capture",
-    )
-
-    current_path = readlink_result.stdout.strip()
-
-    if not current_path:
-        abort(404, f"Could not read current link in {root}")
-
+    current_path = get_current_path()
     current_version = os.path.basename(current_path)
     printer.success(f"Current version: {current_version}")
 
@@ -241,3 +254,20 @@ def clean_remote(root="/sites/djangokit.org", run_as="djangokit", dry_run=False)
             remote(f"rm -r {path}", run_as=run_as)
 
         printer.success("Done")
+
+
+@command
+def push_settings(env, host):
+    """Push settings for env to current deployment and restart uWSGI.
+
+    This provides a simple way to modify production settings without
+    doing a full redeployment.
+
+    """
+    current_path = get_current_path()
+    app_dir = posixpath.join(current_path, "app/")
+    printer.header(f"Pushing {env} settings to {host}:{app_dir}")
+    sync(f"settings.{env}.toml", app_dir, host, run_as="djangokit")
+    printer.info("Restarting uWSGI (this can take a while)...", end="")
+    remote("systemctl restart uwsgi.service", sudo=True)
+    printer.success("Done")

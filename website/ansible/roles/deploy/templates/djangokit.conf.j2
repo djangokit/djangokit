@@ -34,7 +34,9 @@ server {
     ssl_prefer_server_ciphers on;
 
     location /static {
-        alias {{ remote_current_static }};
+        expires 1y;
+        add_header cache-control "public, immutable";
+        alias /sites/djangokit.org/static;
     }
 
     location / {

@@ -1,3 +1,5 @@
+import NotFound from "./NotFound";
+
 interface Props {
   title: string;
   error: {
@@ -7,13 +9,19 @@ interface Props {
 }
 
 export default function ErrorMessage({ title, error }: Props) {
+  if (error.statusCode === 404) {
+    return <NotFound />;
+  }
+
   return (
-    <div className="alert alert-danger">
-      <h2>{title}</h2>
-      <div className="lead">
-        <span>{error.message}</span>
-        {error.statusCode ? <span> ({error.statusCode})</span> : null}
-      </div>
+    <div className="p-4 border border-danger rounded">
+      <h2 className="text-danger">⛔️ {title} ⛔️</h2>
+
+      <p className="lead">{error.message}</p>
+
+      {error.statusCode ? (
+        <p className="small">Error code: {error.statusCode}</p>
+      ) : null}
     </div>
   );
 }

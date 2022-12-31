@@ -1,0 +1,14 @@
+#!/bin/bash
+root="$(dirname "$0")"
+
+for hook in "$root"/*; do
+    name="$(basename "$hook")"
+    if [ "$name" != "install" ]; then
+        if [ -e "$hook" ]; then
+            echo "Reinstalling hook: $name"
+        else
+            echo "Installing hook: $name"
+        fi
+        ln -sf "$hook" ".git/hooks/$name"
+    fi
+done

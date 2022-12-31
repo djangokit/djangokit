@@ -25,26 +25,48 @@ export default function Layout() {
 
   return (
     <>
-      <header className="p-4 bg-dark text-light border-bottom shadow-sm">
-        <Navbar variant="dark" bg="dark" expand="sm" className="light">
-          <Container fluid className="justify-content-between p-0">
-            <Link to="/" className="navbar-brand">
-              DjangoKit
+      <header className="border-bottom shadow-sm">
+        <div className="d-flex align-items-center justify-content-between p-3 bg-dark text-light">
+          <Link to="/" className="navbar-brand">
+            DjangoKit
+          </Link>
+
+          {currentPath.startsWith("/docs") ? null : (
+            <LinkContainer to="/docs/get-started">
+              <IconButton size="sm" variant="outline-info" icon={<FaRocket />}>
+                <span className="d-inline d-sm-none">Start</span>
+                <span className="d-none d-sm-inline">Get Started</span>
+              </IconButton>
+            </LinkContainer>
+          )}
+
+          {currentUser.isAuthenticated ? (
+            <div className="d-flex align-items-center gap-2">
+              <div>{currentUser.username}</div>
+              <Form method="post" action="/logout">
+                <input name="next" type="hidden" value={currentPath} />
+                <Button type="submit" size="sm" variant="outline-secondary">
+                  Log Out
+                </Button>
+              </Form>
+            </div>
+          ) : null}
+
+          {currentUser.isAuthenticated || isLogin ? null : (
+            <Link
+              className="btn btn-sm btn-outline-secondary"
+              to={`/login?next=${redirectPath}`}
+            >
+              Log In
             </Link>
+          )}
+        </div>
 
-            {currentPath.startsWith("/docs") ? null : (
-              <LinkContainer to="/docs/get-started">
-                <IconButton variant="outline-info" icon={<FaRocket />}>
-                  <span className="d-inline d-sm-none">Start</span>
-                  <span className="d-none d-sm-inline">Get Started</span>
-                </IconButton>
-              </LinkContainer>
-            )}
-
+        <Navbar variant="dark" bg="dark" expand="sm" collapseOnSelect>
+          <Container fluid className="justify-content-end">
             <Navbar.Toggle aria-controls="main-navbar" />
-
-            <Navbar.Collapse id="main-navbar" className="flex-grow-0">
-              <Nav>
+            <Navbar.Collapse id="main-navbar" className="justify-content-end">
+              <Nav className="align-items-end">
                 <LinkContainer to="/docs">
                   <Nav.Link className="d-flex align-items-center">
                     <FaBookReader />
@@ -58,90 +80,69 @@ export default function Layout() {
                   className="d-flex align-items-center"
                 >
                   <FaGithub />
-                  <span className="d-none d-sm-inline ms-1">Code</span>
+                  <span className="ms-1">Code</span>
                 </Nav.Link>
-
-                {isLogin || currentUser.isAuthenticated ? null : (
-                  <Nav.Link as="div">
-                    <Link
-                      className="btn btn-sm btn-outline-secondary"
-                      to={`/login?next=${redirectPath}`}
-                    >
-                      Log In
-                    </Link>
-                  </Nav.Link>
-                )}
               </Nav>
             </Navbar.Collapse>
           </Container>
         </Navbar>
-
-        {currentUser.isAuthenticated ? (
-          <div className="d-flex align-items-center justify-content-end gap-2 small text-muted">
-            <div>{currentUser.username}</div>
-            <Form method="post" action="/$api/logout">
-              <input name="next" type="hidden" value={currentPath} />
-              <Button type="submit" size="sm" variant="outline-secondary">
-                Log Out
-              </Button>
-            </Form>
-          </div>
-        ) : null}
       </header>
 
-      <main className="p-4">
-        <Outlet />
-      </main>
+      <div id="wrapper">
+        <main className="p-4">
+          <Outlet />
+        </main>
 
-      <footer className="d-flex align-items-center justify-content-between px-4 py-2 border-top bg-light small">
-        <span>&copy; 2022 DjangoKit.org</span>
+        <footer className="d-flex align-items-center justify-content-between px-4 py-2 border-top bg-light small">
+          <span>&copy; 2022 DjangoKit.org</span>
 
-        <NavDropdown title={<FaBars />}>
-          <LinkContainer to="/blog">
-            <NavDropdown.Item>Blog</NavDropdown.Item>
-          </LinkContainer>
+          <NavDropdown title={<FaBars />}>
+            <LinkContainer to="/blog">
+              <NavDropdown.Item>Blog</NavDropdown.Item>
+            </LinkContainer>
 
-          <LinkContainer to="/todo">
-            <NavDropdown.Item>TODO</NavDropdown.Item>
-          </LinkContainer>
+            <LinkContainer to="/todo">
+              <NavDropdown.Item>TODO</NavDropdown.Item>
+            </LinkContainer>
 
-          <LinkContainer to="/timer">
-            <NavDropdown.Item>Timer</NavDropdown.Item>
-          </LinkContainer>
+            <LinkContainer to="/timer">
+              <NavDropdown.Item>Timer</NavDropdown.Item>
+            </LinkContainer>
 
-          <NavDropdown.Item
-            title="Django Admin"
-            href="/$admin/"
-            target="djangokit_admin"
-          >
-            Admin
-          </NavDropdown.Item>
+            <NavDropdown.Item
+              title="Django Admin"
+              href="/$admin/"
+              target="djangokit_admin"
+            >
+              Admin
+            </NavDropdown.Item>
 
-          {meta.data ? (
-            <>
-              <NavDropdown.Divider />
-              <NavDropdown.Item title="env">
-                {meta.data?.env || "development"}
-              </NavDropdown.Item>
-
-              {meta.data.version ? (
-                <NavDropdown.Item
-                  title="version"
-                  href={githubUrlForVersion(meta.data.version)}
-                >
-                  v{meta.data.version ?? "???"}
+            {meta.data ? (
+              <>
+                <NavDropdown.Divider />
+                <NavDropdown.Item title="env">
+                  {meta.data?.env || "development"}
                 </NavDropdown.Item>
-              ) : null}
 
-              <LinkContainer to="/meta">
-                <NavDropdown.Item title="More metadata">
-                  Metadata
-                </NavDropdown.Item>
-              </LinkContainer>
-            </>
-          ) : null}
-        </NavDropdown>
-      </footer>
+                {meta.data.version ? (
+                  <NavDropdown.Item
+                    title="version"
+                    href={githubUrlForVersion(meta.data.version)}
+                  >
+                    v{meta.data.version ?? "???"}
+                  </NavDropdown.Item>
+                ) : null}
+
+                <LinkContainer to="/meta">
+                  <NavDropdown.Item title="More metadata">
+                    Metadata
+                  </NavDropdown.Item>
+                </LinkContainer>
+              </>
+            ) : null}
+          </NavDropdown>
+        </footer>
+      </div>
     </>
   );
 }

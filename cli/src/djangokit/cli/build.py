@@ -6,21 +6,24 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import djangokit.core
+from django.conf import settings
 from djangokit.core.build import make_client_bundle, make_server_bundle, run_bundle
 from djangokit.core.http import make_request
+from djangokit.core.serializers import dump_json
+from djangokit.core.utils import get_unmasked_csrf_token
 from typer import Option
 from watchdog.events import FileSystemEvent, PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 from .app import app, state
-from .django import configure_settings_module
 from .utils.console import Console
 
 
 @app.command()
 def build_client(
-    ssr: bool = Option(True, envvar="DJANGOKIT_SSR"),
+    ssr: bool = True,
     minify: bool = False,
+    source_map: bool = True,
     watch: bool = Option(False, help="Watch files and rebuild automatically?"),
     join: bool = Option(True, help="Only relevant with --watch"),
 ):
@@ -35,19 +38,18 @@ def build_client(
         render into the React root instead.
 
     """
-    configure_settings_module(DJANGOKIT_SSR=ssr)
+    settings.DJANGOKIT.ssr = ssr
     console = state.console
 
     bundle_kwargs = {
         "env": state.env,
+        "settings_file": state.settings_file,
         "minify": minify,
-        "source_map": minify,
+        "source_map": source_map,
         "quiet": state.quiet,
     }
 
     console.header("Building client bundle")
-    if not ssr:
-        console.warning("SSR disabled")
     make_client_bundle(**bundle_kwargs)
     console.print()
 
@@ -67,6 +69,7 @@ def build_client(
 def build_server(
     path="/",
     minify: bool = False,
+    source_map: bool = False,
     watch: bool = Option(False, help="Watch files and rebuild automatically?"),
     join: bool = Option(False, help="Only relevant with --watch"),
 ):
@@ -75,15 +78,15 @@ def build_server(
     The serer bundle *is* request dependent.
 
     """
-    configure_settings_module()
     console = state.console
 
-    bundle_args = [make_request(path)]
+    bundle_args = [make_request(path=path)]
 
     bundle_kwargs = {
         "env": state.env,
+        "settings_file": state.settings_file,
         "minify": minify,
-        "source_map": minify,
+        "source_map": source_map,
         "quiet": state.quiet,
     }
 
@@ -105,10 +108,23 @@ def build_server(
 
 
 @app.command()
-def render_markup(path: str = "/", csrf_token: str = "__csrf_token__"):
+def render_markup(path: str = "/", csrf_token=None):
     """Render markup for the specified request path"""
-    configure_settings_module()
-    request = make_request(path)
+    from django.contrib.auth.models import AnonymousUser
+
+    request = make_request(path=path)
+
+    if csrf_token is None:
+        # NOTE: The CSRF token is arbitrary
+        csrf_token = get_unmasked_csrf_token(request)
+
+    user = AnonymousUser()
+    user_data = settings.DJANGOKIT.current_user_serializer(user)
+    user_json = dump_json(user_data)
+
+    data: Any = {}
+    data_json = dump_json(data)
+
     bundle_kwargs = {
         "env": state.env,
         "minify": False,
@@ -116,7 +132,8 @@ def render_markup(path: str = "/", csrf_token: str = "__csrf_token__"):
         "quiet": state.quiet,
     }
     bundle = make_server_bundle(request, **bundle_kwargs)
-    markup = run_bundle(bundle, [path, csrf_token])
+    markup = run_bundle(bundle, [path, user_json, data_json])
+    markup = markup.replace("__DJANGOKIT_CSRF_TOKEN__", csrf_token)
     print(markup, flush=True)
 
 
@@ -186,13 +203,11 @@ class WatchEventHandler(PatternMatchingEventHandler):
 def get_build_watch_event_handler() -> Tuple[WatchEventHandler, Observer]:
     """Get the singleton build watch event handler."""
     handler = WatchEventHandler(state.console)
-
     core_dir = Path(djangokit.core.__path__[0])
-    app_dir = state.settings.app_dir
-
+    package_dir = settings.DJANGOKIT.package_dir
     observer = Observer()
 
-    for d in (core_dir, app_dir):
+    for d in (core_dir, package_dir):
         state.console.info(f"Watching {d}")
         observer.schedule(handler, d, recursive=True)
 

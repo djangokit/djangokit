@@ -10,7 +10,7 @@ export default function Page() {
   const next = params.get("next") ?? "/";
 
   return (
-    <Form method="post" action="/$api/login" className="container-lg">
+    <Form method="post" action="/login" className="container-lg">
       <input name="next" type="hidden" value={next} />
       <Stack gap={4}>
         <h2>Log In</h2>

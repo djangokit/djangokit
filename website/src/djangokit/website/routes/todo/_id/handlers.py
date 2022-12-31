@@ -1,4 +1,3 @@
-"""API for individual todo items."""
 from typing import Optional
 
 from django.shortcuts import get_object_or_404
@@ -49,8 +48,9 @@ def patch(request, id):
         if val is not None:
             setattr(item, name, val)
 
-    if data.completed is not None:
-        item.completed = timezone.now()
+    completed = data.completed
+    if completed is not None:
+        item.completed = timezone.now() if completed else None
 
     item.save()
     item.refresh_from_db()
