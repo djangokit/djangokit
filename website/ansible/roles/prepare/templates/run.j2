@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#
+# Wraps RunCommands console script
+# Sets env global via --env
+{{ remote_app_dir }}/venv/bin/runcommands --env {{ env }} "$@"

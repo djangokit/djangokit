@@ -10,6 +10,10 @@ from runcommands import printer
 from runcommands.commands import remote, sync
 from runcommands.util import flatten_args
 
+TITLE = "DjangoKit"
+SITE_USER = "djangokit"
+SRC_PATH = "src/djangokit/website"
+
 
 @command
 def clean(deep=False):
@@ -25,8 +29,8 @@ def clean(deep=False):
 
     rm_dir("build")
     rm_dir("dist")
-    rm_dir("src/djangokit/website/app/build")
-    rm_dir("src/djangokit/website/static/build")
+    rm_dir(f"{SRC_PATH}/app/build")
+    rm_dir(f"{SRC_PATH}/website/static/build")
     rm_dir(".mypy_cache")
     rm_dir(".pytest_cache")
     rm_dir(".ruff_cache")
@@ -112,7 +116,7 @@ def upgrade_remote(env, host):
 
 
 def remove_build_dir():
-    printer.warning("Removing build directory... ", end="")
+    printer.warning("Removing build directory...", end="")
     c.local("rm -rf build")
     printer.success("Done")
 
@@ -123,18 +127,23 @@ def prepare(
     host,
     version=None,
     provision_=False,
-    clean_: arg(help="Remove build directory? [no]") = False,
+    clean_: arg(help="Remove build directory? [no]") = True,
 ):
     """Prepare build locally for deployment."""
-    printer.header(f"Preparing deployment to {host} ({env})")
-    if clean_:
-        remove_build_dir()
     version = version or c.git_version()
     tags = []
     if provision_:
         tags.append("provision")
     tags.append("prepare")
-    printer.hr(f"Preparing DjangoKit website version {version} for deployment")
+
+    printer.header(f"Preparing {TITLE} website version {version} for {env}")
+
+    if clean_:
+        printer.print()
+        remove_build_dir()
+
+    printer.print()
+
     ansible(env, host, tags=tags, extra_vars={"version": version})
 
 
@@ -149,27 +158,13 @@ def deploy(
         inverse_short_option="-R",
         help="Run local prep steps? [yes]",
     ) = True,
-    clean_: arg(help="Remove build directory? [no]") = False,
+    clean_: arg(help="Remove build directory? [no]") = True,
     app: arg(help="Deploy app? [yes]") = True,
     static: arg(help="Deploy static files? [yes]") = True,
 ):
     """Deploy site."""
-    if clean_:
-        remove_build_dir()
-
     version = version or c.git_version()
     bool_as_str = lambda b: "yes" if b else "no"
-
-    printer.hr()
-    printer.header(f"Deploying to {host} ({env})\n")
-    printer.print(f"env = {env}")
-    printer.print(f"host = {host}")
-    printer.print(f"version = {version}")
-    printer.print(f"provision = {bool_as_str(provision_)}")
-    printer.print(f"local prep = {bool_as_str(prepare_)}")
-    printer.print(f"deploy app = {bool_as_str(app)}")
-    printer.print(f"deploy static = {bool_as_str(static)}")
-    printer.print("")
 
     tags = []
     skip_tags = []
@@ -185,15 +180,29 @@ def deploy(
         skip_tags.append("deploy-static")
     tags.append("deploy")
 
-    printer.hr(f"Deploying DjangoKit website version {version}")
+    printer.header(f"Deploying {TITLE} website version {version} to {env}")
+    printer.print(f"env = {env}")
+    printer.print(f"host = {host}")
+    printer.print(f"version = {version}")
+    printer.print(f"provision = {bool_as_str(provision_)}")
+    printer.print(f"local prep = {bool_as_str(prepare_)}")
+    printer.print(f"deploy app = {bool_as_str(app)}")
+    printer.print(f"deploy static = {bool_as_str(static)}")
+
+    if clean_ and prepare_:
+        printer.print()
+        remove_build_dir()
+
+    printer.print()
+
     ansible(env, host, version, tags=tags, skip_tags=skip_tags)
 
 
-def get_current_path():
-    root = "/sites/djangokit.org"
+def get_current_path(host):
+    root = f"/sites/{host}"
     readlink_result = remote(
         "readlink current",
-        run_as="djangokit",
+        run_as=SITE_USER,
         cd=root,
         stdout="capture",
     )
@@ -204,15 +213,15 @@ def get_current_path():
 
 
 @command
-def clean_remote(run_as="djangokit", dry_run=False):
+def clean_remote(host, run_as=SITE_USER, dry_run=False):
     """Clean up remote.
 
     Removes old deployments under the site root.
 
     """
-    root = "/sites/djangokit.org"
+    root = f"/sites/{host}"
     printer.header(f"Removing old versions from {root}")
-    current_path = get_current_path()
+    current_path = get_current_path(host)
     current_version = os.path.basename(current_path)
     printer.success(f"Current version: {current_version}")
 
@@ -264,10 +273,10 @@ def push_settings(env, host):
     doing a full redeployment.
 
     """
-    current_path = get_current_path()
+    current_path = get_current_path(host)
     app_dir = posixpath.join(current_path, "app/")
     printer.header(f"Pushing {env} settings to {host}:{app_dir}")
-    sync(f"settings.{env}.toml", app_dir, host, run_as="djangokit")
+    sync(f"settings.{env}.toml", app_dir, host, run_as=SITE_USER)
     printer.info("Restarting uWSGI (this can take a while)...", end="")
     remote("systemctl restart uwsgi.service", sudo=True)
     printer.success("Done")
