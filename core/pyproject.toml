@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "org-djangokit-core"
-version = "0.0.2.dev0"
+version = "0.0.2"
 description = "DjangoKit core"
 authors = ["Wyatt Baldwin <self@wyattbaldwin.com>"]
 license = "MIT"
