@@ -66,6 +66,12 @@ def main(
         "--settings-file",
         envvar="DJANGO_SETTINGS_FILE",
     ),
+    standalone: bool = Option(
+        False,
+        "-s",
+        "--standalone",
+        help="Run in standalone mode (outside of any project)",
+    ),
     use_typescript: bool = Option(
         True,
         "-t",
@@ -93,7 +99,10 @@ def main(
         env = "production"
 
     if params.is_default(ctx, "settings_file"):
-        settings_file = Path(f"settings.{env}.toml")
+        if standalone:
+            settings_file = Path(__file__).parent / "settings.standalone.toml"
+        else:
+            settings_file = Path(f"settings.{env}.toml")
 
     settings_file = settings_file.absolute()
     loaded_settings = load_settings(path=settings_file, env=env)

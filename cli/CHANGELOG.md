@@ -1,5 +1,9 @@
 # Changelog for DjangoKit CLI
 
+## 0.0.3 - 2022-12-31
+
+- Added `create-project` command.
+
 ## 0.0.2 - 2022-12-31
 
 Second alpha prerelease.

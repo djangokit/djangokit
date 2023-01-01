@@ -9,8 +9,9 @@ minimal setup and configuration.
 - Easily set up a Django project with an integrated React front end
 - Filesystem-based routing
 - Convention over configuration
-- Configuration using TOML files (or using a standard Django settings
-  module)
+- Env-specific configuration using TOML files (or using a standard
+  Django settings module)
+- Additional configuration via env vars as needed
 - Optional server side rendering of React templates/components
 - TypeScript support
 - Tooling to create models, routes, etc
@@ -21,5 +22,4 @@ minimal setup and configuration.
 
 ## Getting Started
 
-- Docs: https://djangokit.org/docs
-- Cookiecutter: https://github.com/djangokit/djangokit/cookiecutter
+- Docs: https://djangokit.org/docs/get-started

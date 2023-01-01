@@ -1,30 +1,54 @@
 # DjangoKit Cookiecutter
 
-This cookiecutter template can be used to create a DjangoKit app. This
+This `cookiecutter` template can be used to create a DjangoKit app. This
 is similar to running `django-admin startproject`, but more setup is
 done for you up front (and the setup is somewhat opinionated).
+
+## Using the DjangoKit CLI
+
+Rather than using this `cookiecutter` directly, you can install the
+DjangoKit CLI and run `dk -s create-project <name>`:
+
+```shell
+# Install DjangoKit CLI using pipx:
+pipx install org-djangokit-cli
+
+# Or you can use pip:
+pip install --user org-djangokit-cli
+
+# NOTE: Make sure to include the -s (standalone) flag.
+dk -s create-project <name>
+```
+
+Follow the prompts and then see the README file in your newly-created
+project for information on how to install and run it.
 
 ## Prerequisites
 
 - Install the version of Python you want to use. Versions 3.8 and up are
   supported.
  
-- Install `poetry` and `cookiecutter`.
+- Install `cookiecutter`.
 
   > TIP: [pipx](https://pypa.github.io/pipx/) is a good way to install
-  > command line tools like `poetry` and `cookiecutter`.
+  > command line tools like `cookiecutter`.
 
-  If you're on a Mac and using Homebrew, you can run the following
-  commands:
+  If you're on a Mac and using Homebrew, you can install `pipx` with
+  `brew`:
 
       brew install pipx
-      pipx install poetry
+
+  After installing `pipx`:
+ 
       pipx install cookiecutter
 
-  Other options for installing these packages can be found in their
+  You can also use `pip`:
+
+      pip install --user cookiecutter
+
+  Other options for installing `cookiecutter` can be found in their
   respective docs:
 
-  - https://python-poetry.org/docs/#installation
   - https://cookiecutter.readthedocs.io/en/stable/installation.html
 
 ## Create Your DjangoKit-based Project
