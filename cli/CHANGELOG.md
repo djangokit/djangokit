@@ -1,8 +1,9 @@
 # Changelog for DjangoKit CLI
 
-## 0.0.5 - unreleased
+## 0.0.5 - 2023-01-01
 
-In progress...
+- Fixed dist config so standalone settings module is included when
+  building distributions with `poetry build`.
 
 ## 0.0.4 - 2023-01-01
 
