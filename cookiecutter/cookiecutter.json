@@ -1,6 +1,6 @@
 {
   "project_name": "DjangoKit Project",
-  "package_name": "{{ cookiecutter.dist_name.replace('-', '_') }}",
+  "package_name": "{{ cookiecutter.project_name.lower().replace('-', '_') }}",
   "dist_name": "{{ cookiecutter.project_name.lower().replace(' ', '-') }}",
   "description": "{{ cookiecutter.project_name }}",
   "version": "0.0.1.dev0",
