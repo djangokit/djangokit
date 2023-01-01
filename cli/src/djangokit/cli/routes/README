@@ -1,0 +1,2 @@
+This is a stub for standalone mode. It keeps the CLI from throwing an
+error on startup when `discover_routes()` is run.
