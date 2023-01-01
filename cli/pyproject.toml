@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "org-djangokit-cli"
-version = "0.0.5"
+version = "0.0.6.dev0"
 description = "DjangoKit command line interface"
 authors = ["Wyatt Baldwin <self@wyattbaldwin.com>"]
 license = "MIT"

@@ -1,5 +1,9 @@
 # Changelog for DjangoKit CLI
 
+## 0.0.6 - unreleased
+
+In progress...
+
 ## 0.0.5 - 2023-01-01
 
 - Fixed dist config so standalone settings module is included when
