@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "org-djangokit-cli"
-version = "0.0.4"
+version = "0.0.5"
 description = "DjangoKit command line interface"
 authors = ["Wyatt Baldwin <self@wyattbaldwin.com>"]
 license = "MIT"
@@ -8,6 +8,10 @@ readme = "README.md"
 
 packages = [
     { include = "djangokit", from = "src" }
+]
+
+include = [
+    "src/djangokit/cli/settings.standalone.toml",
 ]
 
 [tool.poetry.dependencies]
