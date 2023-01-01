@@ -1,8 +1,9 @@
 # Changelog for DjangoKit CLI
 
-## 0.0.4 - unreleased
+## 0.0.4 - 2023-01-01
 
-In progress...
+- Fixed an `ImportError` that would occur when running certain commands
+  in standalone mode (e.g., `setup`).
 
 ## 0.0.3 - 2022-12-31
 
