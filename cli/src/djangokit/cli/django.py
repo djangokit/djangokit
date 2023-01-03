@@ -12,7 +12,8 @@ from django.urls import URLPattern, URLResolver, get_resolver
 from rich.pretty import pretty_repr
 from typer import Abort, Argument, Option
 
-from .app import app, state
+from .app import app
+from .state import state
 from .utils.run import Args, process_args
 
 

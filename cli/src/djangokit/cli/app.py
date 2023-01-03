@@ -4,39 +4,23 @@ This defines the CLI app. The global `app` can be imported from here and
 used to add commands.
 
 """
-from dataclasses import dataclass
+import dataclasses
+import os
+import sys
 from os import environ
 from pathlib import Path
-from typing import Optional
 
 import django
 import typer
 from djangokit.core.conf import load_settings
+from rich.table import Table
 from typer import Context, Option
 
-from .utils import Console, params
+from . import __version__
+from .state import state
+from .utils import find_project_root, get_standalone_settings_file, params
 
 app = typer.Typer()
-
-
-@dataclass
-class State:
-    """DjangoKit CLI global app state"""
-
-    console: Console = Console(highlight=False)
-    cwd: Path = Path.cwd()
-
-    env: str = "development"
-
-    settings_module: str = "djangokit.core.settings"
-    additional_settings_module: Optional[str] = None
-    settings_file: Path = Path("settings.development.toml")
-
-    use_typescript: bool = True
-    quiet: bool = False
-
-
-state = State()
 
 
 @app.callback(no_args_is_help=True)
@@ -70,7 +54,7 @@ def main(
         False,
         "-s",
         "--standalone",
-        help="Run in standalone mode (outside of any project)",
+        help="Force standalone mode",
     ),
     use_typescript: bool = Option(
         True,
@@ -88,7 +72,7 @@ def main(
 ):
     """DjangoKit CLI
 
-    Commands must be run from the top level directory of your project.
+    CWD will be changed to the project root before running subcommands.
 
     """
     console = state.console
@@ -98,9 +82,19 @@ def main(
     elif env == "prod":
         env = "production"
 
+    cwd = Path.cwd()
+    project_root = find_project_root()
+
+    if project_root:
+        os.chdir(project_root)
+
+    if project_root is None:
+        console.warning("Project root not found; running in standalone mode")
+        standalone = True
+
     if params.is_default(ctx, "settings_file"):
         if standalone:
-            settings_file = Path(__file__).parent / "settings.standalone.toml"
+            settings_file = get_standalone_settings_file(cwd, project_root)
         else:
             settings_file = Path(f"settings.{env}.toml")
 
@@ -134,25 +128,36 @@ def main(
     if quiet:
         state.console.quiet = True
 
-    console.header("DjangoKit CLI")
-    console.print(f"Environment = {env}")
-    console.print(f"Django settings module = {settings_module}")
-    console.print(f"Django additional settings module = {additional_settings_module}")
-    console.print(f"Settings file = {settings_file}")
-    console.print(f"Use TypeScript = {use_typescript}")
-    console.print(f"Quiet = {quiet}")
-    console.print()
-
     state.env = env
+    state.cwd = cwd
+    state.project_root = project_root
     state.settings_module = settings_module
     state.additional_settings_module = additional_settings_module
     state.settings_file = settings_file
     state.use_typescript = use_typescript
     state.quiet = quiet
 
+    console.header(f"DjangoKit CLI version {__version__}")
+    state_table = Table()
+    state_table.add_column("name")
+    state_table.add_column("value")
+    for field in dataclasses.fields(state):
+        name = field.name
+        if name == "console":
+            continue
+        val = str(getattr(state, name))
+        state_table.add_row(name, val)
+    console.print(state_table)
+    console.print()
+
+    if state.project_root is not None:
+        path = str(state.project_root / "src")
+        if path not in sys.path:
+            sys.path.insert(0, path)
+
     django.setup()
 
 
-@app.command(hidden=True)
-def meta():
-    """Show the main CLI configuration."""
+@app.command()
+def info():
+    """Show the main CLI configuration"""

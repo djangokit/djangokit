@@ -15,7 +15,8 @@ from typer import Option
 from watchdog.events import FileSystemEvent, PatternMatchingEventHandler
 from watchdog.observers import Observer
 
-from .app import app, state
+from .app import app
+from .state import state
 from .utils.console import Console
 
 
