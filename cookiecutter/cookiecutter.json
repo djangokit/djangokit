@@ -1,12 +1,12 @@
 {
   "project_name": "DjangoKit Project",
-  "package_name": "{{ cookiecutter.project_name.lower().replace('-', '_') }}",
-  "dist_name": "{{ cookiecutter.project_name.lower().replace(' ', '-') }}",
+  "package_name": "{{ cookiecutter.project_name|lower|replace(' ', '_') }}",
+  "dist_name": "{{ cookiecutter.project_name|lower|replace(' ', '-') }}",
   "description": "{{ cookiecutter.project_name }}",
   "version": "0.0.1.dev0",
   "author": "Anon",
   "author_email": "anon@example.com",
-  "python_version": "3.9",
+  "python_version": "3.11",
   "license": [
     "MIT",
     "GPL-3.0",
