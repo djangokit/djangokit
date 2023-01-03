@@ -29,7 +29,6 @@ org-djangokit-cli = { path = "../cli", develop = true }
 
 ansible = "*"
 black = "*"
-bpython = "*"
 isort = "*"
 mypy = "*"
 pytest = "*"
