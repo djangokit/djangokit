@@ -13,7 +13,8 @@ const TICK_MS = 50;
 const DEFAULT_HOURS = ENV === "development" ? 0 : 0;
 const DEFAULT_MINUTES = ENV === "development" ? 0 : 0;
 const DEFAULT_SECONDS = ENV === "development" ? 8 : 0;
-const HAS_NOTIFICATION = typeof window.Notification !== "undefined";
+const HAS_NOTIFICATION =
+  typeof window !== "undefined" && typeof window.Notification !== "undefined";
 
 export default function Page() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -63,32 +64,37 @@ export default function Page() {
     if (!ctx) return;
 
     const [w, h] = [canvas.width, canvas.height];
+
+    ctx.clearRect(0, 0, w, h);
+
+    if (!endMs) {
+      return;
+    }
+
     const remainingMs = (endMs as number) - (nowMs as number);
     const elapsedMs = totalMs - remainingMs;
     const percentage = elapsedMs / totalMs;
 
-    if (!endMs) {
-      ctx.clearRect(0, 0, w, h);
-      return;
-    }
+    const centerX = w / 2;
+    const barWidth = w * percentage;
+    const leftX = centerX - barWidth / 2;
 
-    if (!running) {
-      return;
-    }
-
-    ctx.clearRect(0, 0, w, h);
+    const hue = Math.floor(120 * percentage);
+    const barColor = `hsl(${hue}, 50%, 60%)`;
 
     ctx.beginPath();
-    ctx.fillStyle = "white";
-    ctx.rect(0, 1, percentage * w, 14);
+    ctx.fillStyle = "#f0f0f0";
+    ctx.rect(0, 1, w, 14);
     ctx.fill();
 
     ctx.beginPath();
-    ctx.strokeStyle = "black";
-    ctx.moveTo(0, 0);
-    ctx.lineTo(percentage * w, 0);
-    ctx.moveTo(0, 16);
-    ctx.lineTo(percentage * w, 16);
+    ctx.fillStyle = barColor;
+    ctx.rect(leftX, 1, barWidth, 14);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.strokeStyle = "#606060";
+    ctx.rect(0, 0, w, h);
     ctx.stroke();
   }, canvasRef.current && totalMs && nowMs && endMs && running);
 
@@ -208,6 +214,14 @@ export default function Page() {
             {pausedAt ? <div className="text-muted">Ends at ---</div> : null}
 
             <div className="d-flex gap-2">
+              <IconButton
+                icon={<FaStop />}
+                variant="outline-danger"
+                onClick={cancel}
+              >
+                Cancel
+              </IconButton>
+
               {running ? (
                 <IconButton
                   icon={<FaPause />}
@@ -225,14 +239,6 @@ export default function Page() {
                   Resume
                 </IconButton>
               )}
-
-              <IconButton
-                icon={<FaStop />}
-                variant="outline-danger"
-                onClick={cancel}
-              >
-                Cancel
-              </IconButton>
             </div>
           </div>
         ) : (
