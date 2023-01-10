@@ -1,5 +1,9 @@
 # Changelog for DjangoKit Core
 
+## 0.0.4 - unreleased
+
+In progress...
+
 ## 0.0.3 - 2023-01-10
 
 Add missing stub bundles.
