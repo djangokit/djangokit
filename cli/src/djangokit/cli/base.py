@@ -1,18 +1,24 @@
 """Base commands."""
 from functools import partial
-from pathlib import Path
 
 from django.conf import settings
 from typer import Context, Exit
 
-from .app import app, state
+from .app import app
 from .build import build_client, build_server
 from .django import run_django_command
-from .utils import params, run, run_node_command, run_poetry_command
+from .state import state
+from .utils import (
+    DEFAULT_PYTHON_VERSION,
+    params,
+    run,
+    run_node_command,
+    run_poetry_command,
+)
 
 
 @app.command()
-def setup(python_version=None):
+def setup(python_version=DEFAULT_PYTHON_VERSION):
     """Set up project"""
     console = state.console
     console.header("Setting up project...")
@@ -170,11 +176,11 @@ def format_(python: bool = True, js: bool = True):
 
 
 def has_package_json():
-    return Path("./package.json").exists()
+    return (state.project_root / "package.json").is_file()
 
 
 def has_node_modules():
-    return Path("./node_modules").exists()
+    return (state.project_root / "node_modules").is_dir()
 
 
 def check_js_flag():
@@ -193,8 +199,7 @@ def check_js_flag():
     # Otherwise, exit with an error because it's likely that `npm i`
     # needs to be run first.
     console.error(
-        "Can't format with eslint because CWD doesn't contain a "
-        "node_modules directory. Do you need to run `npm install`? "
-        f"CWD = {state.cwd}"
+        "Can't format with eslint because the project doesn't contain "
+        "a node_modules directory. Do you need to run `npm install`? "
     )
     raise Exit(1)

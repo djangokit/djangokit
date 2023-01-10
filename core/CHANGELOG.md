@@ -1,5 +1,9 @@
 # Changelog for DjangoKit Core
 
+## 0.0.3 - 2023-01-10
+
+Add missing stub bundles.
+
 ## 0.0.2 - 2022-12-31
 
 Second alpha prerelease.

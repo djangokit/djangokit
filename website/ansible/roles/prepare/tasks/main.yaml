@@ -48,6 +48,42 @@
     src: "wsgi.py.j2"
     dest: "{{ app_build_dir }}/wsgi.py"
 
+- name: <LOCAL> Copy DjangoKit wrapper script to build directory
+  tags:
+    - prepare-app
+    - prepare-copy-files
+    - deploy-app
+  template:
+    src: "dk.j2"
+    dest: "{{ app_build_dir }}/dk"
+
+- name: <LOCAL> Copy RunCommands wrapper script to build directory
+  tags:
+    - prepare-app
+    - prepare-copy-files
+    - deploy-app
+  template:
+    src: "run.j2"
+    dest: "{{ app_build_dir }}/run"
+
+- name: <LOCAL> Copy RunCommands module to build directory
+  tags:
+    - prepare-app
+    - prepare-copy-files
+    - deploy-app
+  copy:
+    src: "{{ root }}/commands.py"
+    dest: "{{ app_build_dir }}/commands.py"
+
+- name: <LOCAL> Copy RunCommands config file to build directory
+  tags:
+    - prepare-app
+    - prepare-copy-files
+    - deploy-app
+  template:
+    src: "runcommands.toml.j2"
+    dest: "{{ app_build_dir }}/runcommands.toml"
+
 - name: <LOCAL> Remove existing source distributions
   tags:
     - prepare-app

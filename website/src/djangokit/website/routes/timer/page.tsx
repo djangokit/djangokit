@@ -2,51 +2,101 @@ import { useEffect, useRef, useState } from "react";
 
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
-import ProgressBar from "react-bootstrap/ProgressBar";
 
 import { FaPause, FaPlay, FaStop } from "react-icons/fa";
 
-import IconButton from "../../components/IconButton";
+import { IconButton } from "../../components";
+import { useInterval, useRequestAnimationFrame } from "../../hooks";
+import { range } from "../../utils";
 
 const TICK_MS = 50;
-const DEFAULT_SECONDS = ENV === "development" ? 5 : 0;
+const DEFAULT_HOURS = ENV === "development" ? 0 : 0;
+const DEFAULT_MINUTES = ENV === "development" ? 0 : 0;
+const DEFAULT_SECONDS = ENV === "development" ? 8 : 0;
+const HAS_NOTIFICATION =
+  typeof window !== "undefined" && typeof window.Notification !== "undefined";
 
 export default function Page() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   // User input
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
-  const [seconds, setSeconds] = useState(DEFAULT_SECONDS);
+  const [seconds, setSeconds] = useState(0);
 
-  const [startMs, setStartMs] = useState<number>();
+  const [nowMs, setNowMs] = useState<number>();
   const [endMs, setEndMs] = useState<number>();
   const [countdown, setCountdown] = useState("");
   const [started, setStarted] = useState(false);
   const [running, setRunning] = useState(false);
   const [pausedAt, setPausedAt] = useState<number>();
-
-  // NOTE: This is only needed in order to force a rerender of the
-  //       progress bar on every tick so that it advances smoothly.
-  const [numTicks, setNumTicks] = useState<number>(0);
-
   const [message, setMessage] = useState<string>();
+  const [requestedNotificationPermission, setRequestedNotificationPermission] =
+    useState(false);
+
+  const totalMs = (hours * 60 * 60 + minutes * 60 + seconds) * 1000;
+
+  useEffect(() => {
+    setHours(DEFAULT_HOURS);
+    setMinutes(DEFAULT_MINUTES);
+    setSeconds(DEFAULT_SECONDS);
+  }, []);
 
   useInterval(
     () => {
-      if (typeof endMs !== "number") {
-        throw new Error(`Expected endMs to be a number: ${endMs}`);
-      }
       const nowMs = getNowMs();
-      setNumTicks(numTicks + 1);
-      if (nowMs < endMs) {
+      setNowMs(nowMs);
+      if (nowMs < (endMs as number)) {
         setCountdown(getCountdown(nowMs, endMs));
       } else {
         setCountdown("0");
         done();
       }
     },
-    TICK_MS,
-    running
+    running && endMs,
+    TICK_MS
   );
+
+  useRequestAnimationFrame(() => {
+    const canvas = canvasRef.current as HTMLCanvasElement;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const [w, h] = [canvas.width, canvas.height];
+
+    ctx.clearRect(0, 0, w, h);
+
+    if (!endMs) {
+      return;
+    }
+
+    const remainingMs = (endMs as number) - (nowMs as number);
+    const elapsedMs = totalMs - remainingMs;
+    const percentage = elapsedMs / totalMs;
+
+    const centerX = w / 2;
+    const barWidth = w * percentage;
+    const leftX = centerX - barWidth / 2;
+
+    const hue = Math.floor(120 * percentage);
+    const barColor = `hsl(${hue}, 50%, 60%)`;
+
+    ctx.beginPath();
+    ctx.fillStyle = "#f0f0f0";
+    ctx.rect(0, 1, w, 14);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.fillStyle = barColor;
+    ctx.rect(leftX, 1, barWidth, 14);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.strokeStyle = "#606060";
+    ctx.rect(0, 0, w, h);
+    ctx.stroke();
+  }, canvasRef.current && totalMs && nowMs && endMs && running);
 
   // User input --------------------------------------------------------
 
@@ -78,20 +128,22 @@ export default function Page() {
     if (!(hours || minutes || seconds)) {
       return;
     }
-    const nowMs = getNowMs();
-    const totalMs = (hours * 60 * 60 + minutes * 60 + seconds) * 1000;
-    setMessage(undefined);
-    setStartMs(nowMs);
-    setEndMs(nowMs + totalMs);
-    setStarted(true);
-    setRunning(true);
+    requestNotificationPermission().finally(() => {
+      const nowMs = getNowMs();
+      const totalMs = (hours * 60 * 60 + minutes * 60 + seconds) * 1000;
+      setMessage(undefined);
+      setNowMs(nowMs);
+      setEndMs(nowMs + totalMs);
+      setStarted(true);
+      setRunning(true);
+    });
   };
 
   const reset = () => {
     setHours(0);
     setMinutes(0);
-    setSeconds(0);
-    setStartMs(undefined);
+    setSeconds(DEFAULT_SECONDS);
+    setNowMs(undefined);
     setEndMs(undefined);
     setCountdown("");
     setStarted(false);
@@ -109,6 +161,7 @@ export default function Page() {
     const resumedAt = getNowMs();
     const newEndMs = (endMs as number) + (resumedAt - (pausedAt as number));
     setPausedAt(undefined);
+    setNowMs(undefined);
     setEndMs(newEndMs);
     setRunning(true);
   };
@@ -121,24 +174,39 @@ export default function Page() {
   };
 
   const done = () => {
-    setMessage("Done!");
-    setEndMs(undefined);
+    setMessage(`Timer finished at ${msToTimeString(getNowMs())}`);
     setStarted(false);
     setRunning(false);
-    notifyDone();
+    if (HAS_NOTIFICATION && Notification.permission === "granted") {
+      new Notification("Timer", { body: "Timer finished!" });
+    }
   };
 
-  // Utilities ---------------------------------------------------------
+  const requestNotificationPermission = () => {
+    const perm = window.Notification?.permission;
+    if (!HAS_NOTIFICATION) {
+      Promise.resolve("window.Notification is undefined");
+    }
+    if (requestedNotificationPermission) {
+      return Promise.resolve("already requested");
+    }
+    if (perm === "granted" || perm === "denied") {
+      return Promise.resolve(`already ${perm}`);
+    }
+    setRequestedNotificationPermission(true);
+    return Notification.requestPermission();
+  };
 
   return (
-    <div className="d-flex flex-column align-items-center gap-4">
+    <div
+      ref={containerRef}
+      className="d-flex flex-column align-items-center gap-4"
+    >
       <h1>Timer</h1>
 
       <Form className="d-flex align-items-end gap-2">
         {started ? (
-          <div className="d-flex flex-column align-items-center gap-4">
-            <div>{countdown}</div>
-
+          <div className="d-flex flex-column align-items-center gap-2">
             {endMs && !pausedAt ? (
               <div>Ends at {msToTimeString(endMs)}</div>
             ) : null}
@@ -146,6 +214,14 @@ export default function Page() {
             {pausedAt ? <div className="text-muted">Ends at ---</div> : null}
 
             <div className="d-flex gap-2">
+              <IconButton
+                icon={<FaStop />}
+                variant="outline-danger"
+                onClick={cancel}
+              >
+                Cancel
+              </IconButton>
+
               {running ? (
                 <IconButton
                   icon={<FaPause />}
@@ -163,14 +239,6 @@ export default function Page() {
                   Resume
                 </IconButton>
               )}
-
-              <IconButton
-                icon={<FaStop />}
-                variant="outline-danger"
-                onClick={cancel}
-              >
-                Cancel
-              </IconButton>
             </div>
           </div>
         ) : (
@@ -229,17 +297,15 @@ export default function Page() {
         )}
       </Form>
 
-      {started && startMs && endMs ? (
-        <div className="bg-light w-100">
-          <ProgressBar
-            min={Math.round(startMs / 10)}
-            max={Math.round(endMs / 10)}
-            now={Math.round(getNowMs() / 10)}
-            striped={true}
-          />
-        </div>
+      {containerRef.current ? (
+        <canvas
+          ref={canvasRef}
+          width={containerRef.current.clientWidth}
+          height={16}
+        ></canvas>
       ) : null}
 
+      {running ? <p className="lead">{countdown}</p> : null}
       {message ? <p className="lead">{message}</p> : null}
     </div>
   );
@@ -272,60 +338,10 @@ function getCountdown(nowMs, endMs) {
   return parts.join(" ");
 }
 
-function notifyDone() {
-  if (typeof window.Notification === "undefined") {
-    return;
-  }
-
-  const title = "Timer";
-  const body = "Timer finished!";
-
-  switch (Notification.permission) {
-    case "denied":
-      return;
-    case "granted":
-      new Notification(title, { body });
-      return;
-    default:
-      Notification.requestPermission().then((permission) => {
-        if (permission === "granted") {
-          new Notification(title, { body });
-        }
-      });
-  }
-}
-
 function numberOptions(count) {
   return Array.from(range(count)).map((n) => (
     <option key={n} value={n}>
       {n}
     </option>
   ));
-}
-
-function* range(quantity, start = 0) {
-  const end = start + quantity;
-  for (let i = start; i < end; ++i) {
-    yield i;
-  }
-}
-
-function useInterval(callback, delay, condition) {
-  const savedCallback = useRef<() => void>();
-
-  useEffect(() => {
-    savedCallback.current = callback;
-  }, [callback]);
-
-  useEffect(() => {
-    if (condition) {
-      const tick = () => {
-        if (savedCallback.current) {
-          savedCallback.current();
-        }
-      };
-      const id = setInterval(tick, delay);
-      return () => clearInterval(id);
-    }
-  }, [delay, condition]);
 }

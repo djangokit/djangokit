@@ -42,10 +42,14 @@ def run_poetry_command(args: Args, exit_on_err=True) -> subprocess.CompletedProc
 
 
 def subprocess_run(args: List[str], exit_on_err=True) -> subprocess.CompletedProcess:
-    from ..app import state
+    from ..state import state
 
     state.console.command(">", " ".join(args))
-    result = subprocess.run(args, stdout=subprocess.DEVNULL if state.quiet else None)
+    result = subprocess.run(
+        args,
+        stdout=subprocess.DEVNULL if state.quiet else None,
+        cwd=state.project_root or state.cwd,
+    )
     if result.returncode and exit_on_err:
         raise typer.Exit(result.returncode)
     return result
