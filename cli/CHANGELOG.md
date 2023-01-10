@@ -1,5 +1,9 @@
 # Changelog for DjangoKit CLI
 
+## 0.0.7 - unreleased
+
+In progress...
+
 ## 0.0.6 - 2023-01-10
 
 - Find project root in CWD or ancestors and run commands there.
