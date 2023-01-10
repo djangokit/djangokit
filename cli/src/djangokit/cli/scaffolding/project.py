@@ -2,6 +2,7 @@ from cookiecutter.main import cookiecutter
 from typer import Argument, Option
 
 from ..app import app
+from ..utils import DEFAULT_PYTHON_VERSION
 
 
 @app.command()
@@ -16,7 +17,7 @@ def create_project(
     version: str = Option(None, "-v", "--version", help="Initial version"),
     author: str = Option(None, help="Author name"),
     author_email: str = Option(None, help="Author email"),
-    python_version: str = Option(None, help="Python version"),
+    python_version: str = Option(DEFAULT_PYTHON_VERSION, help="Python version"),
     license: str = Option(None, help="Short license name (e.g., 'MIT' or 'GPL-3.0')"),
 ):
     """Create a new DjangoKit project

@@ -28,7 +28,7 @@ export function useInterval(callback, condition, delay) {
   }, [condition, delay]);
 }
 
-export function useRequestAnimationFrame(callback, condition) {
+export function useRequestAnimationFrame(callback, condition, delay?: number) {
   const callbackRef = useRef<() => void>();
 
   useEffect(() => {
@@ -37,14 +37,23 @@ export function useRequestAnimationFrame(callback, condition) {
 
   useEffect(() => {
     if (callbackRef.current && condition) {
-      const tick = () => {
+      let lastMs = 0;
+      const tick = (nowMs) => {
         if (callbackRef.current && condition) {
-          callbackRef.current();
-          requestAnimationFrame(tick);
+          if (!delay) {
+            callbackRef.current();
+            requestAnimationFrame(tick);
+          } else if (lastMs === 0 || nowMs - lastMs >= delay) {
+            lastMs = nowMs;
+            callbackRef.current();
+            requestAnimationFrame(tick);
+          } else {
+            requestAnimationFrame(tick);
+          }
         }
       };
       requestAnimationFrame(tick);
       return () => (callbackRef.current = undefined);
     }
-  }, [condition]);
+  }, [condition, delay]);
 }

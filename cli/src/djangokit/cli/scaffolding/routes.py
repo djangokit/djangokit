@@ -4,7 +4,8 @@ import typer
 from django.conf import settings
 from typer import Argument, Option
 
-from ..app import app, state
+from ..app import app
+from ..state import state
 from ..utils import exclusive
 
 LAYOUT_TEMPLATE = """\
