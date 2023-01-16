@@ -118,10 +118,6 @@ def check(python: bool = True, js: bool = True, exit_on_err: bool = False):
         run("black --check .")
 
         console.print()
-        console.header("Checking Python imports \[isort]...")
-        run("isort --check --profile black .")
-
-        console.print()
         console.header("Checking for Python lint \[ruff]...")
         run("ruff .")
 
@@ -156,10 +152,6 @@ def format_(python: bool = True, js: bool = True):
 
         console.header("Formatting Python code \[black]...")
         run("black .")
-
-        console.print()
-        console.header("Sorting Python imports \[isort]...")
-        run("isort --profile black .")
 
         console.print()
         console.header("Removing Python lint \[ruff]...")

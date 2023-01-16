@@ -29,7 +29,6 @@ org-djangokit-cli = { path = "../cli", develop = true }
 
 ansible = "*"
 black = "*"
-isort = "*"
 mypy = "*"
 pytest = "*"
 ruff = "*"
@@ -47,11 +46,12 @@ development = {}
 production = {}
 
 [tool.ruff]
-ignore = [ "E731" ]
+select = ["E", "F", "I"]
+ignore = ["E731"]
 
 [tool.ruff.per-file-ignores]
-"__init__.py" = [ "F401" ]
-"./commands.py" = [ "F722", "F821" ]
+"__init__.py" = ["F401"]
+"./commands.py" = ["F722", "F821"]
 
 [build-system]
 requires = ["poetry-core"]

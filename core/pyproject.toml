@@ -21,7 +21,6 @@ toml = "^0.10.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
-isort = "*"
 mypy = "*"
 pytest = "*"
 pytest-cov = "*"
@@ -39,10 +38,11 @@ target-branch = "core-release"
 tag-name = "core-v{version}"
 
 [tool.ruff]
-ignore = [ "E731" ]
+select = ["E", "F", "I"]
+ignore = ["E731"]
 
 [tool.ruff.per-file-ignores]
-"__init__.py" = [ "F401" ]
+"__init__.py" = ["F401"]
 
 [build-system]
 requires = ["poetry-core"]
