@@ -18,7 +18,7 @@ from typer import Context, Option
 
 from . import __version__
 from .state import state
-from .utils import find_project_root, get_standalone_settings_file, params
+from .utils import get_project_settings, find_project_root, get_standalone_settings_file, params
 
 app = typer.Typer()
 
@@ -84,14 +84,17 @@ def main(
 
     cwd = Path.cwd()
     project_root = find_project_root()
+    project_settings = get_project_settings()
 
     if project_root:
         os.chdir(project_root)
 
-    # If `standalone` wasn't specified, try to guess based on presence
-    # of pyproject.toml or standalone settings file.
+    # If standalone mode wasn't explicitly requested, determine whether
+    # standalone mode should be used.
     if params.is_default(ctx, "standalone") and not standalone:
-        if project_root is None:
+        if project_settings.get("standalone", False):
+            standalone = True
+        elif project_root is None:
             console.warning("Project root not found; running in standalone mode")
             standalone = True
         elif (cwd / "settings.standalone.toml").is_file():
