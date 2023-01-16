@@ -88,9 +88,15 @@ def main(
     if project_root:
         os.chdir(project_root)
 
-    if project_root is None:
-        console.warning("Project root not found; running in standalone mode")
-        standalone = True
+    # If `standalone` wasn't specified, try to guess based on presence
+    # of pyproject.toml or standalone settings file.
+    if params.is_default(ctx, "standalone") and not standalone:
+        if project_root is None:
+            console.warning("Project root not found; running in standalone mode")
+            standalone = True
+        elif (cwd / "settings.standalone.toml").is_file():
+            console.warning("Found standalone settings file in CWD; running in standalone mode")
+            standalone = True
 
     if params.is_default(ctx, "settings_file"):
         if standalone:
