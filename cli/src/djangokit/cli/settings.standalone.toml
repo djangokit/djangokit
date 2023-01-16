@@ -1,0 +1,3 @@
+[djangokit]
+package = "djangokit.cli"
+app_label = "djangokit_cli"
