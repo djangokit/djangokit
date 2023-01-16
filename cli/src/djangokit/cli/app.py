@@ -18,7 +18,12 @@ from typer import Context, Option
 
 from . import __version__
 from .state import state
-from .utils import get_project_settings, find_project_root, get_standalone_settings_file, params
+from .utils import (
+    find_project_root,
+    get_project_settings,
+    get_standalone_settings_file,
+    params,
+)
 
 app = typer.Typer()
 
@@ -98,7 +103,9 @@ def main(
             console.warning("Project root not found; running in standalone mode")
             standalone = True
         elif (cwd / "settings.standalone.toml").is_file():
-            console.warning("Found standalone settings file in CWD; running in standalone mode")
+            console.warning(
+                "Found standalone settings file in CWD; running in standalone mode"
+            )
             standalone = True
 
     if params.is_default(ctx, "settings_file"):

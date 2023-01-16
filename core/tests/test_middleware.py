@@ -1,5 +1,4 @@
 import pytest
-
 from djangokit.core.http import make_request
 from djangokit.core.middleware import djangokit_middleware
 
