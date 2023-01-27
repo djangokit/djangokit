@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import dataclasses
+import os
 import shlex
 import subprocess
 import sys
@@ -7,6 +8,10 @@ from typing import List
 
 
 force = "--force" in sys.argv
+do_format = "--no-format" not in sys.argv
+core_only = "core" in sys.argv
+cli_only = "cli" in sys.argv
+website_only = "website" in sys.argv
 
 
 @dataclasses.dataclass
@@ -37,9 +42,25 @@ def exit(result, code=1):
 def run(cmd, cwd=None):
     if isinstance(cmd, str):
         cmd = shlex.split(cmd)
-    result = subprocess.run(cmd, capture_output=True, cwd=cwd)
+
+    if cwd is not None:
+        cwd = os.path.abspath(cwd)
+
+    # NOTE: This is needed to keep poetry from using an activated
+    #       virtualenv.
+    env = os.environ.copy()
+    env.pop("VIRTUAL_ENV", None)
+
+    if cwd is not None:
+        print(">", *cmd, f"(in {cwd})")
+    else:
+        print(">", *cmd)
+
+    result = subprocess.run(cmd, capture_output=True, env=env, cwd=cwd)
+
     stdout = result.stdout.decode("utf-8")
     stderr = result.stderr.decode("utf-8")
+
     result = Result(
         return_code=result.returncode,
         stdout=stdout,
@@ -47,8 +68,10 @@ def run(cmd, cwd=None):
         stderr=stderr,
         stderr_lines=[line for line in stderr.splitlines()],
     )
+
     if not result:
         exit(result)
+
     return result
 
 
@@ -60,10 +83,11 @@ def core():
     result = get_files("core")
     has_changed_python = any(path.endswith(".py") for path in result.stdout_lines)
     if has_changed_python or force:
-        print("Formatting core...")
-        run("make format", cwd="core")
+        if do_format:
+            print("Formatting core...")
+            run("poetry run dk format", cwd="core")
         print("Checking core...")
-        result = run("make check", cwd="core")
+        run("poetry run dk check --exit-on-err", cwd="core")
     else:
         print("Skipping core because no files were changed")
 
@@ -71,37 +95,38 @@ def core():
 def cli():
     result = get_files("cli")
     has_changed_python = any(path.endswith(".py") for path in result.stdout_lines)
-    has_changed_js = any(path.endswith(".js") for path in result.stdout_lines)
     if has_changed_python or force:
-        print("Formatting cli Python...")
-        run("poetry run dk format --no-js", cwd="cli")
-        print("Checking cli Python...")
-        run("poetry run dk check --no-js --exit-on-err", cwd="cli")
+        if do_format:
+            print("Formatting cli...")
+            run("poetry run dk format", cwd="cli")
+        print("Checking cli...")
+        run("poetry run dk check --exit-on-err", cwd="cli")
     else:
-        print("Skipping cli Python because no files were changed")
-    if has_changed_js or force:
-        print("Formatting cli JS...")
-        run("poetry run dk format --no-python", cwd="cli")
-        print("Checking cli JS...")
-        run("poetry run dk check --no-python --exit-on-err", cwd="cli")
-    else:
-        print("Skipping cli JS because no files were changed")
+        print("Skipping cli because no files were changed")
 
 
 def website():
     result = get_files("website")
-    has_changed_python = any(path.endswith(".py") for path in result.stdout_lines)
-    has_changed_js = any(path.endswith(".js") for path in result.stdout_lines)
+    lines = result.stdout_lines
+    has_changed_python = any(path.endswith(".py") for path in lines)
+    has_changed_js = (
+        any(path.endswith(".js") for path in lines)
+        or any(path.endswith(".jsx") for path in lines)
+        or any(path.endswith(".ts") for path in lines)
+        or any(path.endswith(".tsx") for path in lines)
+    )
     if has_changed_python or force:
-        print("Formatting website Python...")
-        run("poetry run dk format --no-js", cwd="website")
+        if do_format:
+            print("Formatting website Python...")
+            run("poetry run dk format --no-js", cwd="website")
         print("Checking website Python...")
         run("poetry run dk check --no-js --exit-on-err", cwd="website")
     else:
         print("Skipping website Python because no files were changed")
     if has_changed_js or force:
-        print("Formatting website JS...")
-        run("poetry run dk format --no-python", cwd="website")
+        if do_format:
+            print("Formatting website JS...")
+            run("poetry run dk format --no-python", cwd="website")
         print("Checking website JS...")
         run("poetry run dk check --no-python --exit-on-err", cwd="website")
     else:
@@ -109,6 +134,13 @@ def website():
 
 
 if __name__ == "__main__":
-    core()
-    cli()
-    website()
+    if core_only:
+        core()
+    elif cli_only:
+        cli()
+    elif website_only:
+        website()
+    else:
+        core()
+        cli()
+        website()

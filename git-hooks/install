@@ -9,6 +9,6 @@ for hook in "$root"/*; do
         else
             echo "Installing hook: $name"
         fi
-        ln -sf "$hook" ".git/hooks/$name"
+        cp "$hook" ".git/hooks/$name"
     fi
 done
