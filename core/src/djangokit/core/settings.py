@@ -59,8 +59,9 @@ Environment Variable Settings
 -----------------------------
 
 You can specify that a setting should be loaded from an environment
-variable by adding it to the `[djangokit.from_env]` section of your
-settings file (usually in the `settings.public.toml` file).
+variable by adding it to the `[django.from_env]` and/or
+`[djangokit.from_env]` sections of your settings file (usually in the
+`settings.public.toml` file).
 
 The values of such settings will be converted from TOML if possible.
 Example::
