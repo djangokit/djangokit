@@ -1,5 +1,9 @@
 # Changelog for DjangoKit CLI
 
+## 0.0.7 - 2023-02-04
+
+- Fixed some issues around standalone mode.
+
 ## 0.0.6 - 2023-01-10
 
 - Find project root in CWD or ancestors and run commands there.

@@ -23,16 +23,3 @@ tox:
 clean-tox:
 	rm -rf .tox
 	poetry run tox
-
-.PHONY = check
-check:
-	poetry run black --check .
-	poetry run isort --check --profile black .
-	poetry run ruff .
-	poetry run mypy
-
-.PHONY = format
-format:
-	poetry run black .
-	poetry run isort --profile black .
-	poetry run ruff --fix .
