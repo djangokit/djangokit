@@ -17,7 +17,7 @@ include = [
 [tool.poetry.dependencies]
 python = "^3.8"
 
-org-djangokit-core = ">=0.0.3.dev0"
+org-djangokit-core = ">=0.0.4"
 
 cookiecutter = "^2.1.1"
 typer = { version = ">=0.7.0", extras = ["all"] }
