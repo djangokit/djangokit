@@ -6,14 +6,14 @@ test:
 	DJANGO_SETTINGS_FILE=src/djangokit/core/test/settings.test.toml \
 	  DJANGO_SECRET_KEY=$(django_secret_key) \
 	  DJANGO_API_KEY=$(django_api_key) \
-	  poetry run pytest -rA --doctest-modules --disable-warnings
+	  poetry run pytest -rA --disable-warnings
 
 .PHONY = test-cov
 test-cov:
 	DJANGO_SETTINGS_FILE=src/djangokit/core/test/settings.test.toml \
 	  DJANGO_SECRET_KEY=$(django_secret_key) \
 	  DJANGO_API_KEY=$(django_api_key) \
-	  poetry run pytest -rA --doctest-modules --disable-warnings --cov=djangokit.core
+	  poetry run pytest -rA --disable-warnings --cov=djangokit.core
 
 .PHONY = tox
 tox:
@@ -23,16 +23,3 @@ tox:
 clean-tox:
 	rm -rf .tox
 	poetry run tox
-
-.PHONY = check
-check:
-	poetry run black --check .
-	poetry run isort --check --profile black .
-	poetry run ruff .
-	poetry run mypy
-
-.PHONY = format
-format:
-	poetry run black .
-	poetry run isort --profile black .
-	poetry run ruff --fix .

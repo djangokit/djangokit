@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "org-djangokit-core"
-version = "0.0.3"
+version = "0.0.4"
 description = "DjangoKit core"
 authors = ["Wyatt Baldwin <self@wyattbaldwin.com>"]
 license = "MIT"
@@ -21,7 +21,6 @@ toml = "^0.10.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
-isort = "*"
 mypy = "*"
 pytest = "*"
 pytest-cov = "*"
@@ -30,16 +29,20 @@ ruff = "*"
 tox = "*"
 types-toml = "^0.10.8.1"
 
+[tool.djangokit.cli]
+standalone = true
+
 [tool.make-release.args]
 test-command = "make test"
 target-branch = "core-release"
 tag-name = "core-v{version}"
 
 [tool.ruff]
-ignore = [ "E731" ]
+select = ["E", "F", "I"]
+ignore = ["E731"]
 
 [tool.ruff.per-file-ignores]
-"__init__.py" = [ "F401" ]
+"__init__.py" = ["F401"]
 
 [build-system]
 requires = ["poetry-core"]

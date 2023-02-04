@@ -21,7 +21,6 @@ log = logging.getLogger(__name__)
 
 
 class RouteView(View):
-
     page_module: Optional[str] = None
     """Page module, if present.
 

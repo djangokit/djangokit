@@ -4,9 +4,8 @@ import re
 import shutil
 from pathlib import Path
 
-from runcommands import abort, arg, command
+from runcommands import abort, arg, command, printer
 from runcommands import commands as c
-from runcommands import printer
 from runcommands.commands import remote, sync
 from runcommands.util import flatten_args
 

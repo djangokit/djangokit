@@ -1,8 +1,12 @@
 # Changelog for DjangoKit Core
 
+## 0.0.4 - 2023-02-04
+
+- Fixed an issue with JSON encoding.
+
 ## 0.0.3 - 2023-01-10
 
-Add missing stub bundles.
+- Added missing stub bundles.
 
 ## 0.0.2 - 2022-12-31
 

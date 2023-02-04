@@ -16,11 +16,11 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
-org-djangokit-core = ">=0.0.2.dev0"
-org-djangokit-cli = ">=0.0.2.dev0"
+org-djangokit-core = ">=0.0.3.dev0"
+org-djangokit-cli = ">=0.0.6.dev0"
 markdown = "^3.4.1"
-pygments = "^2.13.0"
-pydantic = "^1.10.2"
+pygments = "^2.14.0"
+pydantic = "^1.10.4"
 pymemcache = "^4.0.0"
 
 [tool.poetry.group.dev.dependencies]
@@ -29,7 +29,6 @@ org-djangokit-cli = { path = "../cli", develop = true }
 
 ansible = "*"
 black = "*"
-isort = "*"
 mypy = "*"
 pytest = "*"
 ruff = "*"
@@ -47,11 +46,12 @@ development = {}
 production = {}
 
 [tool.ruff]
-ignore = [ "E731" ]
+select = ["E", "F", "I"]
+ignore = ["E731"]
 
 [tool.ruff.per-file-ignores]
-"__init__.py" = [ "F401" ]
-"./commands.py" = [ "F722", "F821" ]
+"__init__.py" = ["F401"]
+"./commands.py" = ["F722", "F821"]
 
 [build-system]
 requires = ["poetry-core"]

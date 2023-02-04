@@ -1,5 +1,4 @@
 import pytest
-
 from djangokit.core.routes import RouteNode, make_route_dir_tree
 
 

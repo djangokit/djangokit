@@ -47,4 +47,4 @@ class JsonEncoder(DjangoJSONEncoder):
         return super().default(o)
 
 
-dump_json = partial(json.dumps, cls=DjangoJSONEncoder)
+dump_json = partial(json.dumps, cls=JsonEncoder)
