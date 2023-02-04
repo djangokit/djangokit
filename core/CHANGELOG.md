@@ -1,5 +1,9 @@
 # Changelog for DjangoKit Core
 
+## 0.0.5 - unreleased
+
+In progress...
+
 ## 0.0.4 - 2023-02-04
 
 - Fixed an issue with JSON encoding.
