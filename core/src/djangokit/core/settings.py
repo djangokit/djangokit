@@ -115,6 +115,7 @@ USE_TZ = True
 
 # Apps
 INSTALLED_APPS = [
+    "djangokit.core",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -125,6 +126,7 @@ INSTALLED_APPS = [
 
 # Middleware
 MIDDLEWARE = [
+    "djangokit.core.middleware.djangokit_middleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -322,13 +324,9 @@ def append_settings():
 def add_djangokit_settings():
     """Add DjangoKit settings.
 
-
     - Converts `DJANGOKIT` setting to an instance of
       :class:`DjangoKitSettings`.
-    - Adds the app's package and "djangokit.core" to the front of
-      `INSTALLED_APPS`.
-    - Adds the DjangoKit middleware to the end of `MIDDLEWARE`.
-    - Adds template loader option to `TEMPLATES[0]["OPTIONS"]`.
+    - Prepends `package` to `INSTALLED_APPS` (if not already present).
     - Checks the DjangoKit settings to ensure they're valid.
 
     """
@@ -348,12 +346,8 @@ def add_djangokit_settings():
     settings["DJANGOKIT"] = dk_settings
 
     installed_apps = settings["INSTALLED_APPS"]
-    settings["INSTALLED_APPS"] = [package, "djangokit.core"] + installed_apps
-
-    middleware = settings["MIDDLEWARE"]
-    settings["MIDDLEWARE"] = middleware + [
-        "djangokit.core.middleware.djangokit_middleware"
-    ]
+    if package not in installed_apps:
+        settings["INSTALLED_APPS"] = [package] + installed_apps
 
     dk_settings.check()
 
@@ -361,7 +355,11 @@ def add_djangokit_settings():
 def set_derived_settings():
     """Set defaults for settings that are derived from other settings.
 
-    If a setting is already set, this has no effect.
+    ..note:: If a setting is already set, it's left as is.
+
+    - Adds default template loader.
+    - Sets default logging settings for `package`.
+    - In test mode, disables existing loggers.
 
     """
     env = settings["ENV"]
@@ -399,8 +397,7 @@ prepend_settings()
 append_settings()
 
 # NOTE: The ordering of this matters because it adds the app's package
-#       name to the front of INSTALLED_APPS and the DjangoKit middleware
-#       to the end of MIDDLEWARE.
+#       name to the front of INSTALLED_APPS.
 add_djangokit_settings()
 
 set_derived_settings()
