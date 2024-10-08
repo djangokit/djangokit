@@ -5,15 +5,16 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-import djangokit.core
 from django.conf import settings
+from typer import Option
+from watchdog.events import FileSystemEvent, PatternMatchingEventHandler
+from watchdog.observers import Observer
+
+import djangokit.core
 from djangokit.core.build import make_client_bundle, make_server_bundle, run_bundle
 from djangokit.core.http import make_request
 from djangokit.core.serializers import dump_json
 from djangokit.core.utils import get_unmasked_csrf_token
-from typer import Option
-from watchdog.events import FileSystemEvent, PatternMatchingEventHandler
-from watchdog.observers import Observer
 
 from .app import app
 from .state import state

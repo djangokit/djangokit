@@ -6,20 +6,20 @@ test:
 	DJANGO_SETTINGS_FILE=src/djangokit/core/test/settings.test.toml \
 	  DJANGO_SECRET_KEY=$(django_secret_key) \
 	  DJANGO_API_KEY=$(django_api_key) \
-	  poetry run pytest -rA --disable-warnings
+	  uv run pytest -rA --disable-warnings
 
 .PHONY = test-cov
 test-cov:
 	DJANGO_SETTINGS_FILE=src/djangokit/core/test/settings.test.toml \
 	  DJANGO_SECRET_KEY=$(django_secret_key) \
 	  DJANGO_API_KEY=$(django_api_key) \
-	  poetry run pytest -rA --disable-warnings --cov=djangokit.core
+	  uv run pytest -rA --disable-warnings --cov=djangokit.core
 
 .PHONY = tox
 tox:
-	poetry run tox
+	uv run tox
 
 .PHONY = clean-tox
 clean-tox:
 	rm -rf .tox
-	poetry run tox
+	uv run tox

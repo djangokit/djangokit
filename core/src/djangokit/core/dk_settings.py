@@ -83,9 +83,9 @@ class DjangoKitSettings:
     
     """
 
-    current_user_serializer: Union[
-        str, Callable
-    ] = "djangokit.core.user.current_user_serializer"
+    current_user_serializer: Union[str, Callable] = (
+        "djangokit.core.user.current_user_serializer"
+    )
     """Serializer function used to serialize the current user."""
 
     csr: bool = True

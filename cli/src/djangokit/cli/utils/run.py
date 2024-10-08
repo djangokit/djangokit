@@ -12,8 +12,8 @@ def run(args: Args, exit_on_err=True) -> subprocess.CompletedProcess:
     """Run a command in a subprocess.
 
     .. note::
-        In many cases, it's better to use :func:`run_poetry_command` or
-        :func:`run_poetry_command` to ensure the command is run in the
+        In many cases, it's better to use :func:`run_uv_command` or
+        :func:`run_node_command` to ensure the command is run in the
         project's node env or virtualenv.
 
     """
@@ -31,13 +31,13 @@ def run_node_command(args: Args, exit_on_err=True) -> subprocess.CompletedProces
     return subprocess_run(args, exit_on_err)
 
 
-def run_poetry_command(args: Args, exit_on_err=True) -> subprocess.CompletedProcess:
-    """Run a command via poetry in a subprocess.
+def run_uv_command(args: Args, exit_on_err=True) -> subprocess.CompletedProcess:
+    """Run a command via uv in a subprocess.
 
-    This is a convenience for `poetry run <args>`.
+    This is a convenience for `uv run <args>`.
 
     """
-    args = ["poetry", "run"] + process_args(args)
+    args = ["uv", "run"] + process_args(args)
     return subprocess_run(args, exit_on_err)
 
 

@@ -38,6 +38,7 @@ template::
     partial templates?
 
 """
+
 import logging
 
 from django.conf import settings

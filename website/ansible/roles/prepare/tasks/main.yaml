@@ -102,7 +102,7 @@
     - prepare-app
     - deploy-app
     - build-distributions
-  command: poetry build --format wheel
+  command: uv build --wheel
   args:
     chdir: "{{ item }}"
   with_items:
@@ -155,7 +155,7 @@
     - prepare-ssr-build
     - deploy-ssr
   command: >
-    poetry run djangokit
+    uv run djangokit
     --env {{ env }}
     build-server
     --minify
@@ -169,7 +169,7 @@
     - prepare-static-build
     - deploy-static
   command: >
-    poetry run djangokit
+    uv run djangokit
     --env {{ env }}
     build-client
     --minify 
@@ -183,7 +183,7 @@
     - prepare-static-build
     - deploy-static
   command: >
-    poetry run djangokit
+    uv run djangokit
     --env {{ env }}
     collectstatic
     --static-root {{ static_build_dir }}

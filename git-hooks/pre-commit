@@ -46,8 +46,7 @@ def run(cmd, cwd=None):
     if cwd is not None:
         cwd = os.path.abspath(cwd)
 
-    # NOTE: This is needed to keep poetry from using an activated
-    #       virtualenv.
+    # NOTE: This is needed to avoid using an activated virtualenv.
     env = os.environ.copy()
     env.pop("VIRTUAL_ENV", None)
 
@@ -85,9 +84,9 @@ def core():
     if has_changed_python or force:
         if do_format:
             print("Formatting core...")
-            run("poetry run dk format", cwd="core")
+            run("uv run dk format", cwd="core")
         print("Checking core...")
-        run("poetry run dk check --exit-on-err", cwd="core")
+        run("uv run dk check --exit-on-err", cwd="core")
     else:
         print("Skipping core because no files were changed")
 
@@ -98,9 +97,9 @@ def cli():
     if has_changed_python or force:
         if do_format:
             print("Formatting cli...")
-            run("poetry run dk format", cwd="cli")
+            run("uv run dk format", cwd="cli")
         print("Checking cli...")
-        run("poetry run dk check --exit-on-err", cwd="cli")
+        run("uv run dk check --exit-on-err", cwd="cli")
     else:
         print("Skipping cli because no files were changed")
 
@@ -118,17 +117,17 @@ def website():
     if has_changed_python or force:
         if do_format:
             print("Formatting website Python...")
-            run("poetry run dk format --no-js", cwd="website")
+            run("uv run dk format --no-js", cwd="website")
         print("Checking website Python...")
-        run("poetry run dk check --no-js --exit-on-err", cwd="website")
+        run("uv run dk check --no-js --exit-on-err", cwd="website")
     else:
         print("Skipping website Python because no files were changed")
     if has_changed_js or force:
         if do_format:
             print("Formatting website JS...")
-            run("poetry run dk format --no-python", cwd="website")
+            run("uv run dk format --no-python", cwd="website")
         print("Checking website JS...")
-        run("poetry run dk check --no-python --exit-on-err", cwd="website")
+        run("uv run dk check --no-python --exit-on-err", cwd="website")
     else:
         print("Skipping website JS because no files were changed")
 

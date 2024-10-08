@@ -1,4 +1,5 @@
 import pytest
+
 from djangokit.core.serializers import dump_json
 from djangokit.core.test.models.page import Page
 

@@ -4,6 +4,7 @@ This defines the CLI app. The global `app` can be imported from here and
 used to add commands.
 
 """
+
 import dataclasses
 import os
 import sys
@@ -12,9 +13,10 @@ from pathlib import Path
 
 import django
 import typer
-from djangokit.core.conf import load_settings
 from rich.table import Table
 from typer import Context, Option
+
+from djangokit.core.conf import load_settings
 
 from . import __version__
 from .state import state

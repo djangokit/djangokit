@@ -1,4 +1,5 @@
 """DjangoKit console script entry point."""
+
 from importlib import import_module
 from pathlib import Path
 from typing import Any

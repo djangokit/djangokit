@@ -1,8 +1,9 @@
 import os
 
-import djangokit.core.test
 from django.conf import settings
 from django.test import SimpleTestCase
+
+import djangokit.core.test
 
 
 class TestConf(SimpleTestCase):

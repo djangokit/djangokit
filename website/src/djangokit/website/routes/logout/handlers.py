@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib.auth import logout
+
 from djangokit.core.views.utils import is_site_path
 
 log = logging.getLogger(__name__)

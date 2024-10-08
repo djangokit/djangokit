@@ -1,38 +1,48 @@
-[tool.poetry]
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
 name = "org-djangokit-website"
 version = "0.0.2.dev0"
 description = "DjangoKit.org Website"
-authors = ["Wyatt Baldwin <Wyatt Baldwin>"]
-license = "MIT"
+authors = [ { name = "Wyatt Baldwin", email = "self@wyattbaldwin.com" } ]
+license = { text = "MIT" }
 readme = "README.md"
-
-packages = [
-    { include = "djangokit", from = "src" }
+requires-python = ">=3.9"
+dependencies = [
+    "org-djangokit-core>=0.0.4",
+    "org-djangokit-cli>=0.0.7",
+    "markdown>=3.4.1",
+    "pygments>=2.14.0",
+    "pydantic>=1.10.5",
+    "pymemcache>=4.0.0",
 ]
 
-include = [
-    "CHANGELOG.md",
+[tool.setuptools.package-data]
+"djangokit.website" = [
+    "**/*.css",
+    "**/*.html",
+    "**/*.ico",
+    "**/*.js",
+    "**/*.jsx",
+    "**/*.toml",
+    "**/*.ts",
+    "**/*.tsx",
 ]
 
-[tool.poetry.dependencies]
-python = "^3.9"
-org-djangokit-core = ">=0.0.4.dev0"
-org-djangokit-cli = ">=0.0.7.dev0"
-markdown = "^3.4.1"
-pygments = "^2.14.0"
-pydantic = "^1.10.5"
-pymemcache = "^4.0.0"
+[tool.uv]
+dev-dependencies = [
+    "ansible>=8.7.0",
+    "mypy>=1.11.2",
+    "pytest>=8.3.3",
+    "ruff>=0.6.9",
+    "runcommands>=1.0a71",
+]
 
-[tool.poetry.group.dev.dependencies]
-org-djangokit-core = { path = "../core", develop = true }
-org-djangokit-cli = { path = "../cli", develop = true }
-
-ansible = "*"
-black = "*"
-mypy = "*"
-pytest = "*"
-ruff = "*"
-runcommands = "*"
+[tool.uv.sources]
+org-djangokit-core = { path = "../core", editable = true }
+org-djangokit-cli = { path = "../cli", editable = true }
 
 [tool.make-release.args]
 test = false
@@ -45,14 +55,10 @@ host = "djangokit.org"
 development = {}
 production = {}
 
-[tool.ruff]
+[tool.ruff.lint]
 select = ["E", "F", "I"]
 ignore = ["E731"]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "./commands.py" = ["F722", "F821"]
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"

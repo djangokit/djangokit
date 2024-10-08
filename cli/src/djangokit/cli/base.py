@@ -1,4 +1,5 @@
 """Base commands."""
+
 from functools import partial
 
 from django.conf import settings
@@ -13,7 +14,7 @@ from .utils import (
     params,
     run,
     run_node_command,
-    run_poetry_command,
+    run_uv_command,
 )
 
 
@@ -83,13 +84,11 @@ def start(
 
 
 @app.command()
-def install(python_version=None):
-    """Run `poetry install`"""
+def install():
+    """Install the project"""
     console = state.console
     console.header("Installing project...")
-    if python_version:
-        run(f"poetry env use {python_version}")
-    run("poetry install")
+    run("uv sync")
     if has_package_json():
         console.print()
         run("npm install")
@@ -97,10 +96,10 @@ def install(python_version=None):
 
 @app.command()
 def update():
-    """Run `poetry update`"""
+    """Update the project"""
     console = state.console
     console.header("Updating project...")
-    run("poetry update")
+    run("uv sync --upgrade")
     if has_package_json():
         console.print()
         run("npm update")
@@ -112,31 +111,31 @@ def check(python: bool = True, js: bool = True, exit_on_err: bool = False):
     console = state.console
 
     if python:
-        run = partial(run_poetry_command, exit_on_err=exit_on_err)
+        run = partial(run_uv_command, exit_on_err=exit_on_err)
 
-        console.header("Checking Python formatting \[black]...")
-        run("black --check .")
-
-        console.print()
-        console.header("Checking for Python lint \[ruff]...")
-        run("ruff .")
+        console.header("Checking Python formatting \\[ruff]...")
+        run("ruff format --check .")
 
         console.print()
-        console.header("Checking Python types \[mypy]...")
+        console.header("Checking for Python lint \\[ruff]...")
+        run("ruff check .")
+
+        console.print()
+        console.header("Checking Python types \\[mypy]...")
         run("mypy")
 
     if js and check_js_flag():
         run = partial(run_node_command, exit_on_err=exit_on_err)
 
         console.print()
-        console.header("Checking JavaScript formatting \[eslint/prettier]...")
+        console.header("Checking JavaScript formatting \\[eslint/prettier]...")
 
         result = run("eslint .")
         if result.returncode == 0:
             console.success("No issues found")
 
         console.print()
-        console.header("Checking JavaScript types \[tsc]...")
+        console.header("Checking JavaScript types \\[tsc]...")
         result = run("tsc --project tsconfig.json")
         if result.returncode == 0:
             console.success("No issues found")
@@ -148,20 +147,20 @@ def format_(python: bool = True, js: bool = True):
     console = state.console
 
     if python:
-        run = partial(run_poetry_command, exit_on_err=False)
+        run = partial(run_uv_command, exit_on_err=False)
 
-        console.header("Formatting Python code \[black]...")
-        run("black .")
+        console.header("Formatting Python code \\[ruff]...")
+        run("ruff format .")
 
         console.print()
-        console.header("Removing Python lint \[ruff]...")
-        run("ruff --fix .")
+        console.header("Removing Python lint \\[ruff]...")
+        run("ruff check --fix .")
 
     if js and check_js_flag():
         run = partial(run_node_command, exit_on_err=False)
 
         console.print()
-        console.header("Formatting JavaScript code \[eslint/prettier]...")
+        console.header("Formatting JavaScript code \\[eslint/prettier]...")
         result = run("eslint --fix .")
         if result.returncode == 0:
             console.success("No issues found")

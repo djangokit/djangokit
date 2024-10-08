@@ -1,36 +1,41 @@
-[tool.poetry]
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
 name = "{{ cookiecutter.dist_name }}"
 version = "{{ cookiecutter.version }}"
 description = "{{ cookiecutter.description }}"
-authors = ["{{ cookiecutter.author }} <{{ cookiecutter.author }}>"]
-license = "{{ cookiecutter.license }}"
+authors = [ { name = "{{ cookiecutter.author }}", email = "{{ cookiecutter.author }}" } ]
+license = { text = "{{ cookiecutter.license }}" }
 readme = "README.md"
-
-packages = [
-    { include = "{{ cookiecutter.package_name }}", from = "src" }
+requires-python = ">={{ cookiecutter.python_version }}"
+dependencies = [
+    "org-djangokit-core",
+    "org-djangokit-cli",
 ]
 
-include = [
-    "CHANGELOG.md",
+[tool.setuptools.package-data]
+"{{ cookiecutter.package_name }}" = [
+    "**/*.css",
+    "**/*.html",
+    "**/*.ico",
+    "**/*.js",
+    "**/*.jsx",
+    "**/*.toml",
+    "**/*.ts",
+    "**/*.tsx",
 ]
 
-[tool.poetry.dependencies]
-python = "^{{ cookiecutter.python_version }}"
-org-djangokit-core = "*"
-org-djangokit-cli = "*"
+[tool.uv]
+dev-dependencies = [
+    "mypy>=1.11.2",
+    "pytest>=8.3.3",
+    "ruff>=0.6.9",
+]
 
-[tool.poetry.group.dev.dependencies]
-black = "*"
-mypy = "*"
-pytest = "*"
-ruff = "*"
-
-[tool.ruff]
+[tool.ruff.lint]
 select = ["E", "F", "I"]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"

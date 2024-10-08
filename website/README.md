@@ -2,32 +2,27 @@
 
 ## Prerequisites
 
-Before proceeding, you'll need to install the `poetry` package.
-
-> TIP: [pipx](https://pypa.github.io/pipx/) is a good way to install
-> command line tools like `poetry`.
+Before proceeding, you'll need to install `uv`.
 
 If you're on a Mac and using Homebrew, you can run the following
 commands:
 
-    brew install pipx
-    pipx install poetry
+    brew install uv
 
-Other options for installing `poetry` can be found in its docs:
+Other options for installing `uv` can be found in its docs:
 
-- https://python-poetry.org/docs/#installation
+https://docs.astral.sh/uv/getting-started/installation/
 
 ## Install and Run Your Project
 
 Change into the project directory and install the package:
 
-    poetry env use 3.9
-    poetry install
+    uv sync
 
 Complete the installation process:
 
-    poetry run dk install
+    uv run dk install
 
 Run the dev server:
 
-    poetry run dk start
+    uv run dk start

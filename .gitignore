@@ -8,4 +8,4 @@ dist/
 node_modules/
 *.sqlite3
 package-lock.json
-poetry.lock
+uv.lock

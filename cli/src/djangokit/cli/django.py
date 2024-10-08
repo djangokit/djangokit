@@ -1,4 +1,5 @@
 """Django commands and utilities."""
+
 import sys
 from fnmatch import fnmatch
 from getpass import getuser
