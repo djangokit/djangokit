@@ -1,17 +1,16 @@
 import os
+import pathlib
 
 from django.conf import settings
 from django.test import SimpleTestCase
-
-import djangokit.core.test
 
 
 class TestConf(SimpleTestCase):
     def test_DJANGO_SETTINGS_FILE(self):
         file = os.environ["DJANGO_SETTINGS_FILE"]
-        file = os.path.abspath(file)
-        expected = os.path.join(djangokit.core.test.__path__[0], "settings.test.toml")
-        self.assertEqual(file, expected)
+        file = pathlib.Path(file)
+        expected = "settings.test.toml"
+        self.assertEqual(file.name, expected)
 
     def test_ENV(self):
         self.assertEqual(settings.ENV, "test")

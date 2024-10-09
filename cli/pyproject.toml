@@ -9,7 +9,7 @@ description = "DjangoKit command line interface"
 authors = [ { name = "Wyatt Baldwin", email = "self@wyattbaldwin.com" } ]
 license = { text = "MIT" }
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "org-djangokit-core>=0.0.4",
     "cookiecutter>=2.1.1",

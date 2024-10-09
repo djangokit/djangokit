@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Install the version of Python you want to use. Versions 3.8 and up are
+- Install the version of Python you want to use. Versions 3.9 and up are
   supported.
 
 - Install the version of Node.js you want to use. Versions 16 and up are

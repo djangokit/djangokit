@@ -16,7 +16,7 @@ minimal setup and configuration.
 - TypeScript support
 - Tooling to create models, routes, etc
 - Full power of Django available if needed
-- Supports Python 3.8+
+- Supports Python 3.9+
 - Supports Node 16+
 - Supports Django 3.2 and 4.1 (and perhaps other versions)
 
