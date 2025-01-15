@@ -1,0 +1,18 @@
+[django]
+DEBUG = true
+SECRET_KEY = "INSECURE-DEV-KEY-c734792e-950e-47a8-b96e-2714520fc9f3"
+
+[djangokit]
+#cache_time = 15
+
+[djangokit.intercept_extensions]
+".json" = "application/json"
+
+# Uncomment to log database queries
+#[django.LOGGING.loggers."django.db.backends"]
+#handlers = ["console"]
+#level = "DEBUG"
+#propagate = false
+
+[django.LOGGING.loggers."djangokit.core"]
+level = "DEBUG"
