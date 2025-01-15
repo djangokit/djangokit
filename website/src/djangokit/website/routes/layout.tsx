@@ -94,7 +94,7 @@ export default function Layout() {
         </main>
 
         <footer className="d-flex align-items-center justify-content-between px-4 py-2 border-top bg-light small">
-          <span>&copy; 2022 DjangoKit.org</span>
+          <span>&copy; Wyatt Baldwin &lt;code@wyattbaldwin.com&gt;</span>
 
           <NavDropdown title={<FaBars />}>
             <LinkContainer to="/blog">
