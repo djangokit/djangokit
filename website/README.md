@@ -31,6 +31,10 @@ Change into the project directory and install the package:
 
     uv sync
 
+## Run Database Migrations
+
+    uv run dk migrate
+
 ## Run
 
 Complete the installation process:
