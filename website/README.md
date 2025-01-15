@@ -13,11 +13,25 @@ Other options for installing `uv` can be found in its docs:
 
 https://docs.astral.sh/uv/getting-started/installation/
 
-## Install and Run Your Project
+## Create Development Settings File
+
+Create `settings.development.toml` with the following content:
+
+```
+[django]
+DEBUG = true
+SECRET_KEY = "change this to a random value"
+```
+
+**NOTE**: This file is git-ignored.
+
+## Install
 
 Change into the project directory and install the package:
 
     uv sync
+
+## Run
 
 Complete the installation process:
 
