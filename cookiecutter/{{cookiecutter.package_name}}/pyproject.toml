@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "{{ cookiecutter.dist_name }}"
 version = "{{ cookiecutter.version }}"
 description = "{{ cookiecutter.description }}"
-authors = [ { name = "{{ cookiecutter.author }}", email = "{{ cookiecutter.author }}" } ]
+authors = [ { name = "{{ cookiecutter.author }}", email = "{{ cookiecutter.author_email }}" } ]
 license = { text = "{{ cookiecutter.license }}" }
 readme = "README.md"
 requires-python = ">={{ cookiecutter.python_version }}"
