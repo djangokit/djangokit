@@ -19,6 +19,15 @@ dependencies = [
     "pymemcache>=4.0.0",
 ]
 
+[dependency-groups]
+dev = [
+    "ansible>=8.7.0",
+    "mypy>=1.11.2",
+    "pytest>=8.3.3",
+    "ruff>=0.6.9",
+    "runcommands>=1.0a71",
+]
+
 [tool.setuptools.package-data]
 "djangokit.website" = [
     "**/*.css",
@@ -29,15 +38,6 @@ dependencies = [
     "**/*.toml",
     "**/*.ts",
     "**/*.tsx",
-]
-
-[tool.uv]
-dev-dependencies = [
-    "ansible>=8.7.0",
-    "mypy>=1.11.2",
-    "pytest>=8.3.3",
-    "ruff>=0.6.9",
-    "runcommands>=1.0a71",
 ]
 
 [tool.uv.sources]
