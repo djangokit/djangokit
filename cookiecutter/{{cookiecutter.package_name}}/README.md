@@ -29,6 +29,10 @@ Complete the installation process:
 
     uv run dk install
 
+Run the initial database migrations
+
+    uv run dk migrate
+
 Run the dev server:
 
     uv run dk start

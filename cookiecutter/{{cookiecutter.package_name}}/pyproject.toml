@@ -15,6 +15,13 @@ dependencies = [
     "org-djangokit-cli",
 ]
 
+[dependency-groups]
+dev = [
+    "mypy>=1.11.2",
+    "pytest>=8.3.3",
+    "ruff>=0.6.9",
+]
+
 [tool.setuptools.package-data]
 "{{ cookiecutter.package_name }}" = [
     "**/*.css",
@@ -27,12 +34,12 @@ dependencies = [
     "**/*.tsx",
 ]
 
-[tool.uv]
-dev-dependencies = [
-    "mypy>=1.11.2",
-    "pytest>=8.3.3",
-    "ruff>=0.6.9",
-]
+# Uncomment this section to use the dev versions of the DjangoKit
+# packages, assuming you have the DjangoKit repo cloned in an adjacent
+# directory.
+#[tool.uv.sources]
+#org-djangokit-core = { path = "../djangokit/core", editable = true }
+#org-djangokit-cli = { path = "../djangokit/cli", editable = true }
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
