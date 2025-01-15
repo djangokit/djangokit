@@ -13,11 +13,11 @@ workers = 2
 enable-threads = true
 threads = 4
 
-logto2 = /sites/{{ hostname }}/uwsgi.log
+logto2 = /sites/djangokit/uwsgi.log
 
-chdir = /sites/{{ hostname }}/current/app
-virtualenv = /sites/{{ hostname }}/current/app/venv
-wsgi-file = /sites/{{ hostname }}/current/app/wsgi.py
+chdir = /sites/djangokit/current/app
+virtualenv = /sites/djangokit/current/app/venv
+wsgi-file = /sites/djangokit/current/app/wsgi.py
 
 single-interpreter = true
 

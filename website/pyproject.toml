@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "org-djangokit-website"
 version = "0.0.2.dev0"
-description = "DjangoKit.org Website"
+description = "DjangoKit Website"
 authors = [ { name = "Wyatt Baldwin", email = "self@wyattbaldwin.com" } ]
 license = { text = "MIT" }
 readme = "README.md"
@@ -49,7 +49,7 @@ test = false
 
 [tool.runcommands.globals]
 env = "production"
-host = "djangokit.org"
+host = "djangokit.wyattbaldwin.com"
 
 [tool.runcommands.envs]
 development = {}

@@ -36,7 +36,7 @@ server {
     location /static {
         expires 1y;
         add_header cache-control "public, immutable";
-        alias /sites/djangokit.org/static;
+        alias /sites/djangokit/static;
     }
 
     location / {

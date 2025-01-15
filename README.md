@@ -22,4 +22,4 @@ minimal setup and configuration.
 
 ## Getting Started
 
-- Docs: https://djangokit.org/docs/get-started
+- Docs: https://djangokit.wyattbaldwin.com/docs/get-started

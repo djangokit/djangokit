@@ -33,7 +33,7 @@ static_build_dir: "{{ build_root }}/static"
 # Remote ---------------------------------------------------------------
 
 site_user: "djangokit"
-remote_site_root: "/sites/{{ hostname }}"
+remote_site_root: "/sites/djangokit"
 
 # Directory for build/version
 remote_build_dir: "{{ remote_site_root }}/{{ version }}"

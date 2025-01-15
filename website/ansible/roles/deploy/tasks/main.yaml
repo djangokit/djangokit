@@ -245,7 +245,7 @@
   cron:
     name: MAILTO
     env: true
-    job: contact@djangokit.org
+    job: djangokit@wyattbaldwin.com
 
 - name: Add cron SHELL environment variable
   tags:
