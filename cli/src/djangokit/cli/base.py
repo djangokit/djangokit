@@ -10,7 +10,6 @@ from .build import build_client, build_server
 from .django import run_django_command
 from .state import state
 from .utils import (
-    DEFAULT_PYTHON_VERSION,
     params,
     run,
     run_node_command,
@@ -19,11 +18,11 @@ from .utils import (
 
 
 @app.command()
-def setup(python_version=DEFAULT_PYTHON_VERSION):
+def setup():
     """Set up project"""
     console = state.console
     console.header("Setting up project...")
-    install(python_version)
+    install()
     update()
     run_django_command("migrate")
 
