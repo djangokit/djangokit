@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { FaEdit } from "react-icons/fa";
 
 import { usePageQuery } from "../../../api";

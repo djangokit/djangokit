@@ -1,6 +1,6 @@
 import { useApiQuery } from "../../../api";
 import { BlogPost } from "../../../models";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import Loader from "../../../components/Loader";
 import ErrorMessage from "../../../components/ErrorMessage";
 

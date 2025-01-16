@@ -1,5 +1,5 @@
 /* Page */
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { usePageQuery } from "../../api";
 import PageComponent from "../../components/Page";
 

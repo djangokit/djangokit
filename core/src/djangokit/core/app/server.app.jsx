@@ -1,9 +1,6 @@
 import React from "react";
 
-import {
-  unstable_createStaticRouter,
-  unstable_StaticRouterProvider as RouterProvider,
-} from "react-router-dom/server";
+import { createStaticRouter, StaticRouterProvider } from "react-router";
 
 import routes from "./routes";
 import Auth from "./server.auth";
@@ -12,7 +9,7 @@ import Wrapper from "./server.wrapper";
 
 const location = process.argv[2] || "/";
 const routerContext = { location };
-const router = unstable_createStaticRouter(routes, routerContext);
+const router = createStaticRouter(routes, routerContext);
 
 export default function App() {
   return (
@@ -20,7 +17,7 @@ export default function App() {
       <Auth>
         <SharedWrapper>
           <Wrapper>
-            <RouterProvider router={router} context={routerContext} />
+            <StaticRouterProvider router={router} context={routerContext} />
           </Wrapper>
         </SharedWrapper>
       </Auth>

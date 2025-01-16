@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation } from "react-router";
 
 import LinkContainer from "react-router-bootstrap/LinkContainer";
 import Nav from "react-bootstrap/Nav";
@@ -40,7 +40,7 @@ export default function NestedLayout() {
         </Navbar.Toggle>
         <Navbar.Collapse id="nav-docs" className="flex-column">
           <Nav className="flex-column" activeKey={location.pathname}>
-            {data.pages.map((page) => (
+            {data?.pages.map((page) => (
               <Nav.Item key={page.id}>
                 <LinkContainer to={`/docs/${page.slug.slice(4)}`}>
                   <Nav.Link

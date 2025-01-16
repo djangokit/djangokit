@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { FaEdit } from "react-icons/fa";
 
 import { useApiQuery } from "../../api";

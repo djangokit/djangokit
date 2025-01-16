@@ -9,7 +9,7 @@ from ..state import state
 from ..utils import exclusive
 
 LAYOUT_TEMPLATE = """\
-import { Outlet } from "react-router-dom";
+import { Outlet } from "react-router";
 
 export default function Layout() {
   return (
@@ -25,7 +25,7 @@ export default function Layout() {
 """
 
 NESTED_LAYOUT_TEMPLATE = """\
-import { Outlet } from "react-router-dom";
+import { Outlet } from "react-router";
 
 export default function NestedLayout() {
   return (

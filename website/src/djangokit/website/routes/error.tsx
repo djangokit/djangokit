@@ -1,6 +1,6 @@
 /* Root Error */
 
-import { Link, useRouteError } from "react-router-dom";
+import { Link, useRouteError } from "react-router";
 
 import Container from "react-bootstrap/Container";
 import Navbar from "react-bootstrap/Navbar";

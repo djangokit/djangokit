@@ -1,6 +1,6 @@
 /* Root Error */
 
-import { Link, useRouteError } from "react-router-dom";
+import { Link, useRouteError } from "react-router";
 
 export default function Error() {
   const error: any = useRouteError();
