@@ -184,8 +184,7 @@ class Handler:
                 to = data
                 if not isinstance(to, str):
                     raise TypeError(
-                        f"Redirect location should be a string; got "
-                        f"{to}: {type(to)}."
+                        f"Redirect location should be a string; got {to}: {type(to)}."
                     )
                 permanent = status == 301
                 return redirect(to, permanent=permanent)

@@ -22,6 +22,8 @@ class Page(models.Model):
         db_table = "page"
         ordering = ["order", "title"]
 
+    serialize = lambda self: PageSchema.model_validate(self).model_dump()
+
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255)
     lead = models.TextField(null=True, blank=True)
@@ -30,8 +32,6 @@ class Page(models.Model):
     updated = models.DateTimeField(auto_now=True)
     published = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0, null=False)
-
-    serialize = lambda self: PageSchema.from_orm(self).dict()
 
     @property
     def is_doc(self):

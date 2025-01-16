@@ -301,7 +301,7 @@ class RouteNode:
                 return current
             current = current.parent
         raise RouteError(
-            "Could not find parent layout for nested layout " f"{self.rel_path}."
+            f"Could not find parent layout for nested layout {self.rel_path}."
         )
 
     @cached_property

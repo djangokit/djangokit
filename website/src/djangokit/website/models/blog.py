@@ -32,7 +32,7 @@ class BlogPost(models.Model):
     class Meta:
         db_table = "blog_post"
 
-    serialize = lambda self: BlogPostSchema.from_orm(self).dict()
+    serialize = lambda self: BlogPostSchema.model_validate(self).model_dump()
 
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255)

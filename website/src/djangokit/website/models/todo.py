@@ -20,7 +20,7 @@ class TodoItem(models.Model):
     class Meta:
         db_table = "todo_item"
 
-    serialize = lambda self: TodoItemSchema.from_orm(self).dict()
+    serialize = lambda self: TodoItemSchema.model_validate(self).model_dump()
 
     content = models.TextField()
     created = models.DateTimeField(auto_now_add=True)

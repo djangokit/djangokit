@@ -12,10 +12,21 @@ readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "org-djangokit-core>=0.0.4",
-    "cookiecutter>=2.1.1",
-    "typer>=0.7.0",
-    "watchdog>=2.0",
-    "types-toml>=0.10.8.1",
+    "cookiecutter>=2.6.0",
+    "typer>=0.15.1",
+    "watchdog>=6.0.0",
+    "types-toml>=0.10.8.20240310",
+]
+
+[dependency-groups]
+dev = [
+    "org-djangokit-core",
+    "mypy>=1.14.1",
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "pytest-django>=4.9.0",
+    "ruff>=0.9.2",
+    "tox>=4.23.2",
 ]
 
 [tool.setuptools.package-data]
@@ -26,18 +37,6 @@ dependencies = [
 [project.scripts]
 dk = "djangokit.cli.__main__:app"
 djangokit = "djangokit.cli.__main__:app"
-
-[tool.uv]
-dev-dependencies = [
-    "org-djangokit-core",
-    "mypy>=1.11.2",
-    "pytest>=8.3.3",
-    "pytest-cov>=5.0.0",
-    "pytest-django>=4.9.0",
-    "ruff>=0.6.9",
-    "tox>=4.21.2",
-    "types-toml>=0.10.8",
-]
 
 [tool.uv.sources]
 org-djangokit-core = { path = "../core", editable = true }

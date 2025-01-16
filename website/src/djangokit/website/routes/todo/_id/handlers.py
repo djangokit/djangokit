@@ -2,7 +2,7 @@ from typing import Optional
 
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from pydantic import BaseModel, ValidationError, root_validator
+from pydantic import BaseModel, ValidationError, model_validator
 
 from .... import auth
 from ....models import TodoItem
@@ -23,9 +23,9 @@ class PatchSchema(BaseModel):
     content: Optional[str] = None
     completed: Optional[bool] = None
 
-    @root_validator
-    def ensure_at_least_one_value(cls, values):
-        if any(name in values for name in cls.__fields__):
+    @model_validator(mode="after")
+    def ensure_at_least_one_value(self, values):
+        if any(name in values for name in self.model_fields):
             return values
         raise ValueError("PATCH of Page requires at least one field")
 
