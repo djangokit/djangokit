@@ -19,26 +19,6 @@
     state: latest
     force_apt_get: true
 
-- name: Download Node.js apt repo setup script
-  tags:
-    - provision-node
-  command: >
-    curl
-    --location
-    --output /usr/local/bin/nodejs-setup_18.x
-    https://deb.nodesource.com/setup_18.x
-  args:
-    creates: /usr/local/bin/nodejs-setup_18.x
-
-- name: Install Node.js apt repo
-  tags:
-    - provision-node
-  command: >
-    bash /usr/local/bin/nodejs-setup_18.x
-    && touch /usr/local/bin/nodejs-setup_18.x.done
-  args:
-    creates: /usr/local/bin/nodejs-setup_18.x.done
-
 - name: Install packages
   tags:
     - provision-install-packages
@@ -49,7 +29,6 @@
   with_items:
     - acl
     - memcached
-    - nginx
     - nodejs
     - openssl
     - python3
@@ -143,6 +122,7 @@
   with_items:
     - /etc/nginx/fastcgi.conf
     - /etc/nginx/fastcgi_params
+    - /etc/nginx/scgi_params
     - /etc/nginx/sites-available
     - /etc/nginx/sites-enabled
     - /etc/nginx/snippets

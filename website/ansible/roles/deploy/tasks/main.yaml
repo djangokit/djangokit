@@ -161,7 +161,7 @@
   become_user: "{{ site_user }}"
   environment:
     - ENV: "{{ env }}"
-    - PATH: "./venv/bin:$PATH"
+    - PATH: "{{ remote_app_dir }}/venv/bin:$PATH"
     - DJANGO_SETTINGS_FILE: "{{ remote_settings_file }}"
   command: ./venv/bin/djangokit migrate
   args:
