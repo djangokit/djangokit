@@ -11,7 +11,7 @@ license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "Django>=3.0",
+    "Django>=3.0,<5",
     "toml>=0.10.2",
 ]
 
