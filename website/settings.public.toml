@@ -5,4 +5,5 @@ STATICFILES_STORAGE = "djangokit.core.static.ManifestStaticFilesStorage"
 package = "djangokit.website"
 title = "DjangoKit!"
 description = "DjangoKit - a meta-framework for Django"
+ssr = false
 global_stylesheets = ["bootstrap.css", "pygments.css", "global.css"]

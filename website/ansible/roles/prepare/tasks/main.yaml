@@ -146,22 +146,22 @@
     - "{{ package_info.static_build_dir }}"
     - "{{ static_build_dir }}"
 
-- name: <LOCAL> Build server bundle
-  tags:
-    - prepare-static
-    - prepare-static-build
-    - deploy-static
-    - prepare-ssr
-    - prepare-ssr-build
-    - deploy-ssr
-  command: >
-    uv run djangokit
-    --env {{ env }}
-    build-server
-    --minify
-  args:
-    chdir: "{{ root }}"
-    creates: "{{ package_info.static_build_dir }}/server.bundle.js"
+#- name: <LOCAL> Build server bundle
+#  tags:
+#    - prepare-static
+#    - prepare-static-build
+#    - deploy-static
+#    - prepare-ssr
+#    - prepare-ssr-build
+#    - deploy-ssr
+#  command: >
+#    uv run djangokit
+#    --env {{ env }}
+#    build-server
+#    --minify
+#  args:
+#    chdir: "{{ root }}"
+#    creates: "{{ package_info.static_build_dir }}/server.bundle.js"
 
 - name: <LOCAL> Build client bundle
   tags:
