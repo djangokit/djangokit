@@ -49,11 +49,15 @@ test = false
 
 [tool.runcommands.globals]
 env = "production"
-host = "djangokit.wyattbaldwin.com"
+host = "djangokitssh.wyattbaldwin.com"
+hostname = "djangokit.wyattbaldwin.com"
 
 [tool.runcommands.envs]
 development = {}
 production = {}
+
+[tool.runcommands.args]
+remote = {"cd" = "/sites/djangokit"}
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]

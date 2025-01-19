@@ -6,12 +6,13 @@ from pathlib import Path
 
 from runcommands import abort, arg, command, confirm, printer
 from runcommands import commands as c
-from runcommands.commands import remote, sync
+from runcommands.commands import remote, sync  # Do not remove
 from runcommands.util import flatten_args
 
 TITLE = "DjangoKit"
 SITE_USER = "djangokit"
 SRC_PATH = "src/djangokit/website"
+REMOTE_SITE_DIR = "/sites/djangokit"
 
 
 @command
@@ -64,7 +65,7 @@ def rm_dir(name, quiet=False):
 
 
 @command
-def ansible(env, host, version=None, tags=(), skip_tags=(), extra_vars=()):
+def ansible(env, hostname, version=None, tags=(), skip_tags=(), extra_vars=()):
     """Run ansible playbook."""
     version = version or c.git_version()
 
@@ -87,7 +88,7 @@ def ansible(env, host, version=None, tags=(), skip_tags=(), extra_vars=()):
         skip_tags,
         extra_vars,
         ("--extra-var", f"env={env}"),
-        ("--extra-var", f"hostname={host}"),
+        ("--extra-var", f"hostname={hostname}"),
         ("--extra-var", f"version={version}"),
     )
 
@@ -101,17 +102,17 @@ def ansible(env, host, version=None, tags=(), skip_tags=(), extra_vars=()):
 
 
 @command
-def provision(env, host):
+def provision(env, hostname):
     """Provision the deployment host."""
-    printer.header(f"Provisioning {host} ({env})")
-    ansible(env, host, tags="provision")
+    printer.header(f"Provisioning {hostname} ({env})")
+    ansible(env, hostname, tags="provision")
 
 
 @command
-def upgrade_remote(env, host):
+def upgrade_remote(env, hostname):
     """Upgrade the deployment host."""
-    printer.header(f"Upgrading {host} ({env})")
-    ansible(env, host, tags="provision-update-packages")
+    printer.header(f"Upgrading {hostname} ({env})")
+    ansible(env, hostname, tags="provision-update-packages")
 
 
 def remove_build_dir():
@@ -123,7 +124,7 @@ def remove_build_dir():
 @command
 def prepare(
     env,
-    host,
+    hostname,
     version=None,
     provision_=False,
     clean_: arg(help="Remove build directory? [no]") = True,
@@ -143,7 +144,7 @@ def prepare(
 
     printer.print()
 
-    ansible(env, host, tags=tags, extra_vars={"version": version})
+    ansible(env, hostname, tags=tags, extra_vars={"version": version})
 
 
 @command
@@ -197,12 +198,11 @@ def deploy(
     ansible(env, host, version, tags=tags, skip_tags=skip_tags)
 
 
-def get_current_path(host):
-    root = f"/sites/{host}"
+def get_current_path():
+    root = REMOTE_SITE_DIR
     readlink_result = remote(
         "readlink current",
         run_as=SITE_USER,
-        cd=root,
         stdout="capture",
     )
     current_path = readlink_result.stdout.strip()
@@ -212,20 +212,20 @@ def get_current_path(host):
 
 
 @command
-def clean_remote(host, run_as=SITE_USER, dry_run=False):
+def clean_remote(run_as=SITE_USER, dry_run=False):
     """Clean up remote.
 
     Removes old deployments under the site root.
 
     """
-    root = f"/sites/{host}"
+    root = REMOTE_SITE_DIR
     printer.header(f"Removing old versions from {root}")
-    current_path = get_current_path(host)
+    current_path = get_current_path()
     current_version = os.path.basename(current_path)
     printer.print(f"Current version: {current_version}\n")
 
     find_result = remote(
-        f"find {root} -mindepth 1 -maxdepth 1 -type d -not -name '.*' -not -name 'pip'",
+        f"find {root} -mindepth 1 -maxdepth 1 -type d",
         run_as=run_as,
         stdout="capture",
     )
