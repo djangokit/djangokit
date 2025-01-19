@@ -28,7 +28,6 @@
     force_apt_get: true
   with_items:
     - acl
-    - memcached
 #    - nodejs
     - openssl
     - python3

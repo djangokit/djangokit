@@ -17,7 +17,6 @@ dependencies = [
     "markdown>=3.7",
     "pygments>=2.19.1",
     "pydantic>=2.10.5",
-    "pymemcache>=4.0.0",
 ]
 
 [dependency-groups]
