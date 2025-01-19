@@ -21,7 +21,7 @@ export default function Layout() {
   const currentPath = location.pathname;
   const redirectPath = encodeURIComponent(currentPath);
   const isLogin = currentPath === "/login";
-  const meta = useApiQuery<{ env: string; version: string }>("/meta");
+  const meta = useApiQuery<{ env: string; version: string }>("/meta?for-menu");
 
   return (
     <>
