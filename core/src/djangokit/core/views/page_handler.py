@@ -94,16 +94,15 @@ def make_render(handler):
                     markup = markup.replace("__DJANGOKIT_CSRF_TOKEN__", csrf_token)
 
                 cache.set(key, markup, None)
-
-            context["markup"] = markup
         else:
             # XXX: This is a hack to force the CSRF cookie to *always*
             #      be set in order to avoid 403 errors. This conflicts
             #      with caching. Need to figure out a way to lazily
             #      access the token only when needed.
             get_unmasked_csrf_token(request)
-            context["markup"] = "Loading..."
+            markup = " ".join(("Loading", dk_settings.title, "-", dk_settings.description))
 
+        context["markup"] = markup
         status = 404 if handler.is_catchall else 200
         return render_template(request, handler.template_name, context, status=status)
 
