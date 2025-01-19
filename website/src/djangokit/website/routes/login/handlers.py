@@ -1,6 +1,7 @@
 import logging
 
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.http import HttpRequest
 
@@ -24,6 +25,13 @@ def post(request: HttpRequest):
     if user is None:
         # Authentication failed.
         redirect_path = settings.LOGIN_URL
+        messages.add_message(
+            request,
+            messages.ERROR,
+            "Authentication failed. "
+            "Please check your username and password and try again.",
+            extra_tags="text-danger",
+        )
     else:
         # Authentication succeeded.
         login(request, user)
