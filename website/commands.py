@@ -1,3 +1,4 @@
+import datetime
 import os
 import posixpath
 import re
@@ -284,10 +285,29 @@ def push_settings(env, host):
     doing a full redeployment.
 
     """
-    current_path = get_current_path(host)
+    current_path = get_current_path()
     app_dir = posixpath.join(current_path, "app/")
     printer.header(f"Pushing {env} settings to {host}:{app_dir}")
     sync(f"settings.{env}.toml", app_dir, host, run_as=SITE_USER)
     printer.info("Restarting uWSGI (this can take a while)...", end="")
     remote("systemctl restart uwsgi.service", sudo=True)
     printer.success("Done")
+
+
+@command
+def get_prod_db(host):
+    """Copy remote production database to current directory.
+
+    The current local copy, if present, will be backed up first.
+
+    """
+    file_name = "db.sqlite3"
+    local_path = Path(file_name)
+    if local_path.exists():
+        now = datetime.datetime.now()
+        now = now.strftime("%Y-%m-%d-%H-%M-%S")
+        backup_file_name = f"db.{now}.sqlite3"
+        printer.info(f"Backing up {file_name} to {backup_file_name}")
+        local_path.rename(backup_file_name)
+    remote_path = f"{REMOTE_SITE_DIR}/{file_name}"
+    c.local(f"scp {host}:{remote_path} .")
