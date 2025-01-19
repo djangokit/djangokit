@@ -12,6 +12,7 @@ export default function Page() {
       isError={isError}
       data={data}
       error={error}
+      className="p-3"
     />
   );
 }

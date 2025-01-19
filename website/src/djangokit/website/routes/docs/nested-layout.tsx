@@ -23,13 +23,13 @@ export default function NestedLayout() {
   }
 
   return (
-    <div className="d-flex flex-column flex-md-row gap-4">
+    <div className="d-flex flex-column flex-md-row flex-fill">
       <Navbar
         bg="dark"
         variant="dark"
         expand="md"
         collapseOnSelect
-        className="flex-md-column rounded p-3 p-md-4"
+        className="flex-md-column p-3 p-md-4"
         style={{ minWidth: "192px" }}
       >
         <Navbar.Toggle aria-controls="nav-docs" className="d-md-none w-100">
@@ -62,7 +62,7 @@ export default function NestedLayout() {
         </Navbar.Collapse>
       </Navbar>
 
-      <div className="flex-fill">
+      <div className="p-3 flex-fill">
         <Outlet />
       </div>
     </div>

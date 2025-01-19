@@ -61,7 +61,7 @@ export default function Page() {
   const completedCount = completed.length;
 
   return (
-    <>
+    <div className="p-3">
       <h2>TODO</h2>
 
       {currentUser.isSuperuser ? (
@@ -154,7 +154,7 @@ export default function Page() {
           </Collapse>
         </>
       ) : null}
-    </>
+    </div>
   );
 }
 

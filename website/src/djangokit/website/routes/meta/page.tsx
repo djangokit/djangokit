@@ -24,7 +24,7 @@ export default function Page() {
   const djangokitSettings = settings.DJANGOKIT ?? {};
 
   return (
-    <>
+    <div className="p-3">
       <h2>Site Metadata</h2>
 
       <Table striped bordered hover>
@@ -43,7 +43,7 @@ export default function Page() {
           ))}
         </tbody>
       </Table>
-    </>
+    </div>
   );
 }
 

@@ -23,7 +23,7 @@ export default function Page() {
   }
 
   return (
-    <>
+    <div className="p-3">
       <h2>{post.title}</h2>
 
       <p className="fst-italic small">
@@ -43,6 +43,6 @@ export default function Page() {
       ) : null}
 
       <div dangerouslySetInnerHTML={{ __html: post.content }} />
-    </>
+    </div>
   );
 }

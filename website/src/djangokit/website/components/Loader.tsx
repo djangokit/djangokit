@@ -6,7 +6,7 @@ interface Props {
 
 export default function Loader({ children }: Props) {
   return (
-    <div className="d-flex flex-column align-items-center gap-4">
+    <div className="d-flex flex-column align-items-center gap-3 p-3">
       <Spinner />
       {children}
     </div>

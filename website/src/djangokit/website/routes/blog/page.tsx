@@ -28,7 +28,7 @@ export default function Page() {
   const postCount = posts.length;
 
   return (
-    <>
+    <div className="p-3">
       <h2>DjangoKit Blog</h2>
 
       <hr />
@@ -95,6 +95,6 @@ export default function Page() {
       ) : (
         <div className="alert alert-warning">No blog posts</div>
       )}
-    </>
+    </div>
   );
 }

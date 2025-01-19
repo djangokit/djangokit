@@ -10,7 +10,7 @@ export default function Page() {
       isError={isError}
       data={data}
       error={error}
-      className="flex-fill"
+      className="flex-fill p-3"
     />
   );
 }

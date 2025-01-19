@@ -25,7 +25,7 @@ export default function Layout() {
 
   return (
     <>
-      <header className="border-bottom shadow-sm">
+      <header>
         <div className="d-flex align-items-center justify-content-between p-3 bg-dark text-light">
           <Link to="/" className="navbar-brand">
             DjangoKit
@@ -62,7 +62,13 @@ export default function Layout() {
           )}
         </div>
 
-        <Navbar variant="dark" bg="dark" expand="sm" collapseOnSelect>
+        <Navbar
+          variant="light"
+          bg="light"
+          expand="sm"
+          collapseOnSelect
+          className="border-bottom"
+        >
           <Container fluid className="justify-content-end">
             <Navbar.Toggle aria-controls="main-navbar" />
             <Navbar.Collapse id="main-navbar" className="justify-content-end">
@@ -89,7 +95,7 @@ export default function Layout() {
       </header>
 
       <div id="wrapper">
-        <main className="p-4">
+        <main className="d-flex flex-column flex-fill">
           <Outlet />
         </main>
 

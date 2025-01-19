@@ -200,7 +200,7 @@ export default function Page() {
   return (
     <div
       ref={containerRef}
-      className="d-flex flex-column align-items-center gap-4"
+      className="d-flex flex-column align-items-center gap-4 p-3"
     >
       <h1>Timer</h1>
 

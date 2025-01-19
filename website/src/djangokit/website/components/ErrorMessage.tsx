@@ -14,14 +14,16 @@ export default function ErrorMessage({ title, error }: Props) {
   }
 
   return (
-    <div className="p-4 border border-danger rounded">
-      <h2 className="text-danger">⛔️ {title} ⛔️</h2>
+    <div className="p-3">
+      <div className="border border-danger rounded p-3">
+        <h2 className="text-danger">{title}</h2>
 
-      <p className="lead">{error.message}</p>
+        <p className="lead">{error.message}</p>
 
-      {error.statusCode ? (
-        <p className="small">Error code: {error.statusCode}</p>
-      ) : null}
+        {error.statusCode ? (
+          <p className="small">Error code: {error.statusCode}</p>
+        ) : null}
+      </div>
     </div>
   );
 }
