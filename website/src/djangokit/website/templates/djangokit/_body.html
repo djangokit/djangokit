@@ -1,0 +1,25 @@
+{% if messages %}
+  <div id="messages" class="position-absolute w-100 z-3 p-2 bg-light border-bottom shadow-lg lh-1">
+    <div class="d-flex flex-row gap-2">
+      <div class="d-flex flex-column justify-content-center gap-2 flex-fill">
+        {% for message in messages %}
+          <div class="fs-5 {% if message.tags %}{{ message.tags }}{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+
+      <button type="button" class="btn-close"></button>
+    </div>
+  </div>
+
+  <script>
+    const messages = document.getElementById("messages");
+    const messagesCloseButton = document.querySelector("#messages .btn-close");
+    messagesCloseButton.addEventListener("click", () => {
+      messages.remove();
+    });
+  </script>
+{% endif %}
+
+<div id="root">{{ markup|safe }}</div>
