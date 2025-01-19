@@ -224,35 +224,3 @@
   until: job_result.finished
   retries: 6
   delay: 10
-
-# Cron
-
-- name: Add cron HOME environment variable
-  tags:
-    - cron
-  become: true
-  become_user: "{{ site_user }}"
-  cron:
-    name: HOME
-    env: true
-    job: "{{ remote_site_root }}"
-
-- name: Add cron MAILTO environment variable
-  tags:
-    - cron
-  become: true
-  become_user: "{{ site_user }}"
-  cron:
-    name: MAILTO
-    env: true
-    job: djangokit@wyattbaldwin.com
-
-- name: Add cron SHELL environment variable
-  tags:
-    - cron
-  become: true
-  become_user: "{{ site_user }}"
-  cron:
-    name: SHELL
-    env: true
-    job: /bin/bash
