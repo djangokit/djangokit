@@ -27,7 +27,7 @@ export default function Page() {
           title="Edit doc in Django Admin"
           href={`/$admin/djangokit_website/page/${data.id}/change/`}
           target="djangokit_admin"
-          className="d-flex align-items-center gap-2"
+          className="d-flex align-items-center gap-2 mb-3"
         >
           <FaEdit />
           Edit Page
