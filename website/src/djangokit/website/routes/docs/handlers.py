@@ -1,12 +1,15 @@
-from django.shortcuts import get_list_or_404
-
 from ...models import Page
 
 
 def get(request):
-    prefix = "doc-"
-    if request.user.is_superuser:
-        pages = get_list_or_404(Page, slug__startswith=prefix)
-    else:
-        pages = get_list_or_404(Page, slug__startswith=prefix, published=True)
+    """Get page data for docs index.
+
+    Only the necessary fields are included.
+
+    """
+    args = {"slug__startswith": "doc-"}
+    fields = ["id", "slug", "title", "published"]
+    if not request.user.is_superuser:
+        args["published"] = True
+    pages = Page.objects.filter(**args).values(*fields)
     return {"pages": pages}
