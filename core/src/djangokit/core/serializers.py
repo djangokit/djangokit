@@ -23,7 +23,7 @@ class JsonEncoder(DjangoJSONEncoder):
 
     def default(self, o):
         if isinstance(o, models.QuerySet):
-            return tuple(self.default(item) for item in o)
+            return tuple(o)
         if isinstance(o, models.Model):
             if hasattr(o, "serialize"):
                 try:
