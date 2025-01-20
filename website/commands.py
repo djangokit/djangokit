@@ -151,7 +151,7 @@ def prepare(
 @command
 def deploy(
     env: arg(help="Build/deployment environment"),
-    host: arg(help="Host to deploy to"),
+    hostname: arg(help="Public-facing hostname"),
     version: arg(help="Name of version being deployed [short git hash]") = None,
     provision_: arg(help="Run provisioning steps? [no]") = False,
     prepare_: arg(
@@ -183,7 +183,7 @@ def deploy(
 
     printer.header(f"Deploying {TITLE} website version {version} to {env}")
     printer.print(f"env = {env}")
-    printer.print(f"host = {host}")
+    printer.print(f"hostname = {hostname}")
     printer.print(f"version = {version}")
     printer.print(f"provision = {bool_as_str(provision_)}")
     printer.print(f"local prep = {bool_as_str(prepare_)}")
@@ -196,7 +196,7 @@ def deploy(
 
     printer.print()
 
-    ansible(env, host, version, tags=tags, skip_tags=skip_tags)
+    ansible(env, hostname, version, tags=tags, skip_tags=skip_tags)
 
 
 def get_current_path():
