@@ -50,7 +50,7 @@ test = false
 [tool.runcommands.globals]
 env = "production"
 host = "djangokitssh.wyattbaldwin.com"
-hostname = "djangokit.wyattbaldwin.com"
+public_hostname = "djangokit.wyattbaldwin.com"
 
 [tool.runcommands.envs]
 development = {}

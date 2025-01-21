@@ -1,5 +1,5 @@
 server {
-    server_name {{ hostname }};
+    server_name {{ public_hostname }};
 
     listen 80;
     listen [::]:80;
@@ -12,7 +12,7 @@ server {
 }
 
 server {
-    server_name {{ hostname }};
+    server_name {{ public_hostname }};
 
     listen 443 ssl;
     listen [::]:443 ssl;
@@ -21,12 +21,12 @@ server {
         return 403;
     }
 
-    access_log /var/log/nginx/{{ hostname }}.access.log;
-    error_log /var/log/nginx/{{ hostname }}.error.log;
+    access_log /var/log/nginx/{{ public_hostname }}.access.log;
+    error_log /var/log/nginx/{{ public_hostname }}.error.log;
 
-    ssl_certificate /etc/letsencrypt/live/{{ hostname }}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/{{ hostname }}/privkey.pem;
-    ssl_dhparam /etc/pki/nginx/{{ hostname }}.pem;
+    ssl_certificate /etc/letsencrypt/live/{{ public_hostname }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ public_hostname }}/privkey.pem;
+    ssl_dhparam /etc/pki/nginx/{{ public_hostname }}.pem;
     ssl_session_cache shared:SSL:1m;
     ssl_session_timeout 10m;
     ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
@@ -40,7 +40,7 @@ server {
     }
 
     location / {
-        uwsgi_pass unix:/run/uwsgi/app/{{ hostname }}/socket;
+        uwsgi_pass unix:/run/uwsgi/app/{{ public_hostname }}/socket;
         include uwsgi_params;
     }
 }

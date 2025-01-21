@@ -174,7 +174,7 @@
     - deploy-uwsgi
   template:
     src: "djangokit.ini.j2"
-    dest: "/etc/uwsgi/apps-enabled/{{ hostname }}.ini"
+    dest: "/etc/uwsgi/apps-enabled/{{ public_hostname }}.ini"
 
 - name: Restart uWSGI
   tags:
@@ -203,7 +203,7 @@
     - deploy-nginx
   template:
     src: "djangokit.conf.j2"
-    dest: "/etc/nginx/conf.d/{{ hostname }}.conf"
+    dest: "/etc/nginx/conf.d/{{ public_hostname }}.conf"
 
 - name: Restart Nginx
   tags:

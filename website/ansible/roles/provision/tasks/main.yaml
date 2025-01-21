@@ -3,7 +3,7 @@
   tags:
     - provision-hostname
   hostname:
-    name: "{{ hostname }}"
+    name: "{{ public_hostname }}"
 
 - name: Set timezone
   tags:
@@ -80,12 +80,12 @@
     certbot
     certonly
     --agree-tos
-    --domain {{ hostname }}
+    --domain {{ public_hostname }}
     --email letsencrypt@wyattbaldwin.com
     --standalone
     --non-interactive
   args:
-    creates: /etc/letsencrypt/live/{{ hostname }}/fullchain.pem
+    creates: /etc/letsencrypt/live/{{ public_hostname }}/fullchain.pem
 
 - name: Create /etc/pki/nginx for DH params
   tags:
@@ -98,7 +98,7 @@
   tags:
     - provision-ssl
   openssl_dhparam:
-    path: /etc/pki/nginx/{{ hostname }}.pem
+    path: /etc/pki/nginx/{{ public_hostname }}.pem
     size: 2048
     select_crypto_backend: openssl
 
