@@ -17,6 +17,7 @@ dependencies = [
     "markdown>=3.7",
     "pygments>=2.19.1",
     "pydantic>=2.10.5",
+    "runcommands>=1.0a71",
 ]
 
 [dependency-groups]
@@ -25,7 +26,6 @@ dev = [
     "mypy>=1.14.1",
     "pytest>=8.3.4",
     "ruff>=0.9.2",
-    "runcommands>=1.0a71",
 ]
 
 [tool.setuptools.package-data]
