@@ -17,7 +17,7 @@ dependencies = [
     "markdown>=3.7",
     "pygments>=2.19.1",
     "pydantic>=2.10.5",
-    "runcommands>=1.0a71",
+    "runcommands>=1.0a72",
 ]
 
 [dependency-groups]

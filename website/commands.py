@@ -234,6 +234,7 @@ def clean_remote(run_as=SITE_USER, dry_run=False):
     printer.header(f"Removing old versions from {root}")
     current_path = get_current_path()
     current_version = os.path.basename(current_path)
+    printer.print(f"Current path: {current_path}")
     printer.print(f"Current version: {current_version}\n")
 
     find_result = remote(
