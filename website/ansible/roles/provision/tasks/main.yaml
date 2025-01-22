@@ -28,7 +28,8 @@
     force_apt_get: true
   with_items:
     - acl
-#    - nodejs
+    - fail2ban
+    - iptables-persistent
     - openssl
     - python3
     - python3-venv
@@ -64,6 +65,13 @@
     - 'alias x="exit"'
 
 # SSL (Let's Encrypt)
+
+- name: Stop Nginx
+  tags:
+    - provision-ssl
+  service:
+    name: nginx
+    state: stopped
 
 - name: Install certbot
   tags:

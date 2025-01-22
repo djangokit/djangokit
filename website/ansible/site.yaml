@@ -21,7 +21,6 @@
 - name: Deploy
   hosts:
     - web
-  become: true
   roles:
     - base
     - deploy

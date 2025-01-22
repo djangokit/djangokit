@@ -1,0 +1,9 @@
+echo "-> Updating package index..."
+sudo apt update
+echo "-> Upgrading packages..."
+sudo apt upgrade
+echo "-> Cleaning up..."
+sudo apt autoclean
+sudo apt autoremove
+echo "-> Rebooting (if required)"
+sudo test -f /var/run/reboot-required && sudo reboot || echo 'no reboot required'

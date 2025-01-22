@@ -1,0 +1,8 @@
+#!/bin/bash
+set -eu
+echo "-> Stopping nginx"
+sudo systemctl stop nginx.service
+echo "-> Renewing cert"
+sudo certbot -q renew
+echo "-> Restarting nginx"
+sudo systemctl start nginx.service

@@ -2,13 +2,19 @@
 # Create directories for version
 
 - name: Remove existing build directory for version
+  tags:
+    - deploy-app
   become: true
-  become_user: root
+  become_user: "{{ site_user }}"
   file:
     path: "{{ remote_build_dir }}"
     state: absent
 
 - name: Create directory for version
+  tags:
+    - deploy-app
+  become: true
+  become_user: "{{ site_user }}"
   file:
     path: "{{ remote_build_dir }}"
     state: directory
@@ -17,6 +23,8 @@
     mode: 0751
 
 - name: Create current link to directory for version
+  tags:
+    - deploy-app
   become: true
   become_user: "{{ site_user }}"
   file:
@@ -25,6 +33,10 @@
     state: link
 
 - name: Create app directory for version
+  tags:
+    - deploy-app
+  become: true
+  become_user: "{{ site_user }}"
   file:
     path: "{{ remote_app_dir }}"
     state: directory
@@ -33,6 +45,10 @@
     mode: 0751
 
 - name: Create pip directories
+  tags:
+    - deploy-app
+  become: true
+  become_user: "{{ site_user }}"
   file:
     path: "{{ item }}"
     state: directory
@@ -49,6 +65,8 @@
 - name: Copy and extract app build archive
   tags:
     - deploy-app
+  become: true
+  become_user: "{{ site_user }}"
   unarchive:
     src: "{{ app_build_archive }}"
     dest: "{{ remote_build_dir }}"
@@ -110,7 +128,8 @@
 
 - name: Install app
   tags:
-    - install
+    - deploy-app
+    - install-app
   become: true
   become_user: "{{ site_user }}"
   pip:
@@ -123,6 +142,10 @@
 # Static files
 
 - name: Create static directory
+  tags:
+    - deploy-static
+  become: true
+  become_user: "{{ site_user }}"
   file:
     path: "{{ remote_static_dir }}"
     state: directory
@@ -134,16 +157,14 @@
   tags:
     - deploy-static
   become: true
-  become_user: root
   synchronize:
     src: "{{ static_build_dir }}/"
     dest: "{{ remote_static_dir }}/"
 
 - name: Set ownership & permissions of static files
-  become: true
-  become_user: root
   tags:
     - deploy-static
+  become: true
   file:
     path: "{{ remote_static_dir }}"
     state: directory
@@ -156,6 +177,7 @@
 
 - name: Run Django migrations
   tags:
+    - deploy-app
     - deploy-migrations
   become: true
   become_user: "{{ site_user }}"
@@ -171,14 +193,18 @@
 
 - name: Copy uWSGI app config
   tags:
+    - deploy-app
     - deploy-uwsgi
+  become: true
   template:
     src: "djangokit.ini.j2"
     dest: "/etc/uwsgi/apps-enabled/{{ public_hostname }}.ini"
 
 - name: Restart uWSGI
   tags:
+    - deploy-app
     - deploy-uwsgi
+  become: true
   service:
     name: uwsgi
     state: restarted
@@ -188,7 +214,9 @@
 
 - name: Check uWSGI restart
   tags:
+    - deploy-app
     - deploy-uwsgi
+  become: true
   async_status:
     jid: "{{ uwsgi_restart.ansible_job_id }}"
   register: job_result
@@ -200,14 +228,18 @@
 
 - name: Copy app Nginx config
   tags:
+    - deploy-app
     - deploy-nginx
+  become: true
   template:
     src: "djangokit.conf.j2"
     dest: "/etc/nginx/conf.d/{{ public_hostname }}.conf"
 
 - name: Restart Nginx
   tags:
+    - deploy-app
     - deploy-nginx
+  become: true
   service:
     name: nginx
     state: restarted
@@ -217,7 +249,9 @@
 
 - name: Check Nginx restart
   tags:
+    - deploy-app
     - deploy-nginx
+  become: true
   async_status:
     jid: "{{ nginx_restart.ansible_job_id }}"
   register: job_result
