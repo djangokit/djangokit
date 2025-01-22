@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "org-djangokit-core"
 version = "0.0.5.dev0"
 description = "DjangoKit core"
-authors = [ { name = "Wyatt Baldwin", email = "self@wyattbaldwin.com" } ]
+authors = [ { name = "Wyatt Baldwin", email = "code@wyattbaldwin.com" } ]
 license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.9"

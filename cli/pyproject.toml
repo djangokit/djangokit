@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "org-djangokit-cli"
 version = "0.0.8.dev0"
 description = "DjangoKit command line interface"
-authors = [ { name = "Wyatt Baldwin", email = "self@wyattbaldwin.com" } ]
+authors = [ { name = "Wyatt Baldwin", email = "code@wyattbaldwin.com" } ]
 license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.9"
