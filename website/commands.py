@@ -313,23 +313,23 @@ def get_prod_db(host):
     The current local copy, if present, will be backed up first.
 
     """
-    file_name = "db.sqlite3"
-    backup_file_name = "db.sqlite3.bak"
+    now = datetime.datetime.now()
+    now = now.strftime("%Y-%m-%d-%H-%M-%S")
 
-    # Create a dated backup of the local copy, if present.
+    file_name = "db.sqlite3"
+    backup_file_name = f"db.{now}.sqlite3"
+
     local_path = Path(file_name)
     if local_path.exists():
-        now = datetime.datetime.now()
-        now = now.strftime("%Y-%m-%d-%H-%M-%S")
-        backup_file_name = f"db.{now}.sqlite3"
-        printer.info(f"Backing up {file_name} to {backup_file_name}")
+        printer.info(f"Backing up local {file_name} to {backup_file_name}")
         local_path.rename(backup_file_name)
 
-    # Create database backup on server.
+    printer.info(f"Backing up remote {file_name} to {backup_file_name}")
     c.remote(
         ("sqlite3", file_name, f"'.backup {backup_file_name}'"),
         host,
         run_as=SITE_USER,
         cd=REMOTE_SITE_DIR)
 
+    printer.info(f"Copying remote {backup_file_name} to local {local_path}")
     c.local(("scp", f"{host}:{REMOTE_SITE_DIR}/{backup_file_name}", local_path))
