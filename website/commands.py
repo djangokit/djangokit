@@ -314,6 +314,9 @@ def get_prod_db(host):
 
     """
     file_name = "db.sqlite3"
+    backup_file_name = "db.sqlite3.bak"
+
+    # Create a dated backup of the local copy, if present.
     local_path = Path(file_name)
     if local_path.exists():
         now = datetime.datetime.now()
@@ -321,5 +324,12 @@ def get_prod_db(host):
         backup_file_name = f"db.{now}.sqlite3"
         printer.info(f"Backing up {file_name} to {backup_file_name}")
         local_path.rename(backup_file_name)
-    remote_path = f"{REMOTE_SITE_DIR}/{file_name}"
-    c.local(f"scp {host}:{remote_path} .")
+
+    # Create database backup on server.
+    c.remote(
+        ("sqlite3", file_name, f"'.backup {backup_file_name}'"),
+        host,
+        run_as=SITE_USER,
+        cd=REMOTE_SITE_DIR)
+
+    c.local(("scp", f"{host}:{REMOTE_SITE_DIR}/{backup_file_name}", local_path))
