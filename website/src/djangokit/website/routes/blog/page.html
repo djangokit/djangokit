@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+
+{% block main %}
+    <div class="p-3">
+        <h2>DjangoKit Blog</h2>
+
+        {% for post in data.posts %}
+            <hr/>
+
+            <div>
+                <h3 class="d-flex align-items-center gap-2">
+                    <span>{{ post.title }}</span>
+                    <a href="{{ post.slug }}"
+                       title="Link to blog post: {{ post.title }}"
+                       class="text-decoration-none">
+                        🔗
+                    </a>
+
+                    {% if request.user.is_superuser %}
+                        <a href="/$admin/djangokit_website/blogpost/{{ post.id }}/change/"
+                           title="Edit post in Django Admin"
+                           target="djangokit_admin"
+                           class="ms-auto">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    {% endif %}
+                </h3>
+
+                <p class="fst-italic">
+                    by {{ post.author.username }}
+                    {% if post.published %}
+                        <span> &middot; published {{ post.published }}</span>
+                    {% endif %}
+                </p>
+
+                {% if not post.published %}
+                    <p class="alert alert-warning">
+                        This post is a <em>draft</em> and should not be visible to the
+                        public.
+                    </p>
+                {% endif %}
+
+                {% if post.lead %}
+                    <div class="lead">
+                        {{ post.lead|safe }}
+                    </div>
+                {% endif %}
+
+                <div>
+                    {{ post.blurb|safe }}
+                </div>
+
+                <p class="fst-italic">
+                    <a href="/blog/{{ post.slug }}" title="Read this post">Read more</a>
+                </p>
+            </div>
+        {% empty %}
+            <div class="alert alert-warning">No blog posts</div>
+        {% endfor %}
+    </div>
+{% endblock %}

@@ -4,10 +4,13 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.http import HttpRequest
-
 from djangokit.core.views.utils import is_site_path
 
 log = logging.getLogger(__name__)
+
+
+def get(request: HttpRequest):
+    return {"next": request.GET.get("next") or "/"}
 
 
 def post(request: HttpRequest):

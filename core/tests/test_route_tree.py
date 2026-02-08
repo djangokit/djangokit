@@ -19,7 +19,7 @@ def test_make_route_dir_tree(tree):
 
 def test_traversal(tree, expected_node_ids):
     def visitor(node: RouteNode):
-        if node.page_module:
+        if node.page_template:
             ids.append(node.id)
 
     ids = []
@@ -30,8 +30,3 @@ def test_traversal(tree, expected_node_ids):
 def test_iter(tree, expected_node_ids):
     nodes = tuple(tree)
     assert [node.id for node in nodes] == expected_node_ids
-
-
-def test_js_routes(tree):
-    routes = tree.js_routes(serialize=False)
-    assert len(routes) == 2

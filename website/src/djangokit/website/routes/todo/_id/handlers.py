@@ -1,5 +1,7 @@
 from typing import Optional
 
+from django.contrib import messages
+from django.http import HttpRequest
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from pydantic import BaseModel, ValidationError, model_validator
@@ -17,6 +19,7 @@ def get(_request, id):
 def delete(_request, id):
     item = get_object_or_404(TodoItem, id=id)
     item.delete()
+    return 302, "/todo"
 
 
 class PatchSchema(BaseModel):
@@ -24,24 +27,25 @@ class PatchSchema(BaseModel):
     completed: Optional[bool] = None
 
     @model_validator(mode="after")
-    def ensure_at_least_one_value(self, values):
-        if any(name in values for name in self.model_fields):
-            return values
-        raise ValueError("PATCH of Page requires at least one field")
+    def ensure_at_least_one_value(self):
+        if self.content is not None or self.completed is not None:
+            return self
+        raise ValueError("PATCH TodoItem requires at least one field")
 
 
 @auth.require_authenticated
 @auth.require_superuser
-def patch(request, id):
+def patch(request: HttpRequest, id):
     item = get_object_or_404(TodoItem, id=id)
 
     try:
         data = PatchSchema(**request.data)
     except ValidationError as exc:
-        messages = [err["msg"] for err in exc.errors()]
-        return 400, {"messages": messages}
+        for err in exc.errors():
+            messages.error(request, err["msg"])
+        return 302, "/todo"
 
-    for name in data.__fields__:
+    for name in PatchSchema.model_fields:
         if name == "completed":
             continue
         val = getattr(data, name)
@@ -53,5 +57,4 @@ def patch(request, id):
         item.completed = timezone.now() if completed else None
 
     item.save()
-    item.refresh_from_db()
-    return item
+    return 302, "/todo"

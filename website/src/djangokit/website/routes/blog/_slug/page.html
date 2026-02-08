@@ -1,0 +1,22 @@
+{% extends "../../layout.html" %}
+
+{% block main %}
+    <div class="p-3">
+        <h2>{{ data.title }}</h2>
+
+        <p class="fst-italic small">
+            by {{ data.author.username }}
+            {% if data.published %}
+                <span> &middot; published {{ data.published }}</span>
+            {% endif %}
+        </p>
+
+        {% if not data.published %}
+            <p class="alert alert-warning">
+                This post is a <em>draft</em> and should not be visible to the public.
+            </p>
+        {% endif %}
+
+        <div>{{ data.content|safe }}</div>
+    </div>
+{% endblock %}

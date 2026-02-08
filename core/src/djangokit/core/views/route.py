@@ -1,14 +1,8 @@
 import logging
-import os
 from collections import defaultdict
-from functools import lru_cache
-from pathlib import Path
 from types import ModuleType
-from typing import Callable, Dict, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, Optional, Sequence, Tuple
 
-from django.conf import settings
-from django.contrib.staticfiles.finders import find
-from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest, HttpResponse
 from django.utils.decorators import classonlymethod
@@ -21,13 +15,6 @@ log = logging.getLogger(__name__)
 
 
 class RouteView(View):
-    page_module: Optional[str] = None
-    """Page module, if present.
-
-    This is a JSX file that exports a default function.
-
-    """
-
     page_handler: Optional[PageHandler] = None
     """Handler used to render page."""
 
@@ -66,10 +53,8 @@ class RouteView(View):
         vary_on: Optional[Sequence[str]] = None,
         cache_control: Optional[dict] = None,
         template_name: str = "djangokit/app.html",
-        ssr_bundle_path: Optional[Union[str, Path]] = None,
         loader: Optional[Handler] = None,
     ) -> Tuple[Callable[[HttpRequest], HttpResponse]]:
-        page_module = node.page_module
         handler_module = node.handler_module
 
         if handler_module:
@@ -90,17 +75,9 @@ class RouteView(View):
         else:
             handlers = {}
 
-        if page_module:
-            if ssr_bundle_path:
-                ssr_bundle_path = Path(ssr_bundle_path)
-            else:
-                if settings.DJANGOKIT.ssr:
-                    ssr_bundle_path = get_ssr_bundle_path()
-                else:
-                    ssr_bundle_path = None
+        if template_name:
             page_handler = PageHandler(
                 template_name=template_name,
-                ssr_bundle_path=ssr_bundle_path,
                 loader=loader,
                 is_catchall=node.is_catchall,
                 cache_time=cache_time,
@@ -112,7 +89,6 @@ class RouteView(View):
             page_handler = None
 
         return cls.as_view(
-            page_module=page_module,
             page_handler=page_handler,
             handler_module=handler_module,
             handlers=handlers,
@@ -216,9 +192,9 @@ class RouteView(View):
 
         `GET`/`HEAD` handling:
 
-         1. If HTML is preferred and there's a page module, render the
+         1. If HTML is preferred and there's a page handler, render the
             page.
-         2. If HTML is preferred and there's NOT a page module, fall
+         2. If HTML is preferred and there's NOT a page handler, fall
             through and return the result of the handler (or a 405 if
             there is no handler for the method).
          3. If JSON is preferred but there's no handler for the request
@@ -244,6 +220,13 @@ class RouteView(View):
         prefers_html = not request.prefers_json
         has_method_handler = method in handlers or "*" in handlers
 
+        if method == "post":
+            method = (
+                request.GET.get("$method", None)
+                or request.POST.get("$method", None)
+                or method
+            )
+
         if (
             method in ("get", "head")
             and subpath == ""
@@ -263,22 +246,3 @@ class RouteView(View):
             handler = self.http_method_not_allowed
 
         return handler(request, *args, **kwargs)
-
-
-@lru_cache(maxsize=None)
-def get_ssr_bundle_path(bundle_name="build/server.bundle.js") -> Path:
-    # NOTE: This path never changes for a given deployment/version, so
-    #       we only need to look it up once.
-    if settings.DEBUG or settings.ENV == "test":
-        bundle_path = find(bundle_name)
-        if bundle_path:
-            return Path(bundle_path)
-        raise FileNotFoundError(
-            f"Could not find static file for SSR bundle: {bundle_name}"
-        )
-    else:
-        hashed_bundle_name = staticfiles_storage.stored_name(bundle_name)
-        bundle_path = staticfiles_storage.path(hashed_bundle_name)
-        if os.path.exists(bundle_path):
-            return Path(bundle_path)
-        raise FileNotFoundError(f"SSR bundle path does not exist: {bundle_path}")

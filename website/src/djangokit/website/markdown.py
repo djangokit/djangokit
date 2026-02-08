@@ -23,11 +23,13 @@ def get_instance() -> Markdown:
     )
 
 
-def markdown(text: str) -> str:
+def markdown(text: str | None) -> str | None:
     """Convert Markdown text to HTML.
 
     This uses our configured singleton `Markdown` instance and should
     be used instead of :func:`markdown.markdown`.
 
     """
+    if text is None:
+        return None
     return get_instance().convert(text)

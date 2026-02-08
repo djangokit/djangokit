@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+
+{% block main %}
+    <div class="p-3">
+        <h1>TODO</h1>
+
+        <div class="mb-4">
+            <form method="post"
+                  action="/todo"
+                  class="d-flex flex-row gap-2 mb-1">
+
+                {% csrf_token %}
+
+                <textarea name="content"
+                          required
+                          placeholder="Do all the things and then all the stuff..."
+                          class="form-control flex-fill"
+                          aria-label="Enter TODO content"></textarea>
+
+                <div class="d-flex justify-content-center">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus fs-4"></i>
+                    </button>
+                </div>
+            </form>
+
+            <div class="text-muted small">NOTE: You can use Markdown</div>
+        </div>
+
+        {% if data.todo %}
+            <h2 class="mt-4 d-flex align-items-center gap-2">
+                <i class="bi bi-circle"></i>
+                {{ data.todo|length }}
+                thing{{ data.todo|length|pluralize }}
+                to do
+            </h2>
+
+            <div class="d-flex flex-column gap-2">
+                {% for item in data.todo %}
+                    {% include "./_item.html" with item_number=forloop.counter item=item %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-success">Nothing to do!</div>
+        {% endif %}
+
+        {% if data.completed %}
+            <h2 class="mt-4 d-flex align-items-center gap-2">
+                <i class="bi bi-circle"></i>
+                {{ data.completed|length }}
+                thing{{ data.completed|length|pluralize }}
+                completed
+            </h2>
+
+            <div class="d-flex flex-column gap-2">
+                {% for item in data.completed %}
+                    {% include "./_item.html" with item_number=forloop.counter item=item %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-success">Nothing to do!</div>
+        {% endif %}
+    </div>
+{% endblock %}

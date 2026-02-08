@@ -1,0 +1,131 @@
+{% extends "app.html" %}
+
+{% load bootstrap %}
+{% load static %}
+
+{% block layout %}
+    <a href="#main" class="p-3 visually-hidden-focusable">Skip to main content</a>
+
+    {% if messages %}
+        <div id="messages" class="position-absolute w-100 z-3 p-2 bg-light border-bottom shadow-lg lh-1">
+            <div class="d-flex flex-column justify-content-center gap-2">
+                <div class="d-flex flex-column gap-2">
+                    {% for message in messages %}
+                        <div class="d-flex align-items-center m-0 fs-5 fade show alert alert-dismissible alert-{% bootstrap_message_tag message %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="text-center">
+                    <button id="message-close-button" type="button" class="btn btn-primary">
+                        Dismiss Messages
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const messages = document.getElementById("messages");
+            const messagesCloseButton = document.querySelector("#message-close-button");
+            messagesCloseButton.addEventListener("click", () => {
+                messages.remove();
+            });
+        </script>
+    {% endif %}
+
+    <header>
+        <div class="d-flex align-items-center justify-content-between p-3 bg-dark text-light">
+            <a href="/" class="navbar-brand">DjangoKit</a>
+
+            {% if not data.is_docs %}
+                <a href="/docs/get-started" class="btn btn-outline-info">
+                    <i class="bi bi-rocket"></i>
+                    <span class="d-inline d-sm-none">Start</span>
+                    <span class="d-none d-sm-inline">Get Started</span>
+                </a>
+            {% endif %}
+
+            {% if request.user.is_authenticated %}
+                <div class="d-flex align-items-center gap-2">
+                    <div>{{ request.user.username }}</div>
+                    <form method="post" action="/logout" class="m-0">
+                        {% csrf_token %}
+                        <input name="next" type="hidden" value="{{ request.path }}"/>
+                        <button type="submit" class="btn btn-outline-light">
+                            Log Out
+                        </Button>
+                    </form>
+                </div>
+            {% endif %}
+
+            {% if not request.user.is_authenticated and not data.is_login %}
+                <a href="/login?next={{ request.path }}" class="btn btn-sm btn-outline-light">
+                    Log In
+                </a>
+            {% endif %}
+        </div>
+
+        <nav class="navbar navbar-expand-md border-bottom" aria-label="Main navigation">
+            <div class="container-fluid justify-content-end">
+                <button type="button"
+                        class="navbar-toggler"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#main-nav-items"
+                        aria-controls="main-nav-items"
+                        aria-expanded="false"
+                        aria-label="Toggle main navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div id="main-nav-items" class="collapse navbar-collapse justify-content-end">
+                    <ul class="navbar-nav align-items-end">
+                        <li class="nav-item">
+                            <a href="/docs" class="nav-link">
+                                <i class="bi bi-book"></i>
+                                <span class="ms-1">Docs</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a href="https://github.com/djangokit" class="nav-link">
+                                <i class="bi bi-github"></i>
+                                <span class="ms-1">Code</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div id="wrapper">
+        <main id="main">
+            {% block main %}
+                MAIN
+            {% endblock main %}
+        </main>
+
+        <footer class="d-flex align-items-center justify-content-between px-3 py-2 border-top bg-light small">
+            <span>&copy; Wyatt Baldwin &lt;code@wyattbaldwin.com&gt;</span>
+
+            <div class="dropdown">
+                <button type="button"
+                        class="btn btn-outline-dark dropdown-toggle"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    <i class="bi bi-list"></i>
+                </button>
+
+                <ul class="dropdown-menu">
+                    <li><a href="/blog" class="dropdown-item">Blog</a></li>
+                    <li><a href="/todo" class="dropdown-item">TODO</a></li>
+                    <li class="dropdown-divider"></li>
+                    <li><a href="/$admin/" class="dropdown-item" target="djangokit_admin">Admin</a></li>
+                    <li class="dropdown-divider"></li>
+                    <li><a href="/meta" class="dropdown-item">Metadata</a></li>
+                </ul>
+            </div>
+        </footer>
+    </div>
+{% endblock layout %}

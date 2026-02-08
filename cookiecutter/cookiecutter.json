@@ -6,10 +6,11 @@
   "version": "0.0.1.dev0",
   "author": "Anon",
   "author_email": "anon@example.com",
-  "python_version": "3.11",
+  "python_version": "3.14",
   "license": [
-    "MIT",
+    "BSD",
     "GPL-3.0",
+    "MIT",
     "private"
   ]
 }

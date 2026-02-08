@@ -2,7 +2,8 @@
 
 ## 0.0.8 - unreleased
 
-In progress...
+- Remove everything related to React. DjangoKit is now focused only on
+  filesystem routing.
 
 ## 0.0.7 - 2023-02-04
 

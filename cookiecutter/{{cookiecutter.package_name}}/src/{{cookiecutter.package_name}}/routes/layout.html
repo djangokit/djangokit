@@ -1,0 +1,23 @@
+{% comment %} Root Layout {% endcomment %}
+
+{% extends "app.html" %}
+
+{% block layout %}
+    <a href="#main" class="p-3 visually-hidden-focusable">Skip to main content</a>
+
+    <header class="p-4 bg-dark text-light">
+        <nav>
+            <a href="/" class="text-light text-decoration-none">
+                Home
+            </a>
+        </nav>
+    </header>
+
+    <main id="main" class="p-4">
+        {% block main %}
+            MAIN
+        {% endblock main %}
+    </main>
+
+    <footer class="p-4 border-top">&copy; {{ cookiecutter.package_name }}</footer>
+{% endblock %}

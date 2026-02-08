@@ -12,4 +12,4 @@ def get(request):
     if not request.user.is_superuser:
         args["published"] = True
     pages = Page.objects.filter(**args).values(*fields)
-    return {"pages": pages}
+    return {"pages": pages, "is_docs": True}

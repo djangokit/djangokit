@@ -1,0 +1,22 @@
+{% extends "../layout.html" %}
+
+{% block outlet %}
+    <h1>{{ data.page.title }}</h1>
+
+    {% if request.user.is_superuser %}
+        <div class="my-3">
+            <a href="/$admin/djangokit_website/page/{{ data.page.id }}/change/"
+               target="djangokit_admin"
+               class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i>
+                Edit page
+            </a>
+        </div>
+    {% endif %}
+
+    {% if data.page.lead %}
+        <div class="lead mb-4">{{ data.page.lead|safe }}</div>
+    {% endif %}
+
+    <div>{{ data.page.content|safe }}</div>
+{% endblock outlet %}

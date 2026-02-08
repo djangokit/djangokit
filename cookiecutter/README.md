@@ -11,9 +11,12 @@ DjangoKit CLI and run `dk -s create-project <name>`:
 
 ```shell
 # Install DjangoKit CLI using pipx:
+uv tool install org-djangokit-cli
+
+# Or use pipx:
 pipx install org-djangokit-cli
 
-# Or you can use pip:
+# Or pip
 pip install --user org-djangokit-cli
 
 # NOTE: Make sure to include the -s (standalone) flag.
@@ -25,37 +28,35 @@ project for information on how to install and run it.
 
 ## Prerequisites
 
-- Install the version of Python you want to use. Versions 3.9 and up are
-  supported.
- 
+- Install the version of Python you want to use. Versions 3.10 and up
+  are supported.
+
 - Install `cookiecutter`.
 
-  > TIP: [pipx](https://pypa.github.io/pipx/) is a good way to install
-  > command line tools like `cookiecutter`.
+  > [uv](https://docs.astral.sh/uv/getting-started/installation/) is a
+  > good way to install command line tools like `cookiecutter`.
 
-  If you're on a Mac and using Homebrew, you can install `pipx` with
+  If you're on a Mac and using Homebrew, you can install `uv` with
   `brew`:
 
-      brew install pipx
+      brew install uv
 
-  After installing `pipx`:
- 
-      pipx install cookiecutter
+  After installing `uv`:
 
-  You can also use `pip`:
+      uv tool install cookiecutter
 
-      pip install --user cookiecutter
+  You can also use `pipx` or `pip`.
 
   Other options for installing `cookiecutter` can be found in their
   respective docs:
 
-  - https://cookiecutter.readthedocs.io/en/stable/installation.html
+    - https://cookiecutter.readthedocs.io/en/stable/installation.html
 
 ## Create Your DjangoKit-based Project
 
 Run the following command:
 
-    cookiecutter https://github.com/djangokit/djangokit --directory cookiecutter
+    cookiecutter https://github.com/djangokit/djangokit --directory <target directory>
 
 > NOTE: The `--directory` option is _required_.
 

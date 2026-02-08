@@ -5,26 +5,13 @@
   "author": "Wyatt Baldwin",
   "license": "MIT",
   "dependencies": {
-    "@tanstack/react-query": "^4.36.1",
-    "cookie": "^0.5.0",
-    "react": "^18.3.1",
-    "react-bootstrap": "^2.10.8",
-    "react-cookie": "^4.1.1",
-    "react-dom": "^18.3.1",
-    "react-icons": "^4.12.0",
-    "react-router-bootstrap": "^0.26.3",
-    "react-router-dom": "6.4.3"
-  },
-  "devDependencies": {
-    "@types/react": "^18.3.18",
-    "@typescript-eslint/eslint-plugin": "^5.62.0",
-    "esbuild": "^0.15.18",
-    "eslint": "^8.57.1",
-    "eslint-config-prettier": "^8.10.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-react": "^7.37.4",
-    "eslint-plugin-react-hooks": "^4.6.2",
-    "prettier": "^2.8.8",
-    "typescript": "^4.9.5"
+    "@eslint/js": "^10.0.1",
+    "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.10.5",
+    "eslint": "^10.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "globals": "^17.3.0",
+    "prettier": "^3.8.1"
   }
 }

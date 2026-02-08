@@ -14,12 +14,11 @@ def get(request):
     safe_filter = SafeExceptionReporterFilter()
 
     data = {
-        "env": settings.ENV,
-        "version": os.getenv("VERSION"),
+        "": {
+            "environment": settings.ENV,
+            "version": os.getenv("VERSION"),
+        }
     }
-
-    if "for-menu" in request.GET:
-        return data
 
     if request.user.is_superuser:
         django_settings = safe_filter.get_safe_settings()
@@ -30,7 +29,7 @@ def get(request):
             if callable(v):
                 dk_settings[n] = f"{v.__module__}.{v.__name__}"
 
-        data["settings"] = django_settings
-        data["settings"]["DJANGOKIT"] = dk_settings
+        data["DjangoKit Settings"] = dk_settings
+        data["Django Settings"] = django_settings
 
     return data

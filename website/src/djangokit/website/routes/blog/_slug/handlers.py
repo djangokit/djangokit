@@ -6,6 +6,7 @@ def get(request, slug):
     if not request.user.is_superuser:
         kwargs["published__isnull"] = False
     try:
-        return BlogPost.objects.select_related("author").get(**kwargs)
+        post: BlogPost = BlogPost.objects.select_related("author").get(**kwargs)
+        return post.serialize()
     except BlogPost.DoesNotExist:
         return 404, f"Blog post not found: {slug}"

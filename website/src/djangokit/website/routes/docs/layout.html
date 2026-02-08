@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+
+{% block main %}
+    <div class="d-flex flex-column flex-md-row flex-fill">
+        <nav class="navbar navbar-expand-md flex-md-column p-3 p-md-4 bg-dark"
+             style="min-width: 192px"
+             aria-label="Docs navigation"
+             data-bs-theme="dark">
+
+            <button type="button"
+                    class="navbar-toggler d-md-none w-100"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#docs-nav-items"
+                    aria-controls="docs-nav-items"
+                    aria-expanded="false"
+                    aria-label="Toggle main navigation">
+                <span class="navbar-toggler-icon"></span>
+                <span>Docs Menu</span>
+            </button>
+
+            <div id="docs-nav-items" class="collapse navbar-collapse flex-column">
+                <ul class="navbar-nav flex-column">
+                    {% for page in data.pages %}
+                        <li class="nav-item">
+                            <a href="/docs/{{ page.slug|slice:"4:" }}"
+                               class="nav-link text-decoration-underline
+                                      {% if not page.published %}text-danger text-decoration-line-through{% endif %}">
+                                {{ page.title }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </nav>
+
+        <div class="p-3 flex-fill">
+            {% block outlet %}{% endblock outlet %}
+        </div>
+    </div>
+{% endblock main %}

@@ -18,7 +18,6 @@ class State:
     additional_settings_module: Optional[str] = None
     settings_file: Path = Path("settings.development.toml")
 
-    use_typescript: bool = True
     quiet: bool = False
 
     console: Console = Console(highlight=False)

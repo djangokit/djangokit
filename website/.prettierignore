@@ -1,0 +1,8 @@
+**/.venv/
+**/build/
+**/dist/
+**/static/lib/
+
+**/*.html
+**/*.md
+**/*.yaml

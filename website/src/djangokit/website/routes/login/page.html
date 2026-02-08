@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block main %}
+    <form method="post" action="/login" class="container-lg p-3">
+        {% csrf_token %}
+        <input name="next" type="hidden" value="{{ data.next }}"/>
+
+        <div class="d-flex flex-column gap-4">
+            <h2>Log In</h2>
+
+            <div>
+                <label for="username" i class="form-label">Username</label>
+                <input id="username" name="username" type="text" class="form-control">
+            </div>
+
+            <div>
+                <label for="password" class="form-label">Password</label>
+                <input id="password" name="password" type="password" class="form-control">
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Log In
+            </button>
+        </div>
+    </form>
+{% endblock %}

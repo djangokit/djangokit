@@ -108,12 +108,7 @@ def website():
     result = get_files("website")
     lines = result.stdout_lines
     has_changed_python = any(path.endswith(".py") for path in lines)
-    has_changed_js = (
-        any(path.endswith(".js") for path in lines)
-        or any(path.endswith(".jsx") for path in lines)
-        or any(path.endswith(".ts") for path in lines)
-        or any(path.endswith(".tsx") for path in lines)
-    )
+    has_changed_js = any(path.endswith(".js") for path in lines)
     if has_changed_python or force:
         if do_format:
             print("Formatting website Python...")

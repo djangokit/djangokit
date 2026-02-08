@@ -1,0 +1,56 @@
+<style>
+    .todo-item *:last-child {
+        margin: 0;
+    }
+</style>
+
+<div class="d-flex border rounded hover-highlight">
+    <div class="d-flex flex-column align-items-center justify-content-center p-2 text-bg-light border-end">
+        {{ item_number }}
+    </div>
+
+    <div class="flex-fill align-self-center p-2">
+        {% if item.completed %}
+            <del class="todo-item" class="text-muted" title="Completed {{ item.completed }}">
+                {{ item.content|safe }}
+            </del>
+        {% else %}
+            <div class="todo-item" title="Created {{ item.created }}">
+                {{ item.content|safe }}
+            </div>
+        {% endif %}
+    </div>
+
+    {% if request.user.is_superuser %}
+        <div class="p-2 d-flex flex-column flex-sm-row align-items-center justify-content-center gap-2 text-bg-light border-start">
+            {% if item.completed %}
+                <form method="post" action="/todo/{{ item.id }}?$method=patch" class="m-0">
+                    {% csrf_token %}
+                    <input type="hidden" name="completed" value="false">
+                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Mark as not completed">
+                        <i class="bi bi-check"></i>
+                    </button>
+                </form>
+            {% else %}
+                <form method="post" action="/todo/{{ item.id }}?$method=patch" class="m-0">
+                    {% csrf_token %}
+                    <input type="hidden" name="completed" value="true">
+                    <button type="submit" class="btn btn-sm btn-outline-success" title="Mark as completed">
+                        <i class="bi bi-check"></i>
+                    </button>
+                </form>
+
+                <button type="button" class="btn btn-sm btn-outline-info" title="Edit">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            {% endif %}
+
+            <form method="post" action="/todo/{{ item.id }}?$method=delete" class="m-0">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete!">
+                    <i class="bi bi-x"></i>
+                </button>
+            </form>
+        </div>
+    {% endif %}
+</div>

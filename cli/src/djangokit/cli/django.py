@@ -6,6 +6,7 @@ from getpass import getuser
 from typing import List, Optional
 
 import click
+import typer
 from django.conf import settings
 from django.core.management import execute_from_command_line
 from django.template import Context, Template
@@ -194,7 +195,8 @@ def add_model(
         None,
         help="Fields to add to the model (e.g., title:str)",
     ),
-    register_admin: bool = True,
+    register_admin: bool = Option(True),
+    overwrite: bool = Option(False),
 ):
     """Add new Django model"""
     console = state.console
@@ -213,22 +215,28 @@ def add_model(
     console.header(f"Adding model {class_name} to {model_path}")
 
     if model_path.exists():
-        console.error(f"Model {class_name} exists at {model_path}")
-        raise Abort()
+        if overwrite or typer.confirm(
+            f"Overwrite model: {class_name} at {model_path}?"
+        ):
+            console.warning(f"Overwriting model: {class_name} at {model_path}?")
+        else:
+            console.error(f"Model exists: {class_name} at {model_path}?")
+            raise Abort()
 
     model_fields = {}
-    for field in fields:
-        name, *rest = field.split(":", 1)
-        if rest:
-            type_ = rest[0]
-        elif name in ("created", "created_at"):
-            type_ = "created"
-        elif name in ("updated", "updated_at"):
-            type_ = "updated"
-        else:
-            console.error(f"Field `{name}` requires a type; e.g. {name}:str")
-            raise Abort()
-        model_fields[name] = get_model_field(type_)
+    if fields:
+        for field in fields:
+            name, *rest = field.split(":", 1)
+            if rest:
+                type_ = rest[0]
+            elif name in ("created", "created_at"):
+                type_ = "created"
+            elif name in ("updated", "updated_at"):
+                type_ = "updated"
+            else:
+                console.error(f"Field `{name}` requires a type; e.g. {name}:str")
+                raise Abort()
+            model_fields[name] = get_model_field(type_)
 
     template = Template(MODEL_TEMPLATE)
     context = Context(
@@ -240,21 +248,44 @@ def add_model(
     )
     contents = template.render(context)
 
-    with model_path.open("w") as fp:
-        fp.write(contents)
+    with model_path.open("w") as write_fp:
+        write_fp.write(contents)
 
     # Add model import to __init__.py ----------------------------------
 
-    with init_path.open("a") as fp:
-        fp.write(f"\nfrom . {table_name} import {class_name}\n")
+    write_import = True
+    import_string = f"from .{table_name} import {class_name}"
+    with init_path.open("r") as read_fp:
+        content = read_fp.read()
+        if import_string in content:
+            write_import = False
+
+    if write_import:
+        lines = content.splitlines()
+        lines.append(import_string)
+        lines = [f"{line}\n" for line in lines]
+        with init_path.open("w") as write_fp:
+            write_fp.writelines(lines)
 
     # Register model with Django Admin ---------------------------------
 
     if register_admin:
         admin_path = settings.DJANGOKIT.package_dir / "admin.py"
-        with admin_path.open("a") as fp:
-            fp.write(f"\nfrom .models import {class_name}\n")
-            fp.write(f"admin.site.register({class_name})")
+        import_string = f"from .models import {class_name}"
+        do_register = True
+
+        with admin_path.open("r") as read_fp:
+            content = read_fp.read()
+            if import_string in content:
+                do_register = False
+
+        if do_register:
+            lines = content.splitlines()
+            lines.append(f"\n{import_string}")
+            lines.append(f"admin.site.register({class_name})")
+            lines = [f"{line}\n" for line in lines]
+            with admin_path.open("w") as write_fp:
+                write_fp.writelines(lines)
 
     console.success(f"Model {class_name} created at {model_path}")
     console.warning(
@@ -273,15 +304,17 @@ class {{ class_name }}(models.Model):
 
     class Meta:
         db_table = "{{ table_name }}"
-    {% for name, value in fields.items %}
+{% for name, value in fields.items %}
     {{ name }} = {{ value }}{% endfor %}
 
     def __str__(self):
-        return "{{ class_name }}"
+        return f"{{ class_name }} {self.id}"
 """
 
 
 def get_model_field(type_: str) -> str:
+    if type_ == "id":
+        return "models.BigAutoField(primary_key=True)"
     if type_ in ("str", "string"):
         return "models.CharField(max_length=255)"
     if type_ == "text":

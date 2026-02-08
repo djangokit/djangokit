@@ -132,9 +132,9 @@
     path: "{{ app_build_dir }}"
     dest: "{{ app_build_archive }}"
 
-# Static files, including SSR
+# Static files
 
-- name: <LOCAL> Remove client & static build directories
+- name: <LOCAL> Remove static build directories
   tags:
     - prepare-static
     - prepare-static-clean
@@ -145,37 +145,6 @@
   with_items:
     - "{{ package_info.static_build_dir }}"
     - "{{ static_build_dir }}"
-
-#- name: <LOCAL> Build server bundle
-#  tags:
-#    - prepare-static
-#    - prepare-static-build
-#    - deploy-static
-#    - prepare-ssr
-#    - prepare-ssr-build
-#    - deploy-ssr
-#  command: >
-#    uv run djangokit
-#    --env {{ env }}
-#    build-server
-#    --minify
-#  args:
-#    chdir: "{{ root }}"
-#    creates: "{{ package_info.static_build_dir }}/server.bundle.js"
-
-- name: <LOCAL> Build client bundle
-  tags:
-    - prepare-static
-    - prepare-static-build
-    - deploy-static
-  command: >
-    uv run djangokit
-    --env {{ env }}
-    build-client
-    --minify 
-  args:
-    chdir: "{{ root }}"
-    creates: "{{ package_info.static_build_dir }}/client.bundle.js"
 
 - name: <LOCAL> Collect Django static files
   tags:

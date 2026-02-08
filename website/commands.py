@@ -329,7 +329,8 @@ def get_prod_db(host):
         ("sqlite3", file_name, f"'.backup {backup_file_name}'"),
         host,
         run_as=SITE_USER,
-        cd=REMOTE_SITE_DIR)
+        cd=REMOTE_SITE_DIR,
+    )
 
     printer.info(f"Copying remote {backup_file_name} to local {local_path}")
     c.local(("scp", f"{host}:{REMOTE_SITE_DIR}/{backup_file_name}", local_path))

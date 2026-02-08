@@ -24,8 +24,8 @@ def djangokit_middleware(get_response):
       This can be used, for example, in views / handlers to decide
       whether to return data or redirect.
 
-      The request's `Accept` header needs to `application/json` for this
-      to work.
+      The request's `Accept` header needs to be `application/json` for
+      this to work.
 
     - If the request is a modifying type, adds a `data` attribute to the
       request. The data will be extracted from `request.POST` or
@@ -61,7 +61,20 @@ def djangokit_middleware(get_response):
                 "application/x-www-form-urlencoded",
                 "multipart/form-data",
             ):
-                request.data = request.POST
+
+                def convert(value):
+                    try:
+                        return json.loads(value)
+                    except json.JSONDecodeError:
+                        return value
+
+                data = {}
+                for key in request.POST:
+                    values = request.POST.getlist(key)
+                    values = data[key] = [convert(v) for v in values]
+                    data[key] = values[0] if len(values) == 1 else values
+
+                request.data = data
                 request.files = request.FILES
             elif content_type == "application/json":
                 try:
@@ -70,9 +83,10 @@ def djangokit_middleware(get_response):
                     raise BadRequest("Could not parse JSON from request body.")
             else:
                 raise BadRequest(
-                    f"Unexpected content type for {method} request: "
-                    f"{content_type}; expected application/x-www-form-urlencoded "
-                    f"or application/json."
+                    f"Unexpected content type for {method} request: {content_type}; "
+                    "expected application/x-www-form-urlencoded, "
+                    "multipart/form-data, or "
+                    "application/json."
                 )
 
         response = get_response(request)

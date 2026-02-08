@@ -1,1 +1,43 @@
-{% extends "djangokit/base.html" %}
+{% load static %}
+
+<html lang="{{ settings.LANGUAGE_CODE }}">
+
+<head>
+    {% block meta %}
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="{{ settings.description }}">
+    {% endblock %}
+
+    {% block title %}
+        <title>{{ settings.title }}</title>
+    {% endblock %}
+
+    {% block favicon %}
+        <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    {% endblock %}
+
+    {% block links %}{% endblock %}
+
+    {% block stylesheets %}
+        {% for path in settings.global_stylesheets %}
+            <link rel="stylesheet" href="{% static path %}">
+        {% endfor %}
+    {% endblock %}
+
+    {% block head_scripts %}{% endblock %}
+</head>
+
+<body>
+{% block layout %}
+    LAYOUT
+{% endblock %}
+
+{% block scripts %}
+    {% for path in settings.global_scripts %}
+        <script src="{% static path %}"></script>
+    {% endfor %}
+{% endblock %}
+</body>
+
+</html>

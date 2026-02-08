@@ -1,0 +1,38 @@
+{% extends "./layout.html" %}
+
+{% block outlet %}
+    <p class="lead">Welcome to the DjangoKit documentation!</p>
+
+    <div class="admonition note">
+        <p class="admonition-title">Note</p>
+        <p>Documentation is a work in progress.</p>
+    </div>
+
+    <p>
+        <a href="./get-started">Click here to get started</a> or click
+        another link on the left to jump into a specific topic.
+    </p>
+
+    {% if request.user.is_superuser %}
+        <h3>Admin</h3>
+
+        <div>
+            <ul class="list-group">
+                {% for page in data.pages %}
+                    <li class="list-group-item">
+                        <div class="d-flex align-items-center justify-content-between gap-4">
+                            <a href="/docs/{{ page.slug|slice:"4:" }}">{{ page.title }}</a>
+
+                            <a href="/$admin/djangokit_website/page/{{ page.id }}/change"
+                               target="djangokit_admin"
+                               class="btn btn-outline-primary">
+                                <i class="bi bi-pencil"></i>
+                                Edit
+                            </a>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+{% endblock outlet %}

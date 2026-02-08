@@ -13,10 +13,9 @@ from pathlib import Path
 
 import django
 import typer
+from djangokit.core.conf import load_settings
 from rich.table import Table
 from typer import Context, Option
-
-from djangokit.core.conf import load_settings
 
 from . import __version__
 from .state import state
@@ -62,13 +61,6 @@ def main(
         "-s",
         "--standalone",
         help="Force standalone mode",
-    ),
-    use_typescript: bool = Option(
-        True,
-        "-t",
-        "--ts",
-        "--typescript",
-        help="Use TypeScript (e.g., when generating files)",
     ),
     quiet: bool = Option(
         state.quiet,
@@ -134,7 +126,6 @@ def main(
     additional_settings_module = cli_setting(
         "additional_settings_module", additional_settings_module
     )
-    use_typescript = cli_setting("use_typescript", use_typescript)
     quiet = cli_setting("quiet", quiet)
 
     environ["ENV"] = env
@@ -152,7 +143,6 @@ def main(
     state.settings_module = settings_module
     state.additional_settings_module = additional_settings_module
     state.settings_file = settings_file
-    state.use_typescript = use_typescript
     state.quiet = quiet
 
     console.header(f"DjangoKit CLI version {__version__}")

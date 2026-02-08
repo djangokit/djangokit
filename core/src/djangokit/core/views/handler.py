@@ -44,14 +44,14 @@ class Handler:
        specified body content.
     3. An HTTP status code (an `int`), which will be converted to an
        empty response with the specified status code, unless the status
-       code is 301 or 302, in which case a redirect to the site root
-       will be returned.
+       code is 301, 302, or 307, in which case a redirect to the current
+       page will be returned.
     4. A status code *and* a dict or model instance, which will be
        converted to a JSON response with the specified status code and
        data.
     5. A status code *and* a string, which will be converted to a
        response with the specified status code and body  *or* to a
-       redirect if the status code is 301 or 302.
+       redirect if the status code is 301, 302, or 307.
     6. None, which will be converted to a 204 No Content response.
     7. A Django response object when more control is needed over the
        response.
@@ -60,8 +60,8 @@ class Handler:
     response will be returned.
 
     .. note::
-        To redirect, return 301 or 302 and a redirect location. E.g.,
-        `302, "/login"`. Note that you usually want to use 302
+        To redirect, return 301, 302, or 307 and a redirect location.
+        E.g., `302, "/login"`. Note that you usually want to use 302
         non-permanent redirects. Note also that trying to redirect with
         data will raise an error (e.g., `302, {}`).
 
@@ -143,6 +143,8 @@ class Handler:
         return self.call(request, *args, **kwargs)
 
     def get_response(self, request: HttpRequest, result) -> HttpResponse:
+        redirect_status_codes = (301, 302, 307)
+
         if result is None:
             return HttpResponse(status=204)
 
@@ -157,8 +159,8 @@ class Handler:
 
         if isinstance(result, int):
             status = result
-            if status in (301, 302):
-                data = "/"
+            if status in redirect_status_codes:
+                data = request.path
             elif request.prefers_json:
                 data = {}
             else:
@@ -180,7 +182,7 @@ class Handler:
                     "(expected int)"
                 )
 
-            if status in (301, 302):
+            if status in redirect_status_codes:
                 to = data
                 if not isinstance(to, str):
                     raise TypeError(

@@ -73,13 +73,15 @@ class DjangoKitSettings:
     global_stylesheets: List[str] = field(default_factory=lambda: ["global.css"])
     """Global stylesheets to be injected into the document `<head>`."""
 
+    global_scripts: List[str] = field(default_factory=lambda: [])
+    """Global scripts to be injected into the document `<body>`."""
+
     route_view_class: Union[str, type] = "djangokit.core.RouteView"
     """The view class used for routes.
     
     It's expected to have an `as_view_from_node` method that takes a
-    :class:`RouteNode` and, optionally, a `template_name`, `cache_time`,
-    and/or `ssr_bundle_path` and returns a view (e.g., by calling
-    `cls.as_view()`).
+    :class:`RouteNode` and, optionally, a `template_name`, and/or
+    `cache_time`, and returns a view (e.g., by calling `cls.as_view()`).
     
     """
 
@@ -87,12 +89,6 @@ class DjangoKitSettings:
         "djangokit.core.user.current_user_serializer"
     )
     """Serializer function used to serialize the current user."""
-
-    csr: bool = True
-    """Whether CSR is enabled."""
-
-    ssr: bool = True
-    """Whether SSR is enabled."""
 
     webmaster: str = field(default_factory=lambda: f"webmaster@{gethostname()}")
     """Email address of the webmaster / site admin."""
@@ -121,7 +117,6 @@ class DjangoKitSettings:
                 )
             package_dir = Path(paths[0])
             self.package_dir = package_dir
-            self.app_dir = package_dir / "app"
             self.models_dir = package_dir / "models"
             self.routes_dir = package_dir / "routes"
             self.routes_package = f"{package}.routes"
@@ -146,9 +141,6 @@ class DjangoKitSettings:
         return setattr(self, name, val)
 
     def check(self):
-        if not (self.csr or self.ssr):
-            raise ImproperlyConfigured("At least one of CSR or SSR must be enabled.")
-
         # Prefixes must be unique.
         if not self.admin_prefix:
             raise ImproperlyConfigured("Admin prefix must be set.")

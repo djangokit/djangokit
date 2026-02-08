@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import Callable, Optional, Sequence
+from typing import Any, Callable, Optional, Sequence
 
 from .views.handler import Handler, Impl
 
@@ -40,7 +40,7 @@ def handler(
 
     """
 
-    def wrapper(impl: Impl) -> Handler:
+    def wrapper(impl: Impl) -> Any:
         nonlocal path
 
         # NOTE: The order of these two lines matters

@@ -1,19 +1,17 @@
 # DjangoKit CLI
 
-> NOTE: DjangoKit is a full stack Django+React framework. See
-> https://djangokit.wyattbaldwin.com/ for more information.
+> DjangoKit is Django + filesystem routing + TOML settings + scaffolding.
+> See https://djangokit.wyattbaldwin.com/ for more information.
 
 This package provides the DjangoKit command line interface. When it's
 installed, it will install the `djangokit` console script.
 
-To see a list of commands, run `djangokit` without any arguments (or use
-the `dk` alias as shown here):
-
-    dk
+To see a list of commands, run `djangokit` without any arguments or the
+`dk` alias.
 
 To run a Django management command:
 
-    dk manage <args>
+    uv run dk manage <args>
 
 ## Configuring the CLI
 
@@ -33,9 +31,5 @@ useful when you want to change a default permanently.
 
 - `--settings-file` / `django_settings_file`: Path to settings file.
   This will be derived from `ENV` if not specified.
-
-- `--typescript` / `use_typescript`: Since using TypeScript is the
-  default, you can use this to disable TypeScript. This will affect how
-  files are generated, for example (e.g. when using `dk add-page`).
 
 - `--quiet` / `quiet`: Squelch stdout.

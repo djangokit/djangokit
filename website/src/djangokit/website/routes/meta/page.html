@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+
+{% block main %}
+    <div class="d-flex flex-column gap-3 p-3">
+        <h1>Site Metadata</h1>
+
+        {% for section_name, section_entries in data.items %}
+            {% if section_name %}
+                <h2>{{ section_name }}</h2>
+            {% endif %}
+
+            <table class="table table-bordered table-hover table-striped">
+                <tbody>
+                {% for key, value in section_entries.items %}
+                    <tr>
+                        <th>{{ key }}</th>
+                        <td>{{ value }}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endfor %}
+    </div>
+{% endblock %}

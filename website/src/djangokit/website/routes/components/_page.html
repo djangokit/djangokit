@@ -1,0 +1,13 @@
+<div class="{{ className }}">
+    <h2>{{ data.page.title }}</h2>
+
+    {% if data.page.lead %}
+        <div class="lead my-4">
+            {{ data.page.lead|safe }}
+        </div>
+    {% endif %}
+
+    <div>
+        {{ data.page.content|safe }}
+    </div>
+</div>
