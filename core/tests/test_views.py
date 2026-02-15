@@ -50,7 +50,12 @@ def test_get(client):
 def test_not_found(client):
     response = client.get("/not/a/path")
     assert response.status_code == 404
-    assert response["Content-Type"] != "application/json"
+    assert "text/html" in response["Content-Type"]
+    assert "application/json" not in response["Content-Type"]
+
+    response = client.get("/not/a/path", HTTP_ACCEPT="application/json")
+    assert response.status_code == 404
+    assert response["Content-Type"] == "application/json"
 
     response = client.get("/not/a/path.json")
     assert response.status_code == 404

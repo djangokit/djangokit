@@ -1,33 +1,36 @@
 """Django error views.
 
-These views render error pages for 400, 403, 404, and 500 responses.
+These views render an error page for 400, 403, 404, and 500 responses.
+The content depends on the status code.
+
+The error template is `djangokit/error.html`, which assumes your app has
+a root layout at `routes/layout.html`.
 
 Customization
 -------------
 
-You can customize these error pages by adding a `djangokit/error.html`
+You can customize the error page by adding `djangokit/error.html`
 template to your project's `templates` directory. This template will
 receive the following context:
 
-* `exception` - The underlying exception, if available
+* `problem` - :class:`Problem` instance
 * `settings` - DjangoKit settings
-* `status_code` - HTTP status code of response
-* `explanation` - Short explanation of error (e.g., "Not Found")
-* `detail` - More detail about the error
 
-To customize the explanation and detail messages, you can ignore the
-values passed in the template context and do this in your custom error
-template::
+Example custom error template::
 
-    {% if status_code == 400 %}
-        <p>400 content</p>
-    {% elif status_code == 403 %}
-        <p>403 content</p>
-    {% elif status_code == 404 %}
-        <p>404 content</p>
-    {% elif status_code == 500 %}
-        <p>500 content</p>
-    {% endif %}
+    <div class="alert alert-danger">
+        <h1>{% problem.title %}</h1>
+
+        {% if problem.status == 400 %}
+            <p>400 content</p>
+        {% elif problem.status == 403 %}
+            <p>403 content</p>
+        {% elif problem.status == 404 %}
+            <p>404 content</p>
+        {% elif problem.status == 500 %}
+            <p>500 content</p>
+        {% endif %}
+    <div>
 
 .. todo::
     Allow customization of explanation and detail via settings or
@@ -35,12 +38,15 @@ template::
 
 """
 
+import http
 import logging
 
 from django.conf import settings
-from django.http import response, JsonResponse
+from django.http import response
 from django.template import loader
 from django.views import defaults
+
+from ..problem import Problem
 
 log = logging.getLogger(__name__)
 
@@ -64,92 +70,89 @@ STATUS_VIEW_MAP = {
 
 
 def bad_request(request, exception, template_name=TEMPLATE_NAME):
-    return generic_error(
+    return create_error_response(
         request,
-        exception,
-        400,
-        "Bad Request",
-        "Something was wrong with the request.",
-        template_name,
+        http.HTTPStatus.BAD_REQUEST,
+        detail="Something was wrong with the request.",
+        exception=exception,
+        template_name=template_name,
     )
 
 
 def permission_denied(request, exception, template_name=TEMPLATE_NAME):
-    return generic_error(
+    return create_error_response(
         request,
-        exception,
-        403,
-        "Forbidden",
-        "You're not allowed to access this page.",
-        template_name,
+        http.HTTPStatus.FORBIDDEN,
+        detail="You're not allowed to access this page.",
+        exception=exception,
+        template_name=template_name,
     )
 
 
 def page_not_found(request, exception, template_name=TEMPLATE_NAME):
-    return generic_error(
+    prefix = f"/{settings.DJANGOKIT.prefix}"
+    detail = f"""\
+<p>The requested page wasn't found.</p>
+<p>Please re-check the address or visit our <a href="{prefix}">home page</a>.</p>"""
+    return create_error_response(
         request,
-        exception,
-        404,
-        "Not Found",
-        "<p>The requested page wasn't found.</p>"
-        '<p>Please re-check the address or visit our <a href="/">home page</a>.</p>',
-        template_name,
+        http.HTTPStatus.NOT_FOUND,
+        detail=detail,
+        exception=exception,
+        template_name=template_name,
     )
 
 
 def server_error(request, template_name=TEMPLATE_NAME):
-    return generic_error(
+    return create_error_response(
         request,
-        None,
-        500,
-        "Internal Server Error",
-        "The server ran into an unexpected issue.",
-        template_name,
+        http.HTTPStatus.INTERNAL_SERVER_ERROR,
+        detail="The server ran into an unexpected issue.",
+        template_name=template_name,
     )
 
 
-def generic_error(
+def create_error_response(
     request,
-    exception,
-    status_code,
-    explanation,
-    detail,
+    status,
+    title: str | None = None,
+    detail: str | None = None,
+    exception: Exception | None = None,
     template_name=TEMPLATE_NAME,
 ):
+    """Create an error response.
+
+    :return:
+        A JSON problem details response if the request accepts
+        application/json; otherwise, an HTML error page.
+
+    """
     try:
+        problem = Problem(
+            status,
+            title=title,
+            detail=detail,
+            exception=exception,
+        )
+
         accept = request.META.get("HTTP_ACCEPT", "*/*")
+
         if accept == "application/json":
-            return problem_details(request, exception, status_code, explanation, detail)
+            return problem.to_json_response()
 
         template = loader.get_template(template_name)
-        context = {
-            "exception": exception,
-            "settings": settings.DJANGOKIT,
-            "status_code": status_code,
-            "explanation": explanation,
-            "detail": detail,
-        }
+        context = {"problem": problem, "settings": settings.DJANGOKIT}
         content = template.render(context, request)
-        response_type = STATUS_RESPONSE_MAP.get(status_code, STATUS_RESPONSE_MAP[500])
+        response_type = STATUS_RESPONSE_MAP.get(status, STATUS_RESPONSE_MAP[500])
         return response_type(content)
     except Exception:
         # XXX: Bail out to Django default handler if rendering fails.
         log.exception(
             "Failed to render error template for %s response: %s.",
-            status_code,
+            status,
             template_name,
         )
-        view = STATUS_VIEW_MAP.get(status_code, STATUS_VIEW_MAP[500])
-        if status_code in (400, 403, 404):
+        view = STATUS_VIEW_MAP.get(status, STATUS_VIEW_MAP[500])
+        if status in (400, 403, 404):
             return view(request, exception)
         return view(request)
-
-def problem_details(request, exception, status_code, explanation, detail):
-    context = {
-        # TODO: "type": "https://example.com/errors/invalid-input",
-        "status": status_code,
-        "title": explanation,
-        "detail": detail,
-        "instance": request.path,
-    }
-    return JsonResponse(context, status=status_code)

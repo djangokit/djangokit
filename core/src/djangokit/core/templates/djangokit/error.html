@@ -1,18 +1,18 @@
-{% extends "djangokit/app.html" %}
+{% extends "layout.html" %}
 
-{% block layout %}
+{% block main %}
     <div class="p-3">
         <h1 class="text-danger">
-            Error{% if explanation %} - {{ explanation }}{% endif %}
+            {{ problem.title }}
         </h1>
 
-        {% if detail %}
+        {% if problem.detail %}
             <div class="lead">
-                {{ detail|safe }}
+                {{ problem.detail|safe }}
             </div>
         {% endif %}
 
-        {% if status_code != 404 %}
+        {% if problem.status != 404 %}
             <hr>
 
             <p>
@@ -21,8 +21,8 @@
             </p>
 
             <p>
-                Error code: {{ status_code }}
+                Error code: {{ problem.status }}
             </p>
         {% endif %}
     </div>
-{% endblock %}
+{% endblock main %}

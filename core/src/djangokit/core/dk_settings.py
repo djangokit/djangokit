@@ -137,10 +137,10 @@ class DjangoKitSettings:
             raise ImproperlyConfigured("Admin prefix must be set.")
 
         # Mount point & prefixes:
-        # - can be an empty string
+        # - can be an empty string to indicate site root
         # - must not be a single slash
         # - must not start with a slash
-        # - must end with a slash
+        # - must end with a slash (if not empty)
         for val, label in (
             (self.prefix, "Mount point"),
             (self.admin_prefix, "Admin prefix"),
