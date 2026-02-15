@@ -79,7 +79,6 @@ class RouteView(View):
             page_handler = PageHandler(
                 template_name=template_name,
                 loader=loader,
-                is_catchall=node.is_catchall,
                 cache_time=cache_time,
                 private=private,
                 vary_on=vary_on,
@@ -134,8 +133,6 @@ class RouteView(View):
                 handler = maybe_handler
             elif name in cls.http_method_names:
                 handler = Handler(maybe_handler, name, "")
-            elif name == "catchall":
-                handler = Handler(maybe_handler, "*", "")
             else:
                 continue
 

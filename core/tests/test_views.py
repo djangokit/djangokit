@@ -47,7 +47,7 @@ def test_get(client):
     assert response["Content-Type"] != "application/json"
 
 
-def test_catchall(client):
+def test_not_found(client):
     response = client.get("/not/a/path")
     assert response.status_code == 404
     assert response["Content-Type"] != "application/json"
@@ -73,7 +73,6 @@ def test_get_with_ext(client):
 
 
 def test_get_with_unknown_ext(client):
-    # This will trigger the catchall handler
     response = client.get("/stuff.UNKNOWN_EXT")
     assert response.status_code == 404
 

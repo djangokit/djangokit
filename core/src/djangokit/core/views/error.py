@@ -1,10 +1,6 @@
 """Django error views.
 
-These views render error pages that users should rarely to never see for
-400, 403, 404, and 500 responses.
-
-In a default DjangoKit setup, 404 responses will be handled at the UI
-level by a catchall route.
+These views render error pages for 400, 403, 404, and 500 responses.
 
 Customization
 -------------
@@ -42,7 +38,7 @@ template::
 import logging
 
 from django.conf import settings
-from django.http import response
+from django.http import response, JsonResponse
 from django.template import loader
 from django.views import defaults
 
@@ -116,11 +112,15 @@ def generic_error(
     request,
     exception,
     status_code,
-    explanation=None,
-    detail=None,
+    explanation,
+    detail,
     template_name=TEMPLATE_NAME,
 ):
     try:
+        accept = request.META.get("HTTP_ACCEPT", "*/*")
+        if accept == "application/json":
+            return problem_details(request, exception, status_code, explanation, detail)
+
         template = loader.get_template(template_name)
         context = {
             "exception": exception,
@@ -143,3 +143,13 @@ def generic_error(
         if status_code in (400, 403, 404):
             return view(request, exception)
         return view(request)
+
+def problem_details(request, exception, status_code, explanation, detail):
+    context = {
+        # TODO: "type": "https://example.com/errors/invalid-input",
+        "status": status_code,
+        "title": explanation,
+        "detail": detail,
+        "instance": request.path,
+    }
+    return JsonResponse(context, status=status_code)

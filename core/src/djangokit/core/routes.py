@@ -112,7 +112,6 @@ def make_route_dir_tree(
     directories = sorted(
         directories,
         key=lambda d: (
-            1 if d.name == "catchall" else 0,
             1 if d.name.startswith("_") else 0,
             -len(d.name),
             d.name,
@@ -139,10 +138,6 @@ class RouteNode:
     """Name of handler module, if present."""
 
     children: List["RouteNode"] = dataclasses.field(default_factory=list)
-
-    def __post_init__(self):
-        if self.id == "catchall" and self.children:
-            raise ImproperlyConfigured("A catchall route cannot have children")
 
     def __hash__(self):
         return hash(self.path)
@@ -188,10 +183,6 @@ class RouteNode:
         return "$root" if self.is_root else "_".join(self.rel_path.parts)
 
     @cached_property
-    def is_catchall(self) -> bool:
-        return self.id == "catchall"
-
-    @cached_property
     def rel_path(self) -> Path:
         """Relative path from root."""
         return self.path.relative_to(self.root.path)
@@ -233,8 +224,6 @@ class RouteNode:
             else:
                 part = part.replace("_", "-")
                 segments.append(part)
-        if self.is_catchall:
-            segments[-1] = "<path:path>"
         pattern = "/".join(segments)
         return pattern
 

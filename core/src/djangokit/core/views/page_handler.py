@@ -21,7 +21,6 @@ class PageHandler(Handler):
     impl: Impl = field(init=False)
     method: str = "get"
     path: str = ""
-    is_catchall: bool = False
 
     template_name: str = "djangokit/app.html"
     """Template used to render page."""
@@ -48,7 +47,6 @@ def make_render(handler):
                 "settings": settings.DJANGOKIT,
                 "data": data,
             },
-            status=404 if handler.is_catchall else 200,
         )
 
     return render

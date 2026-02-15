@@ -10,7 +10,7 @@ def tree():
 
 @pytest.fixture
 def expected_node_ids():
-    return ["$root", "docs", "docs__slug", "_slug", "catchall"]
+    return ["$root", "docs", "docs__slug", "_slug"]
 
 
 def test_make_route_dir_tree(tree):
