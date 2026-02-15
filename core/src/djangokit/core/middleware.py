@@ -9,15 +9,19 @@ from django.http import HttpRequest
 def djangokit_middleware(get_response):
     """DjangoKit middleware.
 
-    ..note::
+    .. note::
         This should be added before most other middleware due to the way
         it modifies requests. In particular, it needs to be before any
         middleware that depends on the value of the URL path and/or
         `Accept` header.
 
-    - Intercepts requests with an extension in `intercept_extensions`
-      and modifies them to remove the extension and set the `Accept`
-      header to the configured extension.
+    - Intercepts requests with specified extensions and modifies them to
+      remove the extension and set the `Accept` header to the configured
+      extension.
+
+      .. note::
+          To enable this feature, the `DJANGOKIT.intercept_extensions`
+          must be set.
 
     - Adds a `prefers_json` attribute to the request based on whether
       the request accepts `application/json` *and* prefers it over HTML.

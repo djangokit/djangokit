@@ -355,7 +355,7 @@ def add_djangokit_settings():
 def set_derived_settings():
     """Set defaults for settings that are derived from other settings.
 
-    ..note:: If a setting is already set, it's left as is.
+    .. note:: If a setting is already set, it's left as is.
 
     - Adds default template loader.
     - Sets default logging settings for `package`.

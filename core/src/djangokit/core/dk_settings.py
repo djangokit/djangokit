@@ -33,10 +33,15 @@ class DjangoKitSettings:
     current_user_path: str = "$current-user"
     """Path to current user endpoint, relative to `prefix`."""
 
+    current_user_serializer: Union[str, Callable] = (
+        "djangokit.core.user.current_user_serializer"
+    )
+    """Function called to serialize the current user."""
+
     intercept_extensions: Optional[Dict[str, str]] = None
     """URL extensions to intercept.
 
-    Map of extension to content type::
+    Map of extension to content type, such as::
 
         # settings.public.toml
         [djangokit.intercept_extensions]
@@ -85,22 +90,8 @@ class DjangoKitSettings:
     
     """
 
-    current_user_serializer: Union[str, Callable] = (
-        "djangokit.core.user.current_user_serializer"
-    )
-    """Serializer function used to serialize the current user."""
-
     webmaster: str = field(default_factory=lambda: f"webmaster@{gethostname()}")
     """Email address of the webmaster / site admin."""
-
-    noscript_message: str = (
-        "This site requires JavaScript to be enabled in your browser."
-    )
-    """Message to display when browser JS is disabled.
-    
-    Can be set to "" to disable showing a noscript message.
-    
-    """
 
     def __setattr__(self, name, value):
         super().__setattr__(name, value)
