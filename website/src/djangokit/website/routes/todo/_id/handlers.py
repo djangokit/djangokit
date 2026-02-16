@@ -19,7 +19,7 @@ def get(_request, id):
 def delete(_request, id):
     item = get_object_or_404(TodoItem, id=id)
     item.delete()
-    return 302, "/todo"
+    return 303, "/todo"
 
 
 class PatchSchema(BaseModel):
@@ -43,7 +43,7 @@ def patch(request: HttpRequest, id):
     except ValidationError as exc:
         for err in exc.errors():
             messages.error(request, err["msg"])
-        return 302, "/todo"
+        return 303, "/todo"
 
     for name in PatchSchema.model_fields:
         if name == "completed":
@@ -57,4 +57,4 @@ def patch(request: HttpRequest, id):
         item.completed = timezone.now() if completed else None
 
     item.save()
-    return 302, "/todo"
+    return 303, "/todo"

@@ -39,4 +39,4 @@ def post(request: HttpRequest):
         # Authentication succeeded.
         login(request, user)
 
-    return 302, redirect_path
+    return 303, redirect_path

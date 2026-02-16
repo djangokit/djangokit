@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from http import HTTPStatus
 from typing import Callable, Optional, Sequence
 
 from django.core.exceptions import ImproperlyConfigured
@@ -14,6 +15,24 @@ from ..http import JsonResponse
 log = logging.getLogger(__name__)
 
 Impl = Callable
+
+REDIRECT_STATUS_CODES = (
+    HTTPStatus.MOVED_PERMANENTLY,  # 301
+    HTTPStatus.FOUND,  # 302
+    HTTPStatus.SEE_OTHER,  # 303
+    HTTPStatus.TEMPORARY_REDIRECT,  # 307
+    HTTPStatus.PERMANENT_REDIRECT,  # 308
+)
+
+PERMANENT_REDIRECT_STATUS_CODES = (
+    HTTPStatus.MOVED_PERMANENTLY,  # 301
+    HTTPStatus.PERMANENT_REDIRECT,  # 308
+)
+
+PRESERVE_REQUEST_REDIRECT_STATUS_CODES = (
+    HTTPStatus.TEMPORARY_REDIRECT,  # 307
+    HTTPStatus.PERMANENT_REDIRECT,  # 308
+)
 
 
 @dataclass
@@ -44,26 +63,20 @@ class Handler:
        specified body content.
     3. An HTTP status code (an `int`), which will be converted to an
        empty response with the specified status code, unless the status
-       code is 301, 302, or 307, in which case a redirect to the current
-       page will be returned.
+       code is a redirect status code, in which case a redirect to the
+       current page will be returned.
     4. A status code *and* a dict or model instance, which will be
        converted to a JSON response with the specified status code and
        data.
     5. A status code *and* a string, which will be converted to a
        response with the specified status code and body  *or* to a
-       redirect if the status code is 301, 302, or 307.
+       redirect if the status code is a redirect status code
     6. None, which will be converted to a 204 No Content response.
     7. A Django response object when more control is needed over the
        response.
 
     If there's no handler corresponding to the request's method, a 405
     response will be returned.
-
-    .. note::
-        To redirect, return 301, 302, or 307 and a redirect location.
-        E.g., `302, "/login"`. Note that you usually want to use 302
-        non-permanent redirects. Note also that trying to redirect with
-        data will raise an error (e.g., `302, {}`).
 
     Raises:
         TypeError:
@@ -143,8 +156,6 @@ class Handler:
         return self.call(request, *args, **kwargs)
 
     def get_response(self, request: HttpRequest, result) -> HttpResponse:
-        redirect_status_codes = (301, 302, 307)
-
         if result is None:
             return HttpResponse(status=204)
 
@@ -159,7 +170,7 @@ class Handler:
 
         if isinstance(result, int):
             status = result
-            if status in redirect_status_codes:
+            if status in REDIRECT_STATUS_CODES:
                 data = request.path
             elif request.prefers_json:
                 data = {}
@@ -182,14 +193,23 @@ class Handler:
                     "(expected int)"
                 )
 
-            if status in redirect_status_codes:
+            if status in REDIRECT_STATUS_CODES:
                 to = data
                 if not isinstance(to, str):
                     raise TypeError(
                         f"Redirect location should be a string; got {to}: {type(to)}."
                     )
-                permanent = status == 301
-                return redirect(to, permanent=permanent)
+                permanent = status in PERMANENT_REDIRECT_STATUS_CODES
+                preserve_request = status in PRESERVE_REQUEST_REDIRECT_STATUS_CODES
+                response = redirect(
+                    to,
+                    permanent=permanent,
+                    preserve_request=preserve_request,
+                )
+                # Django doesn't handle 303, so ensure the correct
+                # status is set.
+                response.status_code = status
+                return response
 
             if isinstance(data, (dict, models.Model)):
                 return JsonResponse(data, status=status)

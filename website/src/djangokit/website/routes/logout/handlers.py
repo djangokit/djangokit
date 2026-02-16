@@ -17,4 +17,4 @@ def post(request):
         log.error("Logout redirect URL should be a site path; got %s", redirect_path)
         redirect_path = "/"
 
-    return 302, redirect_path
+    return 303, redirect_path

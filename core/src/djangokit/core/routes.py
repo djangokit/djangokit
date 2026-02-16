@@ -8,7 +8,6 @@ from typing import Callable, List, Optional
 
 from django import urls as urlconf
 from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
 
 
 class ExtConverter:
