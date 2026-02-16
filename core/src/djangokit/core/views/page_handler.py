@@ -44,6 +44,7 @@ def make_render(handler):
             request,
             handler.template_name,
             context={
+                "django_settings": settings,
                 "settings": settings.DJANGOKIT,
                 "data": data,
             },

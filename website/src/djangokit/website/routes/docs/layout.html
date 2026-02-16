@@ -1,11 +1,20 @@
 {% extends "layout.html" %}
 
 {% block main %}
+    <style>
+        #docs-nav {
+            border-right-width: 0 !important;
+            border-bottom-width: var(--bs-border-width) !important;
+            @media (min-width: 768px) {
+                border-right-width: var(--bs-border-width) !important;
+                border-bottom-width: 0 !important;
+            }
+        }
+    </style>
+
     <div class="d-flex flex-column flex-md-row flex-fill">
-        <nav class="navbar navbar-expand-md flex-md-column p-3 p-md-4 bg-dark"
-             style="min-width: 192px"
-             aria-label="Docs navigation"
-             data-bs-theme="dark">
+        <nav id="docs-nav" class="navbar navbar-expand-md flex-md-column px-1 py-3 bg-light border-end border-bottom"
+             aria-label="Docs navigation">
 
             <button type="button"
                     class="navbar-toggler d-md-none w-100"
@@ -23,7 +32,7 @@
                     {% for page in data.pages %}
                         <li class="nav-item">
                             <a href="/docs/{{ page.slug|slice:"4:" }}"
-                               class="nav-link text-decoration-underline
+                               class="nav-link lh-1 text-decoration-underline
                                       {% if not page.published %}text-danger text-decoration-line-through{% endif %}">
                                 {{ page.title }}
                             </a>
