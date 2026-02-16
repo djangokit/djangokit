@@ -48,7 +48,7 @@ from django.http import JsonResponse
 
 
 @dataclass
-class Problem(Exception):
+class Problem:
     """Reference: https://datatracker.ietf.org/doc/html/rfc7807"""
 
     status: int
