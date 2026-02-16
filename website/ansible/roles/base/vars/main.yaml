@@ -16,8 +16,6 @@ package_info:
   settings_file: "{{ root }}/{{ settings_file }}"
   public_settings_file: "{{ root }}/settings.public.toml"
   package_dir: "{{ package_dir }}"
-  static_dir: "{{ package_dir }}/static"
-  static_build_dir: "{{ package_dir }}/static/build"
 
 # Build root
 build_root: "{{ root }}/build"

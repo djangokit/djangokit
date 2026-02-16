@@ -24,7 +24,11 @@ class ManifestStaticFilesStorage(Base):
     """
 
     def post_process(self, *args, **kwargs):
-        process = super().post_process(*args, **kwargs)
+        # NOTE: The tuple wrapper ensures super post-processing is done
+        #       before we start removing source files below. This is
+        #       necessary because the super post_process method is a
+        #       generator.
+        process = tuple(super().post_process(*args, **kwargs))
         for name, hashed_name, processed in process:
             yield name, hashed_name, processed
             if processed:

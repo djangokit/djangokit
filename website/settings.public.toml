@@ -1,5 +1,6 @@
 [django]
-STATICFILES_STORAGE = "djangokit.core.static.ManifestStaticFilesStorage"
+STORAGES.default.BACKEND = "django.core.files.storage.FileSystemStorage"
+STORAGES.staticfiles.BACKEND = "djangokit.core.static.ManifestStaticFilesStorage"
 
 [djangokit]
 package = "djangokit.website"

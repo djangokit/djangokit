@@ -143,7 +143,6 @@
     path: "{{ item }}"
     state: absent
   with_items:
-    - "{{ package_info.static_build_dir }}"
     - "{{ static_build_dir }}"
 
 - name: <LOCAL> Collect Django static files
