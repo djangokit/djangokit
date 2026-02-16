@@ -138,7 +138,7 @@ def prepare(
     public_hostname,
     version=None,
     provision_=False,
-    clean_: arg(help="Remove build directory? [no]") = True,
+    clean_: arg(help="Remove build directory? [yes]") = True,
 ):
     """Prepare build locally for deployment."""
     version = version or c.git_version()
@@ -170,7 +170,7 @@ def deploy(
         inverse_short_option="-R",
         help="Run local prep steps? [yes]",
     ) = True,
-    clean_: arg(help="Remove build directory? [no]") = True,
+    clean_: arg(help="Remove build directory? [yes]") = True,
     app: arg(help="Deploy app? [yes]") = True,
     static: arg(help="Deploy static files? [yes]") = True,
 ):
