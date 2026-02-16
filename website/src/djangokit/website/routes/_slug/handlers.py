@@ -23,8 +23,7 @@ class PatchSchema(BaseModel):
         raise ValueError("PATCH of Page requires at least one field")
 
 
-@auth.require_authenticated
-@auth.require_superuser
+@auth.require_staff
 def patch(request, slug):
     page = get_object_or_404(Page, slug=slug)
 

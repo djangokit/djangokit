@@ -14,8 +14,7 @@ def get(_request):
     }
 
 
-@auth.require_authenticated
-@auth.require_superuser
+@auth.require_staff
 def post(request: HttpRequest):
     """Create a todo item."""
     data = request.data

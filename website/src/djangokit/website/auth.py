@@ -7,14 +7,11 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 #       access.
 require_authenticated = login_required
 
-# These decorators will NOT cause a redirect-to-login when the user
-# isn't authenticated. In most cases, you'll probably want to stack
-# require_authenticated on top of one of these, like so:
-#
-#     @auth.require_authenticated
-#     @auth.require_superuser
-#     def view(request):
-#         ...
-#
-require_staff = user_passes_test(lambda u: u.is_staff or u.is_superuser)
-require_superuser = user_passes_test(lambda u: u.is_superuser)
+# These decorators will cause a redirect-to-login when the user isn't
+# authenticated.
+require_staff = user_passes_test(
+    lambda u: user_passes_test(require_authenticated) and (u.is_staff or u.is_superuser)
+)
+require_superuser = user_passes_test(
+    lambda u: user_passes_test(require_authenticated) and u.is_superuser
+)

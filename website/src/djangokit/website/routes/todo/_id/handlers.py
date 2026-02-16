@@ -14,8 +14,7 @@ def get(_request, id):
     return get_object_or_404(TodoItem, id=id)
 
 
-@auth.require_authenticated
-@auth.require_superuser
+@auth.require_staff
 def delete(_request, id):
     item = get_object_or_404(TodoItem, id=id)
     item.delete()
@@ -33,8 +32,7 @@ class PatchSchema(BaseModel):
         raise ValueError("PATCH TodoItem requires at least one field")
 
 
-@auth.require_authenticated
-@auth.require_superuser
+@auth.require_staff
 def patch(request: HttpRequest, id):
     item = get_object_or_404(TodoItem, id=id)
 
