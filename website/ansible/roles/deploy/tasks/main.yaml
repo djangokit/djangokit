@@ -189,7 +189,34 @@
   args:
     chdir: "{{ remote_app_dir }}"
 
-# uWSGI
+# Nginx & uWSGI
+
+- name: Stop Nginx
+  tags:
+    - deploy-app
+    - deploy-nginx
+  become: true
+  service:
+    name: nginx
+    state: stopped
+
+- name: Stop uWSGI
+  tags:
+    - deploy-app
+    - deploy-uwsgi
+  become: true
+  service:
+    name: uwsgi
+    state: stopped
+
+- name: Copy app Nginx config
+  tags:
+    - deploy-app
+    - deploy-nginx
+  become: true
+  template:
+    src: "djangokit.conf.j2"
+    dest: "/etc/nginx/conf.d/{{ public_hostname }}.conf"
 
 - name: Copy uWSGI app config
   tags:
@@ -207,33 +234,7 @@
   become: true
   service:
     name: uwsgi
-    state: restarted
-  async: 1000
-  poll: 0
-  register: uwsgi_restart
-
-- name: Check uWSGI restart
-  tags:
-    - deploy-app
-    - deploy-uwsgi
-  become: true
-  async_status:
-    jid: "{{ uwsgi_restart.ansible_job_id }}"
-  register: job_result
-  until: job_result.finished
-  retries: 6
-  delay: 10
-
-# Nginx
-
-- name: Copy app Nginx config
-  tags:
-    - deploy-app
-    - deploy-nginx
-  become: true
-  template:
-    src: "djangokit.conf.j2"
-    dest: "/etc/nginx/conf.d/{{ public_hostname }}.conf"
+    state: started
 
 - name: Restart Nginx
   tags:
@@ -242,19 +243,4 @@
   become: true
   service:
     name: nginx
-    state: restarted
-  async: 1000
-  poll: 0
-  register: nginx_restart
-
-- name: Check Nginx restart
-  tags:
-    - deploy-app
-    - deploy-nginx
-  become: true
-  async_status:
-    jid: "{{ nginx_restart.ansible_job_id }}"
-  register: job_result
-  until: job_result.finished
-  retries: 6
-  delay: 10
+    state: started
