@@ -6,3 +6,5 @@ echo "-> Renewing cert"
 sudo certbot -q renew
 echo "-> Restarting nginx"
 sudo systemctl start nginx.service
+rm -f last-cert-renewal
+date > last-cert-renewal
