@@ -24,16 +24,18 @@
     {% if request.user.is_superuser %}
         <div class="p-2 d-flex flex-column flex-sm-row align-items-center justify-content-center gap-2 text-bg-light border-start">
             {% if item.completed %}
-                <form method="post" action="/todo/{{ item.id }}?$method=patch" class="m-0">
+                <form method="post" action="/todo/{{ item.id }}" class="m-0">
                     {% csrf_token %}
+                    <input type="hidden" name="$method" value="patch">
                     <input type="hidden" name="completed" value="false">
                     <button type="submit" class="btn btn-sm btn-outline-warning" title="Mark as not completed">
                         <i class="bi bi-check"></i>
                     </button>
                 </form>
             {% else %}
-                <form method="post" action="/todo/{{ item.id }}?$method=patch" class="m-0">
+                <form method="post" action="/todo/{{ item.id }}" class="m-0">
                     {% csrf_token %}
+                    <input type="hidden" name="$method" value="patch">
                     <input type="hidden" name="completed" value="true">
                     <button type="submit" class="btn btn-sm btn-outline-success" title="Mark as completed">
                         <i class="bi bi-check"></i>
@@ -45,8 +47,9 @@
                 </button>
             {% endif %}
 
-            <form method="post" action="/todo/{{ item.id }}?$method=delete" class="m-0">
+            <form method="post" action="/todo/{{ item.id }}" class="m-0">
                 {% csrf_token %}
+                <input type="hidden" name="$method" value="delete">
                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete!">
                     <i class="bi bi-x"></i>
                 </button>

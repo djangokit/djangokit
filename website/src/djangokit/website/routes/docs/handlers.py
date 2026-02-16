@@ -8,7 +8,7 @@ def get(request):
 
     """
     args = {"slug__startswith": "doc-"}
-    fields = ["id", "slug", "title", "published"]
+    fields = ["id", "order", "slug", "title", "published"]
     if not request.user.is_superuser:
         args["published"] = True
     pages = Page.objects.filter(**args).values(*fields)

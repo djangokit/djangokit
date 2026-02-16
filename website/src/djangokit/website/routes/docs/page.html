@@ -21,14 +21,40 @@
                 {% for page in data.pages %}
                     <li class="list-group-item">
                         <div class="d-flex align-items-center justify-content-between gap-4">
-                            <a href="/docs/{{ page.slug|slice:"4:" }}">{{ page.title }}</a>
+                            <div>
+                                <a href="/docs/{{ page.slug|slice:"4:" }}">{{ page.title }}</a>
+                            </div>
 
-                            <a href="/$admin/djangokit_website/page/{{ page.id }}/change"
-                               target="djangokit_admin"
-                               class="btn btn-outline-primary">
-                                <i class="bi bi-pencil"></i>
-                                Edit
-                            </a>
+                            <div class="d-flex flex-column flex-md-row gap-2">
+                                <form method="post" action="/docs/{{ page.id }}/up" class="m-0">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="$method" value="post">
+                                    <button type="submit"
+                                            class="btn btn-outline-primary"
+                                            {% if forloop.first %}disabled{% endif %}
+                                            aria-label="Move up">
+                                        <i class="bi bi-arrow-up fs-4"></i>
+                                    </button>
+                                </form>
+
+                                <form method="post" action="/docs/{{ page.id }}/down" class="m-0">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="$method" value="post">
+                                    <button type="submit"
+                                            class="btn btn-outline-primary"
+                                            {% if forloop.last %}disabled{% endif %}
+                                            aria-label="Move down">
+                                        <i class="bi bi-arrow-down fs-4"></i>
+                                    </button>
+                                </form>
+
+                                <a href="/$admin/djangokit_website/page/{{ page.id }}/change"
+                                   target="djangokit_admin"
+                                   class="btn btn-outline-primary">
+                                    <i class="bi bi-pencil"></i>
+                                    Edit
+                                </a>
+                            </div>
                         </div>
                     </li>
                 {% endfor %}
