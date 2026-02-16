@@ -9,7 +9,7 @@ description = "DjangoKit - a meta-framework for Django"
 global_stylesheets = [
     "lib/bootstrap.css",
     "lib/bootstrap-icons/bootstrap-icons.css",
-    "pygments.css",
+    "lib/pygments.css",
     "global.css",
 ]
 
