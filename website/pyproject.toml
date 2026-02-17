@@ -20,7 +20,7 @@ dependencies = [
     "markdown>=3.10.1",
     "pygments>=2.19.2",
     "pydantic>=2.12.5",
-    "runcommands>=1.0a73.dev0",
+    "runcommands>=1.0a73",
 ]
 
 [dependency-groups]
@@ -35,7 +35,6 @@ dev = [
 [tool.uv.sources]
 org-djangokit-core = { path = "../core", editable = true }
 org-djangokit-cli = { path = "../cli", editable = true }
-runcommands = { path = "../../runcommands" }
 
 [tool.make-release.args]
 test = false
