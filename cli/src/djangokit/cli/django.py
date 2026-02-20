@@ -1,8 +1,10 @@
 """Django commands and utilities."""
 
+import shutil
 import sys
 from fnmatch import fnmatch
 from getpass import getuser
+from pathlib import Path
 from typing import List, Optional
 
 import click
@@ -69,11 +71,38 @@ def dbshell():
 
 
 @app.command()
-def collectstatic(static_root: Optional[str] = None, clear: bool = False):
-    """Collect static files."""
+def collectstatic(
+    static_root: Optional[str] = None,
+    clear: bool = False,
+    no_input: bool = False,
+    ignore: Optional[List[str]] = None,
+):
+    """Collect static files.
+
+    This is a convenience wrapper of the builtin Django `collectstatic`
+    command. To run the builtin Django `collectstatic` command, run
+    `dk manage collectstatic`.
+
+    """
     if static_root is not None:
         settings.STATIC_ROOT = static_root
-    run_django_command(["collectstatic", "--clear" if clear else ""])
+    if clear:
+        # Note that the collectstatic command will only clear files,
+        # potentially leaving behind empty directories, so we remove the
+        # directory and recreate it.
+        path = Path(settings.STATIC_ROOT).absolute()
+        if path.is_dir():
+            state.console.warning(f"Recreating static directory: {path}")
+            shutil.rmtree(path)
+            path.mkdir(parents=True)
+    run_django_command(
+        [
+            "collectstatic",
+            "--clear" if clear else "",
+            "--no-input" if no_input else "",
+            *tuple(("-i", i) for i in ignore),
+        ]
+    )
 
 
 @app.command()
