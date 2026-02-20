@@ -26,7 +26,7 @@ from .utils import (
     params,
 )
 
-app = typer.Typer()
+app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
 
 
 @app.callback(no_args_is_help=True)
