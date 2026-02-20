@@ -18,18 +18,19 @@ class ManifestStaticFilesStorage(Base):
     directory.
 
     During the post-processing phase, this storage system removes the
-    source files that were copied to `STATIC_ROOT` (but keeps source
-    files that weren't post-processed).
+    source files copied to `STATIC_ROOT` (but keeps source files that
+    weren't post-processed).
 
     """
 
     def post_process(self, *args, **kwargs):
-        # NOTE: The tuple wrapper ensures super post-processing is done
-        #       before we start removing source files below. This is
-        #       necessary because the super post_process method is a
-        #       generator.
-        process = tuple(super().post_process(*args, **kwargs))
-        for name, hashed_name, processed in process:
-            yield name, hashed_name, processed
+        # NOTE: Super post-processing needs to be complete before we
+        #       start removing source files.
+        remove = []
+        post_process_gen = super().post_process(*args, **kwargs)
+        for name, hashed_name, processed in post_process_gen:
             if processed:
-                os.remove(self.path(name))
+                remove.append(name)
+            yield name, hashed_name, processed
+        for name in remove:
+            os.remove(self.path(name))
