@@ -5,7 +5,7 @@ import sys
 from fnmatch import fnmatch
 from getpass import getuser
 from pathlib import Path
-from typing import List, Optional
+from typing import Annotated
 
 import click
 import typer
@@ -39,7 +39,7 @@ def manage(args):
 
 
 @app.command()
-def createsuperuser(username: str = getuser(), email: Optional[str] = None):
+def createsuperuser(username: str = getuser(), email: str | None = None):
     """Create Django Admin user"""
     if not email:
         email = f"{username}@example.com"
@@ -70,12 +70,13 @@ def dbshell():
     run_django_command("dbshell")
 
 
-@app.command()
+@app.command(help="Convenience wrapper for builtin Django `collectstatic` command")
 def collectstatic(
-    static_root: Optional[str] = None,
+    static_root: str | None = None,
     clear: bool = False,
     no_input: bool = False,
-    ignore: Optional[List[str]] = None,
+    ignore: Annotated[list[str] | None, typer.Option("-i", "--ignore")] = None,
+    ignore_file: Annotated[Path | None, typer.Option("-f", "--ignore-file")] = None,
 ):
     """Collect static files.
 
@@ -83,7 +84,38 @@ def collectstatic(
     command. To run the builtin Django `collectstatic` command, run
     `dk manage collectstatic`.
 
+    There are two major features this wrapper provides:
+
+    1. Remove STATIC_ROOT directory if `clear` is specified to avoid
+       empty directories being left behind.
+    2. Ignore files and directories using a `.collectstaticignore` file
+       in the current working directory.
+
     """
+    if ignore_file:
+        if not ignore_file.is_file():
+            state.console.error(f"collectstatic ignore file not found: {ignore_file}")
+            raise typer.Abort()
+    else:
+        default_ignore_file = Path.cwd() / ".collectstaticignore"
+        if default_ignore_file.is_file():
+            ignore_file = default_ignore_file
+
+    ignore_patterns = []
+
+    if ignore_file:
+        with ignore_file.open("r") as fp:
+            ignore_patterns.extend(
+                stripped_line
+                for line in fp
+                if (stripped_line := line.strip()) not in ignore_patterns
+            )
+
+    if ignore:
+        ignore_patterns.extend(ignore)
+
+    ignore_options = tuple(("-i", i) for i in ignore_patterns)
+
     if static_root is not None:
         settings.STATIC_ROOT = static_root
     if clear:
@@ -95,12 +127,13 @@ def collectstatic(
             state.console.warning(f"Recreating static directory: {path}")
             shutil.rmtree(path)
             path.mkdir(parents=True)
+
     run_django_command(
         [
             "collectstatic",
             "--clear" if clear else "",
             "--no-input" if no_input else "",
-            *tuple(("-i", i) for i in ignore),
+            ignore_options,
         ]
     )
 
@@ -220,7 +253,7 @@ def add_model(
         ...,
         help='Singular name of model (e.g., post or "user post")',
     ),
-    fields: List[str] = Argument(
+    fields: list[str] | None = Argument(
         None,
         help="Fields to add to the model (e.g., title:str)",
     ),
