@@ -75,7 +75,9 @@ class DjangoKitSettings:
     description: str = "A website made with DjangoKit"
     """Site description (used for `<meta name="description">`)"""
 
-    global_stylesheets: List[str] = field(default_factory=lambda: ["global.css"])
+    global_stylesheets: List[str] = field(
+        default_factory=lambda: ["djangokit/bootstrap.min.css"]
+    )
     """Global stylesheets to be injected into the document `<head>`."""
 
     global_scripts: List[str] = field(default_factory=lambda: [])

@@ -12,4 +12,29 @@
 package = "{{ cookiecutter.package_name }}"
 title = "{{ cookiecutter.project_name }}"
 description = "{{ cookiecutter.description }}"
-global_stylesheets = ["global.css"]
+
+# A list of stylesheets to add to the <head> section of every page.
+#
+# By default, this is set to ["djangokit/bootstrap.min.css"] so that
+# newly created apps will have sense of style.
+#
+# Add your own stylesheets, or set it to an empty list to disable this
+# feature.
+#
+# Note that paths should relevant to your app's static directory and
+# will be loaded using `{% static %}`.
+#
+# You can also use these in a custom layout template to control where
+# global stylesheets are inserted.
+# global_stylesheets = []
+
+# A list of scripts to add to the <body> section of every page.
+#
+# By default, this is set to an empty list, which disables this feature.
+#
+# Note that paths should relevant to your app's static directory and
+# will be loaded using `{% static %}`.
+#
+# You can also use this in a custom layout template to control where
+# global scripts are inserted.
+# global_scripts = []
