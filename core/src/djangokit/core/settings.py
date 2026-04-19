@@ -211,6 +211,7 @@ settings = globals()
 # These settings will always be loaded from environment variables, if
 # the corresponding env vars are set.
 default_django_settings_from_env = {
+    "ENV": "ENV",
     "DEBUG": "DJANGO_DEBUG",
     "SECRET_KEY": "DJANGO_SECRET_KEY",
     "DATABASES": {
