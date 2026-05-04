@@ -101,7 +101,7 @@ def collectstatic(
         if default_ignore_file.is_file():
             ignore_file = default_ignore_file
 
-    ignore_patterns = []
+    ignore_patterns: list[str] = []
 
     if ignore_file:
         with ignore_file.open("r") as fp:

@@ -1,11 +1,10 @@
 import shlex
 import subprocess
-from typing import List, Union
+from typing import Sequence
 
 import typer
 
-Arg = Union[str, List[str]]
-Args = Union[Arg, List[Arg]]
+Args = str | Sequence[str] | Sequence["Args"]
 
 
 def run(args: Args, exit_on_err=True) -> subprocess.CompletedProcess:
@@ -41,21 +40,21 @@ def run_uv_command(args: Args, exit_on_err=True) -> subprocess.CompletedProcess:
     return subprocess_run(args, exit_on_err)
 
 
-def subprocess_run(args: List[str], exit_on_err=True) -> subprocess.CompletedProcess:
+def subprocess_run(args: list[str], exit_on_err=True) -> subprocess.CompletedProcess:
     from ..state import state
 
     state.console.command(">", " ".join(args))
     result = subprocess.run(
         args,
         stdout=subprocess.DEVNULL if state.quiet else None,
-        cwd=state.project_root or state.cwd,
+        cwd=state.project_root,
     )
     if result.returncode and exit_on_err:
         raise typer.Exit(result.returncode)
     return result
 
 
-def process_args(args: Args) -> List[str]:
+def process_args(args: Args) -> list[str]:
     """Process args before passing to `subprocess.run()`.
 
     If a string is passed, it will be split into a list of strings. If
@@ -70,7 +69,7 @@ def process_args(args: Args) -> List[str]:
     return args
 
 
-def flatten_args(args: Args) -> List[str]:
+def flatten_args(args: Args) -> list[str]:
     """Flatten args into a single list of strings.
 
     If an arg is `None`, it will be removed (this is a convenience for

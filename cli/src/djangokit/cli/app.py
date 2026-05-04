@@ -13,18 +13,12 @@ from pathlib import Path
 
 import django
 import typer
-from djangokit.core.conf import load_settings
 from rich.table import Table
-from typer import Context, Option
+from typer import Context, Exit, Option
 
 from . import __version__
 from .state import state
-from .utils import (
-    find_project_root,
-    get_project_settings,
-    get_standalone_settings_file,
-    params,
-)
+from .utils import get_standalone_settings_file, params
 
 app = typer.Typer(
     context_settings={
@@ -41,6 +35,12 @@ def main(
         "-e",
         "--env",
         envvar="ENV",
+    ),
+    project_root: Path | None = Option(
+        None,
+        "-p",
+        "--project-root",
+        help="Project root",
     ),
     settings_module: str = Option(
         state.settings_module,
@@ -59,12 +59,6 @@ def main(
         "-f",
         "--settings-file",
         envvar="DJANGO_SETTINGS_FILE",
-    ),
-    standalone: bool = Option(
-        False,
-        "-s",
-        "--standalone",
-        help="Force standalone mode",
     ),
     quiet: bool = Option(
         state.quiet,
@@ -85,52 +79,37 @@ def main(
     elif env == "prod":
         env = "production"
 
-    cwd = Path.cwd()
-    project_root = find_project_root()
-    project_settings = get_project_settings()
+    try:
+        project_root = state.set_project_root(project_root)
+    except FileNotFoundError as exc:
+        console.err_console.error(exc)
+        raise Exit(1) from None
 
-    if project_root:
-        os.chdir(project_root)
-
-    # If standalone mode wasn't explicitly requested, determine whether
-    # standalone mode should be used.
-    if params.is_default(ctx, "standalone") and not standalone:
-        if project_settings.get("standalone", False):
-            standalone = True
-        elif project_root is None:
-            console.warning("Project root not found; running in standalone mode")
-            standalone = True
-        elif (cwd / "settings.standalone.toml").is_file():
-            console.warning(
-                "Found standalone settings file in CWD; running in standalone mode"
-            )
-            standalone = True
+    if not params.is_default(ctx, "project_root"):
+        try:
+            i = sys.argv.index("-p", 1)
+        except ValueError:
+            i = sys.argv.index("--project-root", 1)
+        sys.argv[i + 1] = str(project_root)
 
     if params.is_default(ctx, "settings_file"):
-        if standalone:
-            settings_file = get_standalone_settings_file(cwd, project_root)
+        if env == "standalone":
+            try:
+                settings_file = get_standalone_settings_file(project_root)
+            except FileNotFoundError as exc:
+                console.error(exc)
+                raise Exit(1) from None
         else:
-            settings_file = Path(f"settings.{env}.toml")
+            settings_file = project_root / f"settings.{env}.toml"
 
-    settings_file = settings_file.absolute()
-    loaded_settings = load_settings(path=settings_file, env=env)
-    dk_settings = loaded_settings.get("djangokit", {"cli": {}})
-    cli_settings = dk_settings.get("cli", {})
+    settings_file = settings_file.resolve()
 
-    # For CLI settings that weren't specified on the command line or as
-    # env vars, see if they were loaded from the settings file.
-
-    def cli_setting(name, value):
-        if params.is_default(ctx, name):
-            if name in cli_settings:
-                return cli_settings[name]
-        return value
-
-    settings_module = cli_setting("settings_module", settings_module)
-    additional_settings_module = cli_setting(
-        "additional_settings_module", additional_settings_module
-    )
-    quiet = cli_setting("quiet", quiet)
+    state.env = env
+    state.settings_module = settings_module
+    state.additional_settings_module = additional_settings_module
+    state.settings_file = settings_file
+    state.quiet = quiet
+    state.console.quiet = quiet
 
     environ["ENV"] = env
     environ["DJANGO_SETTINGS_MODULE"] = settings_module
@@ -138,16 +117,7 @@ def main(
         environ["DJANGO_ADDITIONAL_SETTINGS_MODULE"] = additional_settings_module
     environ["DJANGO_SETTINGS_FILE"] = str(settings_file)
 
-    if quiet:
-        state.console.quiet = True
-
-    state.env = env
-    state.cwd = cwd
-    state.project_root = project_root
-    state.settings_module = settings_module
-    state.additional_settings_module = additional_settings_module
-    state.settings_file = settings_file
-    state.quiet = quiet
+    # Always show DjangoKit CLI info before running command
 
     console.header(f"DjangoKit CLI version {__version__}")
     state_table = Table()
@@ -162,14 +132,11 @@ def main(
     console.print(state_table)
     console.print()
 
-    if state.project_root is not None:
-        path = str(state.project_root / "src")
-        if path not in sys.path:
-            sys.path.insert(0, path)
-
+    os.chdir(state.project_root)
     django.setup()
 
 
 @app.command()
 def info():
     """Show the main CLI configuration"""
+    state.console.print(f"CWD: {Path.cwd()}")

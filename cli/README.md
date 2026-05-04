@@ -15,10 +15,10 @@ To run a Django management command:
 
 ## Configuring the CLI
 
-The DjangoKit CLI can be configured via options passed to the
-`djangokit` base command or settings added to your project's settings
-file(s) in the `[djangokit.cli]` section. Using a settings file is
-useful when you want to change a default permanently.
+The DjangoKit CLI can be configured using command line options or adding
+a `[tool.djangokit.cli]` section to your project's `pyproject.toml`.
+Using the project file is useful when you want to permanently change a
+default value.
 
 - `--env` / `env`: Specify the default environment to run commands in.
 
