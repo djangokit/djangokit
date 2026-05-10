@@ -145,7 +145,7 @@ def create_error_response(
         content = template.render(context, request)
         response_type = STATUS_RESPONSE_MAP.get(status, STATUS_RESPONSE_MAP[500])
         return response_type(content)
-    except Exception:
+    except Exception:  # noqa
         # XXX: Bail out to Django default handler if rendering fails.
         log.exception(
             "Failed to render error template for %s response: %s.",

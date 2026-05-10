@@ -11,6 +11,7 @@ from django.utils.cache import patch_cache_control, patch_vary_headers
 from django.views.decorators.cache import cache_page
 
 from ..http import JsonResponse
+from ..problem import Problem
 
 log = logging.getLogger(__name__)
 
@@ -55,25 +56,29 @@ class Handler:
         cache_control: Any valid cache control directive
         vary_on: Names of headers to vary on (sets the `Vary` header)
 
-    Handler functions can return one of the following:
+    Handler functions can return one of the following types:
 
-    1. A dict or a model instance, which will be converted to a JSON
+    1. None, which will be converted to a 204 No Content response.
+    2. A dict, which will be converted to a JSON response with a 200
+       status code.
+    3. A Django model instance, which will be converted to a JSON
        response with a 200 status code.
-    2. A string, which will be converted to a 200 response with the
+    4. A string, which will be converted to a 200 response with the
        specified body content.
-    3. An HTTP status code (an `int`), which will be converted to an
-       empty response with the specified status code, unless the status
-       code is a redirect status code, in which case a redirect to the
-       current page will be returned.
-    4. A status code *and* a dict or model instance, which will be
-       converted to a JSON response with the specified status code and
-       data.
-    5. A status code *and* a string, which will be converted to a
-       response with the specified status code and body  *or* to a
-       redirect if the status code is a redirect status code
-    6. None, which will be converted to a 204 No Content response.
-    7. A Django response object when more control is needed over the
+    5. A :class:`Problem` instance.
+    6. A Django response object when total control is needed over the
        response.
+    7. An HTTP status code, which will be converted to an empty response
+       with the specified status code. If the status code is a redirect
+       status code, a redirect to the current page will be returned.
+    8. An HTTP status code *and* a dict, which will be converted to a
+       JSON response with the specified status code.
+    9. An HTTP status code *and* a Django model instance, which will be
+       converted to a JSON response with the specified status code.
+    10. An HTTP status code *and* a string, which will be converted to a
+        response with the specified status code and body. If the status
+        code is a redirect status code, a redirect to the specified path
+        will be returned.
 
     If there's no handler corresponding to the request's method, a 405
     response will be returned.
@@ -155,28 +160,47 @@ class Handler:
     def __call__(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         return self.call(request, *args, **kwargs)
 
-    def get_response(self, request: HttpRequest, result) -> HttpResponse:
-        if result is None:
-            return HttpResponse(status=204)
-
-        if isinstance(result, HttpResponse):
-            return result
-
-        if isinstance(result, (dict, models.Model)):
-            return JsonResponse(result)
-
-        if isinstance(result, str):
-            return HttpResponse(result)
+    def get_response(
+        self,
+        request: HttpRequest,
+        result: None
+        | dict
+        | models.Model
+        | str
+        | Problem
+        | HttpResponse
+        | int
+        | tuple[int, dict]
+        | tuple[int, models.Model]
+        | tuple[int, str],
+    ) -> HttpResponse:
+        match result:
+            case None:
+                return HttpResponse(status=204)
+            case dict():
+                return JsonResponse(result)
+            case models.Model():
+                return JsonResponse(result)
+            case str():
+                return HttpResponse(result)
+            case Problem():
+                return result.to_json_response()
+            case HttpResponse():
+                return result
 
         if isinstance(result, int):
             status = result
             if status in REDIRECT_STATUS_CODES:
                 data = request.path
-            elif request.prefers_json:
+            elif getattr(request, "prefers_json", False):
                 data = {}
             else:
                 data = ""
             result = (status, data)
+
+        # At this point, the result must be a tuple containing an HTTP
+        # status code and a dict, model instance, or string. Anything
+        # else will cause a type error.
 
         if isinstance(result, tuple):
             if len(result) != 2:
@@ -189,43 +213,43 @@ class Handler:
 
             if not isinstance(status, int):
                 raise TypeError(
-                    f"Handler returned unexpected HTTP status type {type(status)} "
-                    "(expected int)"
+                    f"Handler returned unexpected HTTP status code type {type(status)} "
+                    f"{status!r} (expected int)."
                 )
-
-            if status in REDIRECT_STATUS_CODES:
-                to = data
-                if not isinstance(to, str):
-                    raise TypeError(
-                        f"Redirect location should be a string; got {to}: {type(to)}."
-                    )
-                permanent = status in PERMANENT_REDIRECT_STATUS_CODES
-                preserve_request = status in PRESERVE_REQUEST_REDIRECT_STATUS_CODES
-                response = redirect(
-                    to,
-                    permanent=permanent,
-                    preserve_request=preserve_request,
-                )
-                # Django doesn't handle 303, so ensure the correct
-                # status is set.
-                response.status_code = status
-                return response
-
-            if isinstance(data, (dict, models.Model)):
-                return JsonResponse(data, status=status)
-
-            if isinstance(data, str):
-                return HttpResponse(data, status=status)
-
+        else:
             raise TypeError(
-                f"Handler returned unexpected data type {type(data)} "
-                "(expected dict, Model, or str)"
+                f"Handler returned unexpected object of type {type(result)}: "
+                f"{result!r}."
             )
 
+        if status in REDIRECT_STATUS_CODES:
+            to = data
+            if not isinstance(to, str):
+                raise TypeError(
+                    f"Redirect location must be a string; got {type(to)}: {to!r}."
+                )
+            permanent = status in PERMANENT_REDIRECT_STATUS_CODES
+            preserve_request = status in PRESERVE_REQUEST_REDIRECT_STATUS_CODES
+            response = redirect(
+                to,
+                permanent=permanent,
+                preserve_request=preserve_request,
+            )
+            # Django doesn't handle 303, so ensure the correct status is
+            # set.
+            response.status_code = status
+            return response
+
+        match data:
+            case dict():
+                return JsonResponse(data, status=status)
+            case models.Model():
+                return JsonResponse(data, status=status)
+            case str():
+                return HttpResponse(data, status=status)
+
         raise TypeError(
-            f"Handler returned unexpected object of type {type(result)}: {result!r}. "
-            "Expected dict, Model, int, Tuple[int, dict], Tuple[int, Model], None or "
-            "HttpResponse)."
+            f"Handler returned unexpected data of type {type(data)}: {data!r}."
         )
 
     def apply_cache_config(self, request: HttpRequest, response: HttpResponse):
