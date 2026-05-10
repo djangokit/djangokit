@@ -52,14 +52,14 @@ class State:
         if "project_root" in settings:
             raise ValueError(f"Project root cannot be set via settings in {root}")
 
-        state = State(**settings)
+        project_state = State(**settings)
 
-        self.env = state.env
-        self.settings_module = state.settings_module
-        self.additional_settings_module = state.additional_settings_module
-        self.settings_file = state.settings_file
-        self.quiet = state.quiet
-        self.console.quiet = state.quiet
+        self.env = project_state.env
+        self.settings_module = project_state.settings_module
+        self.additional_settings_module = project_state.additional_settings_module
+        self.settings_file = project_state.settings_file
+        self.quiet = project_state.quiet
+        self.console.quiet = project_state.quiet
 
         return self.project_root
 

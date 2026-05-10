@@ -29,9 +29,6 @@ dev = [
     "types-toml>=0.10.8.20240310"
 ]
 
-[tool.djangokit.cli]
-standalone = true
-
 [tool.make-release.args]
 test-command = "make test"
 target-branch = "core-release"

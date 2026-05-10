@@ -19,8 +19,7 @@ pipx install org-djangokit-cli
 # Or pip
 pip install --user org-djangokit-cli
 
-# NOTE: Make sure to include the -s (standalone) flag.
-dk -s create-project <name>
+dk create-project <name>
 ```
 
 Follow the prompts and then see the README file in your newly-created
