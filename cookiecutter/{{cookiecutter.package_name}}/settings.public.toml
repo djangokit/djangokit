@@ -22,7 +22,7 @@ description = "{{ cookiecutter.description }}"
 # feature.
 #
 # Note that paths should relevant to your app's static directory and
-# will be loaded using `{% static %}`.
+# will be loaded using Django's `static` template tag.
 #
 # You can also use these in a custom layout template to control where
 # global stylesheets are inserted.
@@ -33,7 +33,7 @@ description = "{{ cookiecutter.description }}"
 # By default, this is set to an empty list, which disables this feature.
 #
 # Note that paths should relevant to your app's static directory and
-# will be loaded using `{% static %}`.
+# will be loaded using Django's `static` template tag.
 #
 # You can also use this in a custom layout template to control where
 # global scripts are inserted.
