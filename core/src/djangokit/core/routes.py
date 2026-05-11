@@ -49,7 +49,8 @@ def discover_routes() -> list:
 
         if node.page_template:
             added_patterns.add(pattern)
-            urls.append(urlconf.path(pattern, view, {"__subpath__": ""}))
+            name = get_pattern_name(pattern)
+            urls.append(urlconf.path(pattern, view, {"__subpath__": ""}, name=name))
 
         for method, method_handlers in handlers.items():
             for subpath, handler in method_handlers.items():
@@ -66,16 +67,35 @@ def discover_routes() -> list:
 
                 if subpattern not in added_patterns:
                     added_patterns.add(subpattern)
-                    urls.append(urlconf.path(subpattern, view, view_kwargs))
+                    name = get_pattern_name(subpattern)
+                    urls.append(urlconf.path(subpattern, view, view_kwargs, name=name))
 
                 ext_subpattern = f"{subpattern}.<__ext__:__ext__>"
                 if ext_subpattern not in added_patterns:
                     added_patterns.add(ext_subpattern)
                     sig = signature(handler.impl)
                     if any(name == "__ext__" for name in sig.parameters):
-                        urls.append(urlconf.path(ext_subpattern, view, view_kwargs))
+                        name = get_pattern_name(ext_subpattern)
+                        urls.append(
+                            urlconf.path(ext_subpattern, view, view_kwargs, name=name)
+                        )
 
     return urls
+
+
+def get_pattern_name(pattern):
+    if pattern == "":
+        return "home"
+    name_parts = pattern.split("/")
+    for i, part in enumerate(name_parts):
+        if part.startswith("<") and part.endswith(">"):
+            spec = part[1:-1]  # <type:name>
+            part_name = spec.split(":", 1)[-1]
+            if part_name == "__ext__":
+                part_name = "ext"
+            name_parts[i] = part_name
+    name = "-".join(name_parts)
+    return name
 
 
 @lru_cache(maxsize=None)

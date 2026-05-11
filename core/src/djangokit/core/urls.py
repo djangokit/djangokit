@@ -14,7 +14,7 @@ urlpatterns = [
     # Django Admin
     path(f"{prefix}{admin_prefix}", admin.site.urls),
     # Current user
-    path(f"{prefix}{current_user_path}", user.get_current_user),
+    path(f"{prefix}{current_user_path}", user.get_current_user, name="$current-user"),
     # Routes
     path(prefix, include(discover_routes())),
 ]

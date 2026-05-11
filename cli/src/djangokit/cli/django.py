@@ -14,6 +14,7 @@ from django.core.management import execute_from_command_line
 from django.template import Context, Template
 from django.urls import URLPattern, URLResolver, get_resolver
 from rich.pretty import pretty_repr
+from rich.table import Table
 from typer import Abort, Argument, Option
 
 from .app import app
@@ -218,6 +219,9 @@ def show_urls(include_admin: bool = False):
 
     """
 
+    exclude_admin = not include_admin
+    admin_prefix = rf"^/{settings.DJANGOKIT.admin_prefix}"
+
     def get_patterns(obj, ancestors=()):
         patterns = []
         if isinstance(obj, list):
@@ -229,22 +233,26 @@ def show_urls(include_admin: bool = False):
                 patterns.extend(get_patterns(item, ancestors))
         elif isinstance(obj, URLPattern):
             prefix = "".join(str(segment) for segment in ancestors)
-            patterns.append(f"{prefix}{obj.pattern}")
+            if exclude_admin and prefix.startswith(admin_prefix):
+                return patterns
+            pattern = f"{prefix}{obj.pattern}"
+            name = obj.name
+            patterns.append((pattern, name))
         else:
             raise TypeError(f"Unexpected object of type {type(obj)}: {obj}")
         return patterns
 
-    console = state.console
     resolver = get_resolver()
-    url_patterns = get_patterns(resolver)
-    prefix = rf"^/{settings.DJANGOKIT.admin_prefix}"
+    all_patterns = get_patterns(resolver)
 
-    if not include_admin:
-        url_patterns = (p for p in url_patterns if not p.startswith(prefix))
+    table = Table()
+    table.add_column("path")
+    table.add_column("name")
+    for pattern, name in all_patterns:
+        table.add_row(pattern, name)
 
-    console.header("Django URL patterns in order of precedence:")
-    for pattern in url_patterns:
-        console.print(pattern)
+    state.console.header("Django URL patterns in order of precedence:")
+    state.console.print(table)
 
 
 @app.command()
