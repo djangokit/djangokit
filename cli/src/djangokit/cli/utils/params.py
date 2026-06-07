@@ -5,26 +5,31 @@ from typer import BadParameter, CallbackParam, Context
 from typer._click.core import ParameterSource
 
 
-def _is_same_source(a: ParameterSource | None, b: ParameterSource):
-    if a is None:
+@lru_cache
+def _get_param_names(ctx: Context, command):
+    params = command.get_params(ctx)
+    return [param.name for param in params]
+
+
+def _param_has_source(ctx: Context, param_name: str, source: ParameterSource):
+    command = ctx.command
+    param_names = _get_param_names(ctx, command)
+    if param_name not in param_names:
+        raise KeyError(f"Unknown parameter for command {command.name}: {param_name}")
+    param_source = ctx.get_parameter_source(param_name)
+    if param_source is None:
         return False
-    return a == b
+    return param_source == source
 
 
-def is_default(ctx: Context, name: str) -> bool:
+def has_default_value(ctx: Context, name: str) -> bool:
     """Did the param value come from the default source?"""
-    if name not in ctx.params:
-        raise KeyError(f"Unknown parameter for command {ctx.command.name}: {name}")
-    source = ctx.get_parameter_source(name)
-    return _is_same_source(source, ParameterSource.DEFAULT)
+    return _param_has_source(ctx, name, ParameterSource.DEFAULT)
 
 
-def is_env(ctx: Context, name: str) -> bool:
+def has_env_value(ctx: Context, name: str) -> bool:
     """Did the param value come from an env var?"""
-    if name not in ctx.params:
-        raise KeyError(f"Unknown parameter for command {ctx.command.name}: {name}")
-    source = ctx.get_parameter_source(name)
-    return _is_same_source(source, ParameterSource.ENVIRONMENT)
+    return _param_has_source(ctx, name, ParameterSource.ENVIRONMENT)
 
 
 @lru_cache(maxsize=None)
@@ -62,12 +67,10 @@ def exclusive(group_name: str) -> Callable[[Context, CallbackParam, Any], Any]:
     def callback(ctx: Context, param: CallbackParam, value: Any) -> Any:
         name = param.name
 
-        if name is not None:
-            source = ctx.get_parameter_source(name)
-        else:
-            return value
+        if name is None:
+            raise BadParameter("mutually exclusive option unexpectedly has no name")
 
-        if _is_same_source(source, ParameterSource.ENVIRONMENT):
+        if has_default_value(ctx, name):
             return value
 
         explicit_group_params.append(param)

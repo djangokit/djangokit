@@ -85,14 +85,14 @@ def main(
         console.err_console.error(exc)
         raise Exit(1) from None
 
-    if not params.is_default(ctx, "project_root"):
+    if not params.has_default_value(ctx, "project_root"):
         try:
             i = sys.argv.index("-p", 1)
         except ValueError:
             i = sys.argv.index("--project-root", 1)
         sys.argv[i + 1] = str(project_root)
 
-    if params.is_default(ctx, "settings_file"):
+    if params.has_default_value(ctx, "settings_file"):
         if env == "standalone":
             try:
                 settings_file = get_standalone_settings_file(project_root)
