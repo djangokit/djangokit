@@ -7,7 +7,6 @@ from getpass import getuser
 from pathlib import Path
 from typing import Annotated
 
-import click
 import typer
 from django.conf import settings
 from django.core.management import execute_from_command_line
@@ -22,12 +21,14 @@ from .state import state
 from .utils.run import Args, process_args
 
 
-@click.command(
+@app.command(
     add_help_option=False,
-    context_settings={"ignore_unknown_options": True},
+    context_settings={
+        "allow_extra_args": True,
+        "ignore_unknown_options": True,
+    },
 )
-@click.argument("args", nargs=-1, type=click.UNPROCESSED)
-def manage(args):
+def manage(ctx: typer.Context):
     """Run a Django management command
 
     This command passes any & all args & options to `django-admin`,
@@ -36,7 +37,7 @@ def manage(args):
     commands.
 
     """
-    run_django_command(args)
+    run_django_command(ctx.args)
 
 
 @app.command()

@@ -2,14 +2,10 @@
 
 from importlib import import_module
 from pathlib import Path
-from typing import Any
 
-import typer
+from .app import app
 
-from .app import app as typer_app
-from .django import manage
-
-# Import all module to register commands
+# Import all modules to register commands
 root = Path(__file__).parent
 files = root.glob("**/*.py")
 for file in files:
@@ -22,10 +18,6 @@ for file in files:
     import_path = import_path.replace("/", ".")
     import_path = f".{import_path}"
     import_module(import_path, package="djangokit.cli")
-
-
-app: Any = typer.main.get_command(typer_app)
-app.add_command(manage, "manage")
 
 if __name__ == "__main__":
     app()

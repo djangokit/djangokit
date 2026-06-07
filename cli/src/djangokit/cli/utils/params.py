@@ -1,8 +1,8 @@
 from functools import lru_cache
 from typing import Any, Callable
 
-from click.core import ParameterSource
 from typer import BadParameter, CallbackParam, Context
+from typer._click.core import ParameterSource
 
 
 def _is_same_source(a: ParameterSource | None, b: ParameterSource):
