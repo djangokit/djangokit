@@ -5,12 +5,18 @@ from click.core import ParameterSource
 from typer import BadParameter, CallbackParam, Context
 
 
+def _is_same_source(a: ParameterSource | None, b: ParameterSource):
+    if a is None:
+        return False
+    return a == b
+
+
 def is_default(ctx: Context, name: str) -> bool:
     """Did the param value come from the default source?"""
     if name not in ctx.params:
         raise KeyError(f"Unknown parameter for command {ctx.command.name}: {name}")
     source = ctx.get_parameter_source(name)
-    return source == ParameterSource.DEFAULT
+    return _is_same_source(source, ParameterSource.DEFAULT)
 
 
 def is_env(ctx: Context, name: str) -> bool:
@@ -18,7 +24,7 @@ def is_env(ctx: Context, name: str) -> bool:
     if name not in ctx.params:
         raise KeyError(f"Unknown parameter for command {ctx.command.name}: {name}")
     source = ctx.get_parameter_source(name)
-    return source == ParameterSource.ENVIRONMENT
+    return _is_same_source(source, ParameterSource.ENVIRONMENT)
 
 
 @lru_cache(maxsize=None)
@@ -61,7 +67,7 @@ def exclusive(group_name: str) -> Callable[[Context, CallbackParam, Any], Any]:
         else:
             return value
 
-        if source == ParameterSource.DEFAULT:
+        if _is_same_source(source, ParameterSource.ENVIRONMENT):
             return value
 
         explicit_group_params.append(param)
