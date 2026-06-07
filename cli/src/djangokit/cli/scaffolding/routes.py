@@ -10,7 +10,7 @@ from ..state import state
 from ..utils import exclusive
 
 LAYOUT_TEMPLATE = """\
-{% extends "app.html" %}
+{% extends "${layout_path}" %}
 
 {% block layout %}
     <a href="#main" class="visually-hidden-focusable">Skip to main content</a>
@@ -32,7 +32,7 @@ LAYOUT_TEMPLATE = """\
 """
 
 PAGE_TEMPLATE = """\
-{% extends "layout.html" %}
+{% extends "${layout_path}" %}
 
 {% block main %}
     <div class="p-3">
@@ -42,7 +42,7 @@ PAGE_TEMPLATE = """\
 """
 
 NESTED_LAYOUT_TEMPLATE = """\
-{% extends "layout.html" %}
+{% extends "${layout_path}" %}
 
 {% block main %}
     {% block outlet %}
@@ -52,7 +52,7 @@ NESTED_LAYOUT_TEMPLATE = """\
 """
 
 NESTED_PAGE_TEMPLATE = """\
-{% extends "./layout.html" %}
+{% extends "${layout_path}" %}
 
 {% block outlet %}
     NESTED PAGE CONTENT (${name}})
@@ -62,7 +62,7 @@ NESTED_PAGE_TEMPLATE = """\
 HANDLERS_TEMPLATE = """\
 from django.shortcuts import get_object_or_404
 
-# from ..models import Model
+from .. import models
 
 def get(request):
     return {
@@ -115,9 +115,6 @@ def add_page(
     rel_route_dir = route_dir.relative_to(routes_dir.parent)
     rel_path = page_path.relative_to(routes_dir.parent)
 
-    write_layout = True
-    write_page = True
-
     console.header(f"Creating page at {rel_route_dir}")
 
     # Create route directory for page
@@ -125,15 +122,22 @@ def add_page(
         console.info(f"Creating route directory for page: {rel_route_dir}")
         route_dir.mkdir(parents=True)
 
-    # Create layout for page, if requested
+    write_layout = True
+    write_page = True
+
+    # Create layout for page if requested.
     if with_layout or with_nested_layout:
+        page_layout_path = "./layout.html"
+
         if with_layout:
             nested = " "
             layout_template = LAYOUT_TEMPLATE
+            layout_layout_path = get_app_layout_path(routes_dir)
             page_template = PAGE_TEMPLATE
         else:
             nested = " nested "
             layout_template = NESTED_LAYOUT_TEMPLATE
+            layout_layout_path = get_parent_layout_path(routes_dir, route_dir)
             page_template = NESTED_PAGE_TEMPLATE
 
         rel_layout_path = layout_path.relative_to(routes_dir.parent)
@@ -149,9 +153,14 @@ def add_page(
             console.info(f"Creating{nested}layout: {rel_layout_path}")
 
         if write_layout:
-            write_template(layout_template, layout_path)
+            write_template(
+                layout_template,
+                layout_path,
+                layout_path=layout_layout_path,
+            )
     else:
         page_template = PAGE_TEMPLATE
+        page_layout_path = get_parent_layout_path(routes_dir, route_dir)
 
     # Create page
     if page_path.exists():
@@ -163,13 +172,62 @@ def add_page(
         console.info(f"Creating page: {rel_path}")
 
     if write_page:
-        write_template(page_template, page_path, name=name)
+        write_template(
+            page_template,
+            page_path,
+            name=name,
+            layout_path=page_layout_path,
+        )
 
     # Create handler module, if requested
     if with_handlers:
         add_handler(path, overwrite)
 
     console.success("Done")
+
+
+def get_app_layout_path(routes_dir: Path):
+    """Find the app.html file.
+
+    If the app doesn't have its own app.html, DjangoKit's default
+    app.html is used.
+
+    This used as the layout for the following:
+
+    - A non-nested layout.
+    - A nested layout if no parent layout exists.
+    - A page that doesn't have its own layout if no parent layout exists.
+
+    """
+    if (routes_dir / "app.html").is_file():
+        return "app.html"
+    return "djangokit/app.html"
+
+
+def get_parent_layout_path(routes_dir: Path, route_dir: Path):
+    """Find the route's parent layout path.
+
+    If no parent layout is found, the app's app.html is used. If the
+    app doesn't have its own app.html, DjangoKit's default app.html is
+    used.
+
+    This used as the layout for the following:
+
+    - A nested layout.
+    - A page that doesn't have its own layout.
+
+    """
+    parent = route_dir.parent
+    while parent != routes_dir.parent:
+        maybe_parent_layout = parent / "layout.html"
+        if maybe_parent_layout.is_file():
+            rel_path = maybe_parent_layout.relative_to(routes_dir)
+            parts = rel_path.parts
+            new_parts = [".."] * len(parts)
+            new_parts[-1] = parts[-1]
+            return "/".join(new_parts)
+        parent = parent.parent
+    return get_app_layout_path(routes_dir)
 
 
 @app.command()
