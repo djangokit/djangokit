@@ -9,8 +9,8 @@ def get(_request):
     """Get all todo items."""
     items: list[TodoItem] = TodoItem.objects.all().order_by("created")
     return {
-        "todo": [item.serialize() for item in items if not item.completed],
-        "completed": [item.serialize() for item in items if item.completed],
+        "todo": [item.to_json_value() for item in items if not item.completed],
+        "completed": [item.to_json_value() for item in items if item.completed],
     }
 
 

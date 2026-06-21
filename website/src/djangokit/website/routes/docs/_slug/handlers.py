@@ -15,7 +15,7 @@ def get(request: HttpRequest, slug: str):
     pages = index_handlers.get(request)
     return {
         **pages,
-        "page": page.serialize(),
+        "page": page.to_json_value(),
     }
 
 

@@ -7,6 +7,6 @@ def get(request, slug):
         kwargs["published__isnull"] = False
     try:
         post: BlogPost = BlogPost.objects.select_related("author").get(**kwargs)
-        return post.serialize()
+        return post.to_json_value()
     except BlogPost.DoesNotExist:
         return 404, f"Blog post not found: {slug}"

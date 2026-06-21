@@ -6,4 +6,4 @@ def get(request):
     if not request.user.is_superuser:
         posts = posts.filter(published__isnull=False)
     posts = posts.order_by("published")
-    return {"posts": [p.serialize() for p in posts]}
+    return {"posts": [p.to_json_value() for p in posts]}

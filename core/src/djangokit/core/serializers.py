@@ -1,49 +1,42 @@
 import json
 from functools import partial
+from typing import Any, Protocol, runtime_checkable
 
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.forms import model_to_dict
 
 
+@runtime_checkable
+class JsonSerializable(Protocol):
+    """Protocol for types that can be serialized as JSON."""
+
+    def to_json_value(self) -> Any:
+        """Convert object to a value that can be serialized as JSON."""
+        ...
+
+
 class JsonEncoder(DjangoJSONEncoder):
-    """A JSON encoder that can handle model instances.
+    """JSON encoder that handles additional types.
 
-    Model instances can define a `serialize` method that will be called
-    with no arguments and should return something that can be encoded by
-    the standard JSON encoder.
+    In addition to the types handled by the standard library and Django
+    JSON encoders, this encoder adds support for the following:
 
-    If the model doesn't have a `serialize` method, we fall back to
-    Django's `model_to_dict` utility.
-
-    This allows route handlers to return model instances that can be
-    automatically serialized to JSON.
+    - Any type that implements the :class:`JsonSerializable` protocol.
+    - Model instances that don't implement the :class:`JsonSerializable`
+      protocol will be serialized with Django's `model_to_dict` utility.
+    - Django queryset. A queryset will be materialized as a tuple.
 
     """
 
     def default(self, o):
-        if isinstance(o, models.QuerySet):
-            return tuple(o)
-        if isinstance(o, models.Model):
-            if hasattr(o, "serialize"):
-                try:
-                    return o.serialize()
-                except Exception as exc:
-                    # NOTE: The default method can apparently only raise
-                    #       ValueErrors. Any other exception type will
-                    #       cause the dev server to shut down with no
-                    #       indication of what went wrong.
-                    model_class = o.__class__
-                    class_name = f"{model_class.__module__}.{model_class.__name__}"
-                    exc_class = exc.__class__
-                    exc_class_name = f"{exc_class.__module__}.{exc_class.__qualname__}"
-                    exc_str = " ".join(str(exc).split())
-                    raise ValueError(
-                        "Model serialization failed when calling "
-                        f"{class_name}.serialize(). Original exception: "
-                        f"{exc_class_name}: {exc_str}"
-                    ) from None
-            return model_to_dict(o)
+        match o:
+            case JsonSerializable():
+                return o.to_json_value()
+            case models.Model():
+                return model_to_dict(o)
+            case models.QuerySet():
+                return tuple(o)
         return super().default(o)
 
 

@@ -22,7 +22,7 @@ class Page(models.Model):
         db_table = "page"
         ordering = ["order", "title"]
 
-    serialize = lambda self: PageSchema.model_validate(self).model_dump()
+    to_json_value = lambda self: PageSchema.model_validate(self).model_dump()
 
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255)
