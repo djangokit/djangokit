@@ -20,13 +20,13 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "mypy>=1.19.1",
-    "pytest>=9.0.2",
-    "pytest-cov>=7.0.0",
-    "pytest-django>=4.11.1",
-    "ruff>=0.15.0",
-    "tox>=4.34.1",
-    "types-toml>=0.10.8.20240310"
+    "mypy>=2.1.0",
+    "pytest>=9.1.0",
+    "pytest-cov>=7.1.0",
+    "pytest-django>=4.12.0",
+    "ruff>=0.15.17",
+    "tox>=4.55.1",
+    "types-toml>=0.10.8.20260518"
 ]
 
 [tool.make-release.args]

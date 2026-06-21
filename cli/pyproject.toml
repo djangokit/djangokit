@@ -15,17 +15,17 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "org-djangokit-core>=0.0.4",
-    "cookiecutter>=2.6.0",
+    "cookiecutter>=2.7.1",
     "typer>=0.26.7",
     "watchdog>=6.0.0",
-    "types-toml>=0.10.8.20240310",
+    "types-toml>=0.10.8.20260518",
 ]
 
 [dependency-groups]
 dev = [
     "org-djangokit-core",
-    "mypy>=1.19.1",
-    "ruff>=0.15.0",
+    "mypy>=2.1.0",
+    "ruff>=0.15.17",
 ]
 
 [project.scripts]

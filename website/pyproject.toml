@@ -16,10 +16,10 @@ requires-python = ">=3.12"
 dependencies = [
     "org-djangokit-core>=0.0.5.dev0",
     "org-djangokit-cli>=0.0.8.dev0",
-    "Django>=6.0.2",
-    "markdown>=3.10.1",
-    "pygments>=2.19.2",
-    "pydantic>=2.12.5",
+    "Django>=6.0.6",
+    "markdown>=3.10.2",
+    "pygments>=2.20.0",
+    "pydantic>=2.13.4",
     "runcommands>=1.0a73",
 ]
 
@@ -27,9 +27,9 @@ dependencies = [
 dev = [
     "org-djangokit-core",
     "org-djangokit-cli",
-    "ansible>=13.3.0",
-    "mypy>=1.19.1",
-    "ruff>=0.15.0",
+    "ansible>=14.0.0",
+    "mypy>=2.1.0",
+    "ruff>=0.15.17",
 ]
 
 [tool.uv.sources]
