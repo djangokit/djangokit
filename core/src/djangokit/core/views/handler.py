@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Callable, Optional, Sequence
+from typing import Any, Callable, Optional, Sequence, Union
 
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
@@ -16,6 +16,22 @@ from ..problem import Problem
 log = logging.getLogger(__name__)
 
 Impl = Callable
+"""A handler's implementation method."""
+
+
+Result = Union[
+    None,
+    dict,
+    models.Model,
+    str,
+    Problem,
+    HttpResponse,
+    int,
+    tuple[int, dict],
+    tuple[int, models.Model],
+    tuple[int, str],
+]
+"""The result of calling a handler implementation."""
 
 REDIRECT_STATUS_CODES = (
     HTTPStatus.MOVED_PERMANENTLY,  # 301
@@ -160,67 +176,11 @@ class Handler:
     def __call__(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         return self.call(request, *args, **kwargs)
 
-    def get_response(
-        self,
-        request: HttpRequest,
-        result: None
-        | dict
-        | models.Model
-        | str
-        | Problem
-        | HttpResponse
-        | int
-        | tuple[int, dict]
-        | tuple[int, models.Model]
-        | tuple[int, str],
-    ) -> HttpResponse:
-        match result:
-            case None:
-                return HttpResponse(status=204)
-            case dict():
-                return JsonResponse(result)
-            case models.Model():
-                return JsonResponse(result)
-            case str():
-                return HttpResponse(result)
-            case Problem():
-                return result.to_json_response()
-            case HttpResponse():
-                return result
+    def get_response(self, request: HttpRequest, result: Result) -> HttpResponse:
+        if isinstance(result, HttpResponse):
+            return result
 
-        if isinstance(result, int):
-            status = result
-            if status in REDIRECT_STATUS_CODES:
-                data = request.path
-            elif getattr(request, "prefers_json", False):
-                data = {}
-            else:
-                data = ""
-            result = (status, data)
-
-        # At this point, the result must be a tuple containing an HTTP
-        # status code and a dict, model instance, or string. Anything
-        # else will cause a type error.
-
-        if isinstance(result, tuple):
-            if len(result) != 2:
-                raise TypeError(
-                    f"Handler returned tuple with {len(result)} item(s): {result!r}. "
-                    "(expected 2)."
-                )
-
-            status, data = result
-
-            if not isinstance(status, int):
-                raise TypeError(
-                    f"Handler returned unexpected HTTP status code type {type(status)} "
-                    f"{status!r} (expected int)."
-                )
-        else:
-            raise TypeError(
-                f"Handler returned unexpected object of type {type(result)}: "
-                f"{result!r}."
-            )
+        status, data = self.get_status_and_data_for_result(request, result)
 
         if status in REDIRECT_STATUS_CODES:
             to = data
@@ -241,15 +201,68 @@ class Handler:
             return response
 
         match data:
+            case None:
+                return HttpResponse(status=204)
             case dict():
                 return JsonResponse(data, status=status)
             case models.Model():
                 return JsonResponse(data, status=status)
             case str():
                 return HttpResponse(data, status=status)
+            case Problem():
+                return JsonResponse(data, status=status)
 
         raise TypeError(
             f"Handler returned unexpected data of type {type(data)}: {data!r}."
+        )
+
+    def get_status_and_data_for_result(
+        self,
+        request: HttpRequest,
+        result: Result,
+    ) -> tuple[int, Any]:
+        """Get the status and data for a handler result."""
+        match result:
+            case None:
+                return 204, None
+            case int() if result in REDIRECT_STATUS_CODES:
+                return result, request.path
+            case int():
+                prefers_json = getattr(request, "prefers_json", False)
+                data = {} if prefers_json else ""
+                return result, data
+            case dict():
+                return 200, result
+            case models.Model():
+                return 200, result
+            case str():
+                return 200, result
+            case Problem():
+                return result.status, result
+
+        # At this point, the result must be a tuple containing an HTTP
+        # status code and a dict, model instance, or string. Anything
+        # else will cause a type error.
+
+        if isinstance(result, tuple):
+            if len(result) != 2:
+                raise TypeError(
+                    f"Handler returned tuple with {len(result)} item(s): {result!r}. "
+                    "(expected 2)."
+                )
+
+            status, data = result
+
+            if not isinstance(status, int):
+                raise TypeError(
+                    f"Handler returned unexpected HTTP status code type {type(status)} "
+                    f"{status!r} (expected int)."
+                )
+
+            return status, data
+
+        raise TypeError(
+            f"Handler returned unexpected object of type {type(result)}: {result!r}."
         )
 
     def apply_cache_config(self, request: HttpRequest, response: HttpResponse):
