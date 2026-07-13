@@ -145,7 +145,6 @@
   tags:
     - deploy-static
   become: true
-  become_user: "{{ site_user }}"
   file:
     path: "{{ remote_static_dir }}"
     state: directory

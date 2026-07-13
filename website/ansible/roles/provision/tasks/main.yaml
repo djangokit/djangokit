@@ -17,7 +17,6 @@
   apt:
     name: "*"
     state: latest
-    force_apt_get: true
 
 - name: Install packages
   tags:
@@ -25,11 +24,12 @@
   apt:
     name: "{{ item }}"
     state: latest
-    force_apt_get: true
   with_items:
     - acl
+    - certbot
     - fail2ban
     - iptables-persistent
+    - nginx
     - openssl
     - python3
     - python3-venv
@@ -73,14 +73,6 @@
     name: nginx
     state: stopped
 
-- name: Install certbot
-  tags:
-    - provision-ssl
-  apt:
-    name: certbot
-    state: latest
-    force_apt_get: true
-
 - name: Create cert
   tags:
     - provision-ssl
@@ -111,14 +103,6 @@
     select_crypto_backend: openssl
 
 # Nginx
-
-- name: Install Nginx
-  tags:
-    - provision-nginx
-  apt:
-    name: nginx
-    state: latest
-    force_apt_get: true
 
 - name: Remove unused Nginx config
   tags:
@@ -153,3 +137,11 @@
     name: "{{ site_user }}"
     home: "{{ remote_site_root }}"
     shell: /bin/bash
+
+- name: Set permissions of application home directory
+  tags:
+    - provision-site
+  become: true
+  file:
+    path: "{{ remote_site_root }}"
+    mode: u=rwx,g=rx,o=rx

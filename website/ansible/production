@@ -1,5 +1,5 @@
 [web]
-app-1.wyattbaldwin.com
+app-2.wyattbaldwin.com
 
 [web:vars]
 ansible_python_interpreter=/usr/bin/python3
