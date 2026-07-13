@@ -13,7 +13,7 @@
 - Builtin support for configuration using environment variables
 - Tooling to create models, routes, etc
 - Full power of Django available
-- Supports Python 3.10+
+- Supports Python 3.11+
 - Supports Node 22+
 - Supports Django 4, 5, and 6 (latest point release of each)
 

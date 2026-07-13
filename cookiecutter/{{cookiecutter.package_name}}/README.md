@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Install the version of Python you want to use. Versions 3.10 and up
+- Install the version of Python you want to use. Versions 3.11 and up
   are supported.
 
 - Install `uv`.
