@@ -34,6 +34,7 @@
     - python3
     - python3-venv
     - rsync
+    - sqlite3
     - uwsgi
     - uwsgi-plugin-python3
 

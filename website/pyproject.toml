@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build>=0.10.2,<0.11.0"]
+requires = ["uv_build>=0.12.7,<0.13.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
@@ -16,25 +16,26 @@ requires-python = ">=3.14"
 dependencies = [
     "org-djangokit-core>=0.0.5.dev0",
     "org-djangokit-cli>=0.0.8.dev0",
-    "Django>=6.0.6",
-    "markdown>=3.10.2",
-    "pygments>=2.20.0",
+    "Django>=6.1",
+    "markdown>=3.10.3",
+    "pygments>=2.21.0",
     "pydantic>=2.13.4",
-    "runcommands>=1.0a73",
+    "runcommands>=1.0a74.dev0",
 ]
 
 [dependency-groups]
 dev = [
     "org-djangokit-core",
     "org-djangokit-cli",
-    "ansible>=14.1.0",
-    "mypy>=2.1.0",
-    "ruff>=0.15.20",
+    "ansible>=14.3.1",
+    "mypy>=2.3.1",
+    "ruff>=0.16.4",
 ]
 
 [tool.uv.sources]
 org-djangokit-core = { path = "../core", editable = true }
 org-djangokit-cli = { path = "../cli", editable = true }
+runcommands = { path = "../../runcommands", editable = true }
 
 [tool.make-release.args]
 test = false
